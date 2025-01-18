@@ -1,2 +1,2 @@
-# JobStream2.0
-being single, seeing double, making triple
+# JobFlow
+Basically a revamped [JobStream](https://github.com/sagarpatel211/JobStream)
