@@ -45,3 +45,4 @@ export default function ProfilePage() {
   )
 }
 
+DO THIS: https://www.youtube.com/watch?v=iaxekGfUzvk&t=5327s
