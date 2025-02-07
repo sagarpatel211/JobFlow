@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { MenuIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -71,7 +70,6 @@ const Navbar = async () => {
         ) : (
           <SignInButton />
         )}
-        <MenuIcon className="md:hidden" />
       </aside>
     </header>
   );
