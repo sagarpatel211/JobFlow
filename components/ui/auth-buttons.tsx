@@ -16,7 +16,7 @@ export function SignInButton() {
 export function SignOutButton() {
   return (
     <DropdownMenuItem onClick={() => signOut()}>
-      <LogOut w-5 h-5 mr-2 />
+      <LogOut className="w-5 h-5 mr-2" />
       Log Out
     </DropdownMenuItem>
   );
