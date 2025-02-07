@@ -31,6 +31,8 @@ This document outlines the architecture of the **Job Scraper and Tracker** proje
 |  Elasticsearch)   |          +---------------------------+
 +-------------------+
 
+
+
 ```
 
 ---
@@ -38,6 +40,7 @@ This document outlines the architecture of the **Job Scraper and Tracker** proje
 ## **System Components**
 
 ### **1. Frontend**
+
 - **Framework**: [Next.js](https://nextjs.org/) with TypeScript.
 - **Key Features**:
   - User authentication (Sign-up, Login).
@@ -48,6 +51,7 @@ This document outlines the architecture of the **Job Scraper and Tracker** proje
 ---
 
 ### **2. API Gateway**
+
 - **Framework**: Apollo Server (GraphQL) for flexible, schema-based API queries.
 - **Features**:
   - Acts as the entry point for all requests from the frontend.
@@ -58,6 +62,7 @@ This document outlines the architecture of the **Job Scraper and Tracker** proje
 ---
 
 ### **3. Job Tracker Service**
+
 - **Framework**: Built with **tRPC** (TypeScript) as a microservice.
 - **Key Responsibilities**:
   - CRUD operations for tracking job applications (status, company, position, etc.).
@@ -67,6 +72,7 @@ This document outlines the architecture of the **Job Scraper and Tracker** proje
 ---
 
 ### **4. Job Scraper Service**
+
 - **Workflow Orchestration**: [Apache Airflow](https://airflow.apache.org/) to schedule scraping workflows.
 - **Scraping Tools**:
   - [Scrapy](https://scrapy.org/) for efficient scraping from job platforms.
@@ -79,6 +85,7 @@ This document outlines the architecture of the **Job Scraper and Tracker** proje
 ---
 
 ### **5. ATS Scanner**
+
 - **Framework**: Python-based microservice using:
   - **spaCy** and **Hugging Face** for natural language processing.
   - Pre-trained models for skill extraction and resume-job match scoring.
@@ -89,6 +96,7 @@ This document outlines the architecture of the **Job Scraper and Tracker** proje
 ---
 
 ### **6. Data Storage**
+
 - **Relational Database**: PostgreSQL for structured data (user accounts, jobs, resumes).
   - Optimized with indexing and partitioning for scalability.
 - **Search Engine**: Elasticsearch for full-text search on job descriptions and resumes.
@@ -97,12 +105,14 @@ This document outlines the architecture of the **Job Scraper and Tracker** proje
 ---
 
 ### **7. Data Pipeline**
+
 - **Message Queue**: Kafka for streaming job data from the scraper to consumers.
 - **Distributed Processing**: Apache Spark processes large-scale job data for analytics.
 
 ---
 
 ### **8. Authentication and Authorization**
+
 - **Auth Provider**: [Auth0](https://auth0.com/) or [NextAuth.js](https://next-auth.js.org/) for OAuth and JWT-based authentication.
 - **Security**:
   - Enforce HTTPS.
@@ -111,6 +121,7 @@ This document outlines the architecture of the **Job Scraper and Tracker** proje
 ---
 
 ### **9. Cloud Infrastructure**
+
 - **Provider**: AWS.
 - **Key Services**:
   - EC2: For hosting Dockerized services.
@@ -123,6 +134,7 @@ This document outlines the architecture of the **Job Scraper and Tracker** proje
 ---
 
 ### **10. Monitoring and Analytics**
+
 - **Monitoring Tools**:
   - **Prometheus** for metrics collection.
   - **Grafana** for dashboard visualization.
@@ -149,4 +161,3 @@ This document outlines the architecture of the **Job Scraper and Tracker** proje
 ---
 
 This architecture provides a scalable, production-ready system while incorporating modern tools and technologies to maximize learning opportunities.
-
