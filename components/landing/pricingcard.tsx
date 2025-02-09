@@ -2,30 +2,9 @@
 import { useRouter } from "next/navigation";
 import { CardBody, CardItem } from "@/components/ui/3d-card";
 import { CheckIcon } from "lucide-react";
+import { PricingCardProps } from "@/types/pricing";
 
-interface PricingCardProps {
-  title: string;
-  price: string;
-  description: string;
-  features: string[];
-  primaryAction: {
-    label: string;
-    path: string;
-  };
-  secondaryAction: {
-    label: string;
-    path: string;
-  };
-}
-
-const PricingCard = ({
-  title,
-  price,
-  description,
-  features,
-  primaryAction,
-  secondaryAction,
-}: PricingCardProps) => {
+const PricingCard = ({ title, price, description, features, primaryAction, secondaryAction }: PricingCardProps) => {
   const router = useRouter();
 
   return (
@@ -34,10 +13,7 @@ const PricingCard = ({
         {title}
         <h2 className="text-6xl">{price}</h2>
       </CardItem>
-      <CardItem
-        translateZ="60"
-        className="text-neutral-500 text-sm max-w-sm mt-2 dark:text-neutral-300"
-      >
+      <CardItem translateZ="60" className="text-neutral-500 text-sm max-w-sm mt-2 dark:text-neutral-300">
         {description}
         <ul className="my-4 flex flex-col gap-2">
           {features.map((feature, index) => (
@@ -50,13 +26,17 @@ const PricingCard = ({
       </CardItem>
       <div className="flex justify-between items-center mt-8">
         <button
-          onClick={() => router.push(secondaryAction.path)}
+          onClick={() => {
+            router.push(secondaryAction.path);
+          }}
           className="px-4 py-2 rounded-xl text-xs font-normal dark:text-white"
         >
           {secondaryAction.label} →
         </button>
         <button
-          onClick={() => router.push(primaryAction.path)}
+          onClick={() => {
+            router.push(primaryAction.path);
+          }}
           className="px-4 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-xs font-bold"
         >
           {primaryAction.label}

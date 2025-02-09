@@ -3,9 +3,9 @@
 import { cn } from "@/lib/utils";
 import React, { createContext, useState, useContext, useRef, useEffect, useCallback } from "react";
 
-const MouseEnterContext = createContext<
-  [boolean, React.Dispatch<React.SetStateAction<boolean>>] | undefined
->(undefined);
+const MouseEnterContext = createContext<[boolean, React.Dispatch<React.SetStateAction<boolean>>] | undefined>(
+  undefined,
+);
 
 export const CardContainer = ({
   children,
@@ -24,7 +24,7 @@ export const CardContainer = ({
     const { left, top, width, height } = containerRef.current.getBoundingClientRect();
     const x = (e.clientX - left - width / 2) / 25;
     const y = (e.clientY - top - height / 2) / 25;
-    containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
+    containerRef.current.style.transform = `rotateY(${x.toString()}deg) rotateX(${y.toString()}deg)`;
   };
 
   const handleMouseEnter = () => {
@@ -50,10 +50,7 @@ export const CardContainer = ({
           onMouseEnter={handleMouseEnter}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          className={cn(
-            "flex items-center justify-center relative transition-all duration-200 ease-linear",
-            className,
-          )}
+          className={cn("flex items-center justify-center relative transition-all duration-200 ease-linear", className)}
           style={{
             transformStyle: "preserve-3d",
           }}
@@ -65,20 +62,9 @@ export const CardContainer = ({
   );
 };
 
-export const CardBody = ({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => {
+export const CardBody = ({ children, className }: { children: React.ReactNode; className?: string }) => {
   return (
-    <div
-      className={cn(
-        "h-96 w-96 [transform-style:preserve-3d]  [&>*]:[transform-style:preserve-3d]",
-        className,
-      )}
-    >
+    <div className={cn("h-96 w-96 [transform-style:preserve-3d]  [&>*]:[transform-style:preserve-3d]", className)}>
       {children}
     </div>
   );
@@ -112,9 +98,21 @@ export const CardItem = ({
   const handleAnimations = useCallback(() => {
     if (!ref.current) return;
     if (isMouseEntered) {
-      ref.current.style.transform = `translateX(${translateX}px) translateY(${translateY}px) translateZ(${translateZ}px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) rotateZ(${rotateZ}deg)`;
+      ref.current.style.transform = `
+      translateX(${typeof translateX === "number" ? `${translateX.toString()}px` : translateX}) 
+      translateY(${typeof translateY === "number" ? `${translateY.toString()}px` : translateY}) 
+      translateZ(${typeof translateZ === "number" ? `${translateZ.toString()}px` : translateZ}) 
+      rotateX(${typeof rotateX === "number" ? `${rotateX.toString()}deg` : rotateX}) 
+      rotateY(${typeof rotateY === "number" ? `${rotateY.toString()}deg` : rotateY}) 
+      rotateZ(${typeof rotateZ === "number" ? `${rotateZ.toString()}deg` : rotateZ})`;
     } else {
-      ref.current.style.transform = `translateX(0px) translateY(0px) translateZ(0px) rotateX(0deg) rotateY(0deg) rotateZ(0deg)`;
+      ref.current.style.transform = `
+        translateX(0px) 
+        translateY(0px) 
+        translateZ(0px) 
+        rotateX(0deg) 
+        rotateY(0deg) 
+        rotateZ(0deg)`;
     }
   }, [isMouseEntered, translateX, translateY, translateZ, rotateX, rotateY, rotateZ]);
 

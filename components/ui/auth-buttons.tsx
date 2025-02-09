@@ -7,7 +7,7 @@ import { LogOut } from "lucide-react";
 
 export function SignInButton() {
   return (
-    <Button variant="ghost" onClick={() => signIn()}>
+    <Button variant="ghost" onClick={() => void signIn()}>
       Sign In
     </Button>
   );
@@ -15,7 +15,7 @@ export function SignInButton() {
 
 export function SignOutButton() {
   return (
-    <DropdownMenuItem onClick={() => signOut()}>
+    <DropdownMenuItem onClick={() => void signOut()}>
       <LogOut className="w-5 h-5 mr-2" />
       Log Out
     </DropdownMenuItem>

@@ -5,7 +5,7 @@ type Props = {
   selected: boolean;
 };
 
-const Payment = ({ selected }: Props) => {
+const Billing = ({ selected }: Props) => {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect
@@ -41,4 +41,4 @@ const Payment = ({ selected }: Props) => {
   );
 };
 
-export default Payment;
+export default Billing;

@@ -26,10 +26,7 @@ export const Parallax = ({
   const springConfig = { stiffness: 300, damping: 30, bounce: 100 };
 
   const translateX = useSpring(useTransform(scrollYProgress, [0, 1], [0, 1000]), springConfig);
-  const translateXReverse = useSpring(
-    useTransform(scrollYProgress, [0, 1], [0, -1000]),
-    springConfig,
-  );
+  const translateXReverse = useSpring(useTransform(scrollYProgress, [0, 1], [0, -1000]), springConfig);
   const rotateX = useSpring(useTransform(scrollYProgress, [0, 0.2], [15, 0]), springConfig);
   const opacity = useSpring(useTransform(scrollYProgress, [0, 0.2], [0.2, 1]), springConfig);
   const rotateZ = useSpring(useTransform(scrollYProgress, [0, 0.2], [20, 0]), springConfig);
@@ -37,7 +34,7 @@ export const Parallax = ({
   return (
     <div
       ref={ref}
-      className="relative h-[300vh] py-40 overflow-hidden antialiased flex flex-col self-auto [perspective:1000px] [transform-style:preserve-3d]"
+      className="relative h-[230vh] py-40 overflow-hidden antialiased flex flex-col self-auto [perspective:1000px] [transform-style:preserve-3d]"
     >
       <Header />
       <motion.div
@@ -51,29 +48,17 @@ export const Parallax = ({
       >
         <motion.div className="flex flex-row-reverse space-x-reverse space-x-20 mb-20">
           {firstRow.map((feature, index) => (
-            <ProductCard
-              feature={feature}
-              translate={translateX}
-              key={`${feature.title}-${index}`}
-            />
+            <ProductCard feature={feature} translate={translateX} key={`${feature.title}-${index.toString()}`} />
           ))}
         </motion.div>
         <motion.div className="flex flex-row  mb-20 space-x-20 ">
           {secondRow.map((feature, index) => (
-            <ProductCard
-              feature={feature}
-              translate={translateXReverse}
-              key={`${feature.title}-${index}`}
-            />
+            <ProductCard feature={feature} translate={translateXReverse} key={`${feature.title}-${index.toString()}`} />
           ))}
         </motion.div>
         <motion.div className="flex flex-row-reverse space-x-reverse space-x-20">
           {thirdRow.map((feature, index) => (
-            <ProductCard
-              feature={feature}
-              translate={translateX}
-              key={`${feature.title}-${index}`}
-            />
+            <ProductCard feature={feature} translate={translateX} key={`${feature.title}-${index.toString()}`} />
           ))}
         </motion.div>
       </motion.div>
@@ -89,8 +74,8 @@ export const Header = () => {
         <br /> for job hunting
       </h1>
       <p className="max-w-2xl text-base md:text-xl mt-8 dark:text-neutral-200">
-        We make it easy to find the perfect job for you! Our platform is designed to help you find,
-        apply, and track your job applications.
+        We make it easy to find the perfect job for you! Our platform is designed to help you find, apply, and track
+        your job applications.
       </p>
     </div>
   );
@@ -129,9 +114,7 @@ export const ProductCard = ({
         />
       </Link>
       <div className="absolute inset-0 h-full w-full opacity-0 group-hover/feature:opacity-80 bg-black pointer-events-none"></div>
-      <h2 className="absolute bottom-4 left-4 opacity-0 group-hover/feature:opacity-100 text-white">
-        {feature.title}
-      </h2>
+      <h2 className="absolute bottom-4 left-4 opacity-0 group-hover/feature:opacity-100 text-white">{feature.title}</h2>
     </motion.div>
   );
 };

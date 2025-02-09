@@ -1,18 +1,24 @@
-import Category from "@/components/icons/category";
-import Logs from "@/components/icons/clipboard";
-import Templates from "@/components/icons/cloud";
-import Home from "@/components/icons/home";
-import Payment from "@/components/icons/payment";
+import Tracker from "@/components/icons/tracker";
+import Logs from "@/components/icons/automator";
+import Templates from "@/components/icons/statistics";
+import Home from "@/components/icons/dashboard";
+import Payment from "@/components/icons/billing";
 import Settings from "@/components/icons/settings";
-import Workflows from "@/components/icons/workflows";
+import Workflows from "@/components/icons/interviews";
+import { Feature } from "@/types/header";
 
-interface HeaderProps {
-  title: string;
-  link: string;
-  thumbnail: string;
-}
+export const statuses = ["Nothing Done", "Applying", "Applied", "OA", "Interview", "Offer"];
 
-export const features: HeaderProps[] = [
+export const statusColors = [
+  "bg-red-500/10 text-red-500",
+  "bg-yellow-500/10 text-yellow-500",
+  "bg-green-500/10 text-green-500",
+  "bg-blue-500/10 text-blue-500",
+  "bg-indigo-500/10 text-indigo-500",
+  "bg-purple-500/10 text-purple-500",
+];
+
+export const features: Feature[] = [
   {
     title: "Moonbeam",
     link: "https://localhost:3000",
@@ -28,7 +34,6 @@ export const features: HeaderProps[] = [
     link: "https://localhost:3000",
     thumbnail: "/p3.png",
   },
-
   {
     title: "Editorially",
     link: "https://localhost:3000",
@@ -93,12 +98,23 @@ export const features: HeaderProps[] = [
   },
 ];
 
+export const menuOptionstmp = [
+  { name: "Dashboard", Component: Home, href: "/dashboard" },
+  { name: "Tracker", Component: Workflows, href: "/tracker" },
+  { name: "Resume", Component: Settings, href: "/resume" },
+  { name: "Applications", Component: Tracker, href: "/coverletter" },
+  { name: "Templates", Component: Templates, href: "/templates" },
+  { name: "Mock Interviews", Component: Payment, href: "/mock" },
+  { name: "Logs", Component: Logs, href: "/logs" },
+  // add settings
+];
+
 export const menuOptions = [
   { name: "Dashboard", Component: Home, href: "/dashboard" },
-  { name: "Workflows", Component: Workflows, href: "/workflows" },
-  { name: "Settings", Component: Settings, href: "/settings" },
-  { name: "Connections", Component: Category, href: "/connections" },
+  { name: "Tracker", Component: Tracker, href: "/tracker" },
+  { name: "Appliction Automator", Component: Logs, href: "/generate" },
+  { name: "Mock Interviews", Component: Workflows, href: "/interview" },
+  { name: "Statistics", Component: Templates, href: "/statistics" },
   { name: "Billing", Component: Payment, href: "/billing" },
-  { name: "Templates", Component: Templates, href: "/templates" },
-  { name: "Logs", Component: Logs, href: "/logs" },
+  { name: "Settings", Component: Settings, href: "/settings" },
 ];

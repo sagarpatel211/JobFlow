@@ -1,6 +1,7 @@
 "use client";
 import React, { useRef, useState, useEffect } from "react";
 import { useScroll, useTransform, motion, MotionValue } from "framer-motion";
+import { HeaderProps } from "@/types/header";
 
 export const ContainerScroll = ({
   titleComponent,
@@ -19,10 +20,7 @@ export const ContainerScroll = ({
   }, []);
 
   return (
-    <div
-      className="relative h-[60rem] md:h-[80rem] flex items-center justify-center p-2 md:p-20"
-      ref={containerRef}
-    >
+    <div className="relative h-[60rem] md:h-[80rem] flex items-center justify-center p-2 md:p-20" ref={containerRef}>
       {containerReady && containerRef.current && (
         <ContainerContent
           containerRef={containerRef as React.RefObject<HTMLDivElement>}
@@ -83,11 +81,6 @@ const ContainerContent = ({
     </div>
   );
 };
-
-interface HeaderProps {
-  translate: MotionValue<number>;
-  titleComponent: string | React.ReactNode;
-}
 
 export const Header = ({ translate, titleComponent }: HeaderProps) => {
   return (

@@ -3,7 +3,7 @@ import React from "react";
 
 type Props = { selected: boolean };
 
-const Home = ({ selected }: Props) => {
+const Dashboard = ({ selected }: Props) => {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
@@ -26,4 +26,4 @@ const Home = ({ selected }: Props) => {
   );
 };
 
-export default Home;
+export default Dashboard;

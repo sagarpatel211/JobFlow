@@ -5,18 +5,24 @@ import { Parallax } from "@/components/landing/parallax";
 import { features } from "@/lib/constants";
 import Footer from "@/components/landing/footer";
 import Pricing from "@/components/landing/pricing";
+import { BentoGridDisplay } from "@/components/landing/bentodisplay";
 
 export default function Home() {
   return (
     <main>
       <NavBar />
       <Hero />
-      <Parallax features={features}></Parallax>
-      <section className="mt-[-500px]">
+      <section id="products">
+        <Parallax features={features}></Parallax>
+      </section>
+      <section id="features">
+        <BentoGridDisplay />
+      </section>
+      <section id="pricing">
         <LampComponent />
         <Pricing />
-        <Footer />
       </section>
+      <Footer />
     </main>
   );
 }

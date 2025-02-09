@@ -3,7 +3,7 @@ import React from "react";
 
 type Props = { selected: boolean };
 
-const Workflows = ({ selected }: Props) => {
+const Interviews = ({ selected }: Props) => {
   return (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
@@ -17,4 +17,4 @@ const Workflows = ({ selected }: Props) => {
   );
 };
 
-export default Workflows;
+export default Interviews;
