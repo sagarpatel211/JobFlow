@@ -1,4 +1,3 @@
-// app/page.jsx
 "use client";
 
 import React, { useState } from "react";
@@ -14,9 +13,7 @@ const InterviewSetup = () => {
   const [difficulty, setDifficulty] = useState("Medium");
 
   const startInterview = () => {
-    // Generate a session ID (here we use the timestamp)
     const sessionId = Date.now();
-    // Navigate to the dynamic session URL with query parameters
     router.push(
       `interview/session/${sessionId}?type=${encodeURIComponent(interviewType)}&duration=${duration}&difficulty=${difficulty}`,
     );
@@ -26,7 +23,6 @@ const InterviewSetup = () => {
     <div className="flex flex-col gap-4 relative p-6">
       <h1 className="text-4xl sticky top-0 z-[10] bg-background/50 backdrop-blur-lg border-b p-6">Interview Setup</h1>
       <div className="flex flex-col gap-6 items-center justify-center p-6">
-        {/* Interview Type Selection */}
         <Select value={interviewType} onValueChange={setInterviewType}>
           <SelectTrigger className="w-64">
             <SelectValue placeholder="Select interview type" />
@@ -37,14 +33,10 @@ const InterviewSetup = () => {
             <SelectItem value="Resume Screening">Resume Screening</SelectItem>
           </SelectContent>
         </Select>
-
-        {/* Duration Slider */}
         <div className="flex flex-col items-center w-64">
           <span className="text-muted-foreground mb-2">Duration: {duration} min</span>
           <Slider max={45} min={5} step={5} value={[duration]} onValueChange={(value) => setDuration(value[0])} />
         </div>
-
-        {/* Difficulty Selection */}
         <div className="flex gap-2">
           {["Easy", "Medium", "Hard"].map((level) => (
             <Button
@@ -60,8 +52,6 @@ const InterviewSetup = () => {
             </Button>
           ))}
         </div>
-
-        {/* Start Interview Button */}
         <Button className="px-6 py-2 bg-primary text-white rounded-lg" onClick={startInterview}>
           Start Interview
         </Button>

@@ -40,15 +40,11 @@ const DashboardPage = () => {
             </div>
           </div>
         ))}
-
-        {/* Timer Node - Now row-span-2 to match Job Listings */}
         <div className="row-span-2 bg-card text-card-foreground rounded-lg shadow-[0_8px_20px_rgba(0,0,0,0.5)] p-6 flex flex-col justify-center items-center">
           <Clock className="w-8 h-8 mb-2" />
           <div className="text-lg font-semibold">New jobs released in</div>
           <div className="text-3xl font-bold mt-2">8 hours</div>
         </div>
-
-        {/* Job Listings - Already row-span-2 */}
         <div className="col-span-2 md:col-span-3 row-span-2 bg-card text-card-foreground rounded-lg shadow-[0_8px_20px_rgba(0,0,0,0.5)] p-6 flex flex-col">
           <h2 className="text-xl font-semibold mb-4">Recent Job Postings</h2>
           <div className="overflow-y-auto flex-grow">

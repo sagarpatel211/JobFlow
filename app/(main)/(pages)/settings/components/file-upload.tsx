@@ -21,7 +21,6 @@ export function FileUpload({ title, onFileChange }: FileUploadProps) {
       setFile(selectedFile);
       onFileChange(selectedFile);
 
-      // Simulate upload progress
       let currentProgress = 0;
       const interval = setInterval(() => {
         currentProgress += 10;

@@ -7,7 +7,7 @@ import Settings from "@/components/icons/settings";
 import Workflows from "@/components/icons/interviews";
 import { Feature } from "@/types/header";
 
-export const statuses = ["Nothing Done", "Applying", "Applied", "OA", "Interview", "Offer"];
+export const statuses = ["Nothing Done", "Applying", "Applied", "OA", "Interview", "Offer", "Rejected"];
 
 export const statusColors = [
   "bg-red-500/10 text-red-500",
@@ -16,6 +16,7 @@ export const statusColors = [
   "bg-blue-500/10 text-blue-500",
   "bg-indigo-500/10 text-indigo-500",
   "bg-purple-500/10 text-purple-500",
+  "bg-gray-500/10 text-gray-500",
 ];
 
 export const features: Feature[] = [
@@ -96,17 +97,6 @@ export const features: Feature[] = [
     link: "https://localhost:3000",
     thumbnail: "/p3.png",
   },
-];
-
-export const menuOptionstmp = [
-  { name: "Dashboard", Component: Home, href: "/dashboard" },
-  { name: "Tracker", Component: Workflows, href: "/tracker" },
-  { name: "Resume", Component: Settings, href: "/resume" },
-  { name: "Applications", Component: Tracker, href: "/coverletter" },
-  { name: "Templates", Component: Templates, href: "/templates" },
-  { name: "Mock Interviews", Component: Payment, href: "/mock" },
-  { name: "Logs", Component: Logs, href: "/logs" },
-  // add settings
 ];
 
 export const menuOptions = [

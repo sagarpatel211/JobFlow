@@ -35,7 +35,7 @@ const generateFakeData = (days) => {
   });
 };
 
-export function StatsChart({ data, color }) {
+function StatsChart({ data, color }) {
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">

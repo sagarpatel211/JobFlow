@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import ProfileForm from "@/components/forms/profile-form";
+import ProfileForm from "@/app/(main)/(pages)/settings/components/profile-form";
 
 const SettingsPage = () => {
   return (

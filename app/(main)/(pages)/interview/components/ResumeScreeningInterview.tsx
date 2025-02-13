@@ -1,4 +1,3 @@
-// components/ResumeScreeningInterview.jsx
 "use client";
 
 import React, { useState } from "react";
@@ -15,7 +14,6 @@ const ResumeScreeningInterview = ({ onExit, duration }) => {
       <div className="p-6 flex flex-col flex-grow">
         <h2 className="text-2xl mb-4">Resume Screening Interview</h2>
         <div className="flex flex-col md:flex-row gap-4 flex-grow">
-          {/* Chat side */}
           <div className="flex-1">
             <ChatInterface
               messages={messages}
@@ -23,7 +21,6 @@ const ResumeScreeningInterview = ({ onExit, duration }) => {
               botReply="Bot response for resume screening."
             />
           </div>
-          {/* Resume side */}
           <div className="flex-1">
             <ResumeViewer />
           </div>

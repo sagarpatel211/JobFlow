@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Input } from "../ui/input";
-import { Textarea } from "../ui/textarea";
-import { Button } from "../ui/button";
-import { Switch } from "../ui/switch";
+import { Input } from "../../../../../components/ui/input";
+import { Textarea } from "../../../../../components/ui/textarea";
+import { Button } from "../../../../../components/ui/button";
+import { Switch } from "../../../../../components/ui/switch";
 import { Loader2 } from "lucide-react";
-import { Card } from "../ui/card";
-import { UploadSection } from "../upload-section";
+import { Card } from "../../../../../components/ui/card";
+import { UploadSection } from "./upload-section";
 import { motion } from "framer-motion";
 
 const ProfileForm = () => {
@@ -49,7 +49,7 @@ const ProfileForm = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 1000); // Simulate save delay
+    setTimeout(() => setIsLoading(false), 1000);
   };
 
   return (

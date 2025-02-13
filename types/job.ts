@@ -34,7 +34,6 @@ export interface JobToolbarProps {
   onAddNewJob: () => void;
 }
 
-
 export interface JobRowProps {
   job: Job;
   updateStatus: (jobId: number, direction: number) => void;

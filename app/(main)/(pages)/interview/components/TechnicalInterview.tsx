@@ -1,4 +1,3 @@
-// components/TechnicalInterview.jsx
 "use client";
 
 import React, { useState } from "react";

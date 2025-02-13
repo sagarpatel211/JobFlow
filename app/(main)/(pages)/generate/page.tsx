@@ -9,7 +9,6 @@ import { Progress } from "@/components/ui/progress";
 import { Loader2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
-// dnd-kit imports for Resume section
 import {
   DndContext,
   DragEndEvent,
@@ -25,7 +24,6 @@ import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } 
 import { CSS } from "@dnd-kit/utilities";
 import { Card } from "@/components/ui/card";
 
-// ----- Dummy Data & Types for Resume Components -----
 interface ResumeComponent {
   id: string;
   title: string;
@@ -66,7 +64,6 @@ const initialData: Record<string, ResumeComponent[]> = {
   ],
 };
 
-// ----- Draggable Resume Box Component -----
 const SortableItem = ({ id, title, content }: ResumeComponent) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = {
@@ -83,7 +80,6 @@ const SortableItem = ({ id, title, content }: ResumeComponent) => {
   );
 };
 
-// ----- Overlay for Dragging -----
 const ItemOverlay = ({ item }: { item: ResumeComponent }) => {
   return (
     <Card className="p-4">
@@ -93,7 +89,6 @@ const ItemOverlay = ({ item }: { item: ResumeComponent }) => {
   );
 };
 
-// ----- Droppable Zone Component -----
 const DroppableZone: React.FC<{ id: string; children: React.ReactNode }> = ({ id, children }) => {
   const { setNodeRef } = useDroppable({ id });
   return (
@@ -103,7 +98,6 @@ const DroppableZone: React.FC<{ id: string; children: React.ReactNode }> = ({ id
   );
 };
 
-// ----- Resume Builder (Drag & Drop) Component -----
 const ResumeBuilder = () => {
   const [containers, setContainers] = useState<Record<string, ResumeComponent[]>>(initialData);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -126,12 +120,10 @@ const ResumeBuilder = () => {
     setActiveId(null);
     if (!over) return;
 
-    // Determine which container the active item is in.
     const activeContainer = Object.keys(containers).find((key) =>
       containers[key].some((item) => item.id === active.id),
     );
 
-    // Determine target container from the over element's id or droppable container id.
     let overContainer = Object.keys(containers).find((key) => containers[key].some((item) => item.id === over.id));
     if (!overContainer) {
       if (over.id === "main-zone") {
@@ -171,7 +163,6 @@ const ResumeBuilder = () => {
     >
       <div className="flex flex-col gap-4">
         <h2 className="text-xl font-bold">Resume Builder</h2>
-        {/* Main Resume Components */}
         <div className="border rounded-lg p-4 min-h-[300px]">
           <h3 className="font-semibold mb-2">Main Resume Components</h3>
           <DroppableZone id="main-zone">
@@ -182,7 +173,6 @@ const ResumeBuilder = () => {
             </SortableContext>
           </DroppableZone>
         </div>
-        {/* Holding Zone */}
         <div className="border rounded-lg p-4 min-h-[150px]">
           <h3 className="font-semibold mb-2">Holding Zone (Unused Components)</h3>
           <DroppableZone id="holding-zone">
@@ -201,16 +191,13 @@ const ResumeBuilder = () => {
   );
 };
 
-// ----- Resume Section (Split View) -----
 const ResumeSection = () => {
   return (
     <div className="p-6">
       <div className="w-full flex gap-4">
-        {/* Left Side: Resume Builder */}
         <div className="flex-1">
           <ResumeBuilder />
         </div>
-        {/* Right Side: Resume PDF Preview */}
         <div className="flex-1 border border-dashed rounded-lg p-4 min-h-[300px] flex items-center justify-center">
           <span>Resume PDF Preview</span>
         </div>
@@ -219,13 +206,10 @@ const ResumeSection = () => {
   );
 };
 
-// ----- Main GenerateAppPage Component -----
 const GenerateAppPage = () => {
-  // Toggle states for showing Cover Letter and Resume sections
   const [coverLetterEnabled, setCoverLetterEnabled] = useState(true);
   const [resumeEnabled, setResumeEnabled] = useState(false);
 
-  // State for Cover Letter PDF generation
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
@@ -233,7 +217,6 @@ const GenerateAppPage = () => {
     e.preventDefault();
     setLoading(true);
     setShowResults(false);
-    // Emulate PDF generation delay (5 seconds)
     setTimeout(() => {
       setLoading(false);
       setShowResults(true);
@@ -250,8 +233,6 @@ const GenerateAppPage = () => {
       <h1 className="text-4xl sticky top-0 z-[10] p-6 bg-background/50 backdrop-blur-lg flex items-center border-b">
         Generate Application
       </h1>
-
-      {/* Toggle Section */}
       <div className="flex gap-8 items-center p-6">
         <div className="flex items-center gap-2">
           <Checkbox checked={coverLetterEnabled} onCheckedChange={(checked) => setCoverLetterEnabled(!!checked)} />
@@ -262,11 +243,8 @@ const GenerateAppPage = () => {
           <Label>Resume</Label>
         </div>
       </div>
-
-      {/* Cover Letter Section */}
       {coverLetterEnabled && (
         <div className="flex gap-8 p-6">
-          {/* Left Column: Cover Letter Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-1/2">
             <div className="flex flex-col gap-1">
               <Label htmlFor="companyName">Company Name</Label>
@@ -292,8 +270,6 @@ const GenerateAppPage = () => {
               {loading ? "Generating..." : "Submit"}
             </Button>
           </form>
-
-          {/* Right Column: Cover Letter Results */}
           <div className="w-1/2 flex flex-col gap-4">
             {loading && (
               <div className="flex flex-col items-center justify-center h-96">
@@ -321,8 +297,6 @@ const GenerateAppPage = () => {
           </div>
         </div>
       )}
-
-      {/* Resume Section */}
       {resumeEnabled && <ResumeSection />}
     </div>
   );
