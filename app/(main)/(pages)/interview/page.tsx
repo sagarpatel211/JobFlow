@@ -5,13 +5,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 
 const InterviewSetup = () => {
   const router = useRouter();
@@ -24,15 +18,13 @@ const InterviewSetup = () => {
     const sessionId = Date.now();
     // Navigate to the dynamic session URL with query parameters
     router.push(
-      `interview/session/${sessionId}?type=${encodeURIComponent(interviewType)}&duration=${duration}&difficulty=${difficulty}`
+      `interview/session/${sessionId}?type=${encodeURIComponent(interviewType)}&duration=${duration}&difficulty=${difficulty}`,
     );
   };
 
   return (
     <div className="flex flex-col gap-4 relative p-6">
-      <h1 className="text-4xl sticky top-0 z-[10] bg-background/50 backdrop-blur-lg border-b p-6">
-        Interview Setup
-      </h1>
+      <h1 className="text-4xl sticky top-0 z-[10] bg-background/50 backdrop-blur-lg border-b p-6">Interview Setup</h1>
       <div className="flex flex-col gap-6 items-center justify-center p-6">
         {/* Interview Type Selection */}
         <Select value={interviewType} onValueChange={setInterviewType}>
@@ -48,16 +40,8 @@ const InterviewSetup = () => {
 
         {/* Duration Slider */}
         <div className="flex flex-col items-center w-64">
-          <span className="text-muted-foreground mb-2">
-            Duration: {duration} min
-          </span>
-          <Slider
-            max={45}
-            min={5}
-            step={5}
-            value={[duration]}
-            onValueChange={(value) => setDuration(value[0])}
-          />
+          <span className="text-muted-foreground mb-2">Duration: {duration} min</span>
+          <Slider max={45} min={5} step={5} value={[duration]} onValueChange={(value) => setDuration(value[0])} />
         </div>
 
         {/* Difficulty Selection */}
@@ -78,10 +62,7 @@ const InterviewSetup = () => {
         </div>
 
         {/* Start Interview Button */}
-        <Button
-          className="px-6 py-2 bg-primary text-white rounded-lg"
-          onClick={startInterview}
-        >
+        <Button className="px-6 py-2 bg-primary text-white rounded-lg" onClick={startInterview}>
           Start Interview
         </Button>
       </div>

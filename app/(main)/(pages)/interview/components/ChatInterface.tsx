@@ -23,10 +23,7 @@ const ChatInterface = ({ messages, setMessages, botReply = "Bot response." }) =>
       const simulatedText = "Simulated speech input";
       setMessages((prev) => [...prev, { sender: "user", text: simulatedText }]);
       setTimeout(() => {
-        setMessages((prev) => [
-          ...prev,
-          { sender: "bot", text: botReply },
-        ]);
+        setMessages((prev) => [...prev, { sender: "bot", text: botReply }]);
       }, 1000);
     }
   };
@@ -44,18 +41,14 @@ const ChatInterface = ({ messages, setMessages, botReply = "Bot response." }) =>
           <div
             key={index}
             className={`my-2 p-2 rounded max-w-[70%] ${
-              msg.sender === "user"
-                ? "bg-blue-100 self-end text-right"
-                : "bg-gray-100 self-start text-left"
+              msg.sender === "user" ? "bg-blue-100 self-end text-right" : "bg-gray-100 self-start text-left"
             }`}
           >
             {msg.text}
           </div>
         ))}
       </div>
-      <div className="text-center p-2 border-t">
-        {isRecording ? "Recording..." : "Hold space to speak"}
-      </div>
+      <div className="text-center p-2 border-t">{isRecording ? "Recording..." : "Hold space to speak"}</div>
     </div>
   );
 };

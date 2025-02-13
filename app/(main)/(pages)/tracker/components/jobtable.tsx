@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { JobTableProps } from "@/types/job";
 import { JobRow } from "./jobrow";
-import { EditJobRow } from "./editjob";
+import { ModifyJobRow } from "./modifyjob";
 import { statuses } from "@/lib/constants";
 
 export function JobTable({
@@ -12,7 +12,7 @@ export function JobTable({
   setTotalJobs,
   onUpdateJob,
   onSaveJob,
-  onCancelEditJob,
+  onCancelModifyJob,
 }: JobTableProps) {
   useEffect(() => {
     setTotalJobs(jobs.length);
@@ -32,8 +32,8 @@ export function JobTable({
     onUpdateJob(jobId, { priority: !job.priority });
   };
 
-  const handleEditJob = (jobId: number) => {
-    onUpdateJob(jobId, { isEditing: true });
+  const handleModifyJob = (jobId: number) => {
+    onUpdateJob(jobId, { isModifying: true });
   };
 
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -53,14 +53,14 @@ export function JobTable({
 
       <TableBody>
         {paginatedJobs.map((job) => {
-          if (job.isEditing) {
+          if (job.isModifying) {
             return (
-              <EditJobRow
+              <ModifyJobRow
                 key={job.id}
                 job={job}
                 onUpdateJob={onUpdateJob}
                 onSaveJob={onSaveJob}
-                onCancelEditJob={onCancelEditJob}
+                onCancelModifyJob={onCancelModifyJob}
                 updateStatus={updateStatus}
               />
             );
@@ -71,7 +71,7 @@ export function JobTable({
               job={job}
               updateStatus={updateStatus}
               togglePriority={togglePriority}
-              onEditJob={handleEditJob}
+              onModifyJob={handleModifyJob}
             />
           );
         })}

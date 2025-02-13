@@ -17,13 +17,7 @@ const TechnicalInterview = ({ onExit, duration }) => {
       <InterviewHeader onExit={onExit} duration={duration} />
       <div className="p-6 flex flex-col flex-grow">
         <h2 className="text-2xl mb-4">Technical Interview</h2>
-        <Editor
-          height="70vh"
-          defaultLanguage="javascript"
-          value={code}
-          onChange={handleEditorChange}
-          theme="vs-dark"
-        />
+        <Editor height="70vh" defaultLanguage="javascript" value={code} onChange={handleEditorChange} theme="vs-dark" />
       </div>
     </div>
   );

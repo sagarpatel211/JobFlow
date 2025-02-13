@@ -16,7 +16,7 @@ const generateData = (days, actual, goal) => {
     const date = new Date();
     date.setDate(date.getDate() - (days - 1 - i));
     return {
-      date: date.toISOString().split('T')[0],
+      date: date.toISOString().split("T")[0],
       actual: actual[i] || 0,
       goal: goal[i] || 4,
     };
@@ -28,7 +28,7 @@ const generateFakeData = (days) => {
     const date = new Date();
     date.setDate(date.getDate() - (days - 1 - i));
     return {
-      date: date.toISOString().split('T')[0],
+      date: date.toISOString().split("T")[0],
       actual: Math.floor(Math.random() * 5),
       goal: 4,
     };
@@ -47,12 +47,7 @@ export function StatsChart({ data, color }) {
             axisLine={false}
             padding={{ left: 10, right: 10 }}
           />
-          <YAxis
-            tick={{ fontSize: 12, fill: "gray" }}
-            tickLine={false}
-            axisLine={false}
-            domain={[0, "dataMax + 1"]}
-          />
+          <YAxis tick={{ fontSize: 12, fill: "gray" }} tickLine={false} axisLine={false} domain={[0, "dataMax + 1"]} />
           <Tooltip
             content={({ active, payload }) => {
               if (active && payload && payload.length) {
@@ -80,7 +75,6 @@ export function StatsChart({ data, color }) {
     </div>
   );
 }
-
 
 const StatisticsPage = () => {
   const [leetcodeData, setLeetcodeData] = useState([]);
@@ -111,9 +105,7 @@ const StatisticsPage = () => {
 
   return (
     <div className="flex flex-col gap-4 relative p-6">
-      <h1 className="text-4xl sticky top-0 z-[10] bg-background/50 backdrop-blur-lg border-b p-6">
-        Statistics
-      </h1>
+      <h1 className="text-4xl sticky top-0 z-[10] bg-background/50 backdrop-blur-lg border-b p-6">Statistics</h1>
       <div className="flex gap-2 my-4">
         <Button
           size="sm"

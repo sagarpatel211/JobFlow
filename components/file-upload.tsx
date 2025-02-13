@@ -1,40 +1,40 @@
-"use client"
+"use client";
 
-import { useState, useCallback } from "react"
-import { useDropzone } from "react-dropzone"
-import { Card } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
-import { Cloud, File } from "lucide-react"
+import { useState, useCallback } from "react";
+import { useDropzone } from "react-dropzone";
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Cloud, File } from "lucide-react";
 
 interface FileUploadProps {
-  title: string
-  onFileChange: (file: File) => void
+  title: string;
+  onFileChange: (file: File) => void;
 }
 
 export function FileUpload({ title, onFileChange }: FileUploadProps) {
-  const [file, setFile] = useState<File | null>(null)
-  const [progress, setProgress] = useState(0)
+  const [file, setFile] = useState<File | null>(null);
+  const [progress, setProgress] = useState(0);
 
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
-      const selectedFile = acceptedFiles[0]
-      setFile(selectedFile)
-      onFileChange(selectedFile)
+      const selectedFile = acceptedFiles[0];
+      setFile(selectedFile);
+      onFileChange(selectedFile);
 
       // Simulate upload progress
-      let currentProgress = 0
+      let currentProgress = 0;
       const interval = setInterval(() => {
-        currentProgress += 10
-        setProgress(currentProgress)
+        currentProgress += 10;
+        setProgress(currentProgress);
         if (currentProgress >= 100) {
-          clearInterval(interval)
+          clearInterval(interval);
         }
-      }, 200)
+      }, 200);
     },
     [onFileChange],
-  )
+  );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop })
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({ onDrop });
 
   return (
     <Card className="p-4">
@@ -71,6 +71,5 @@ export function FileUpload({ title, onFileChange }: FileUploadProps) {
         </div>
       )}
     </Card>
-  )
+  );
 }
-

@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { JobActionsProps } from "@/types/job";
 
-export function JobActions({ priority, onTogglePriority, onEdit, onArchive, onDelete }: JobActionsProps) {
+export function JobActions({ priority, onTogglePriority, onModify, onArchive, onDelete }: JobActionsProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -28,8 +28,8 @@ export function JobActions({ priority, onTogglePriority, onEdit, onArchive, onDe
           {priority ? "Unmark Priority" : "Mark Priority"}
         </DropdownMenuItem>
 
-        <DropdownMenuItem onSelect={onEdit}>
-          <Edit className="mr-2 h-4 w-4 text-blue-500" /> Edit
+        <DropdownMenuItem onSelect={onModify}>
+          <Edit className="mr-2 h-4 w-4 text-blue-500" /> Modify
         </DropdownMenuItem>
 
         <DropdownMenuItem onSelect={onArchive}>

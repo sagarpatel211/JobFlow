@@ -1,10 +1,10 @@
 "use client";
 
-import { JobTable } from "@/components/screens/tracker/jobtable";
+import { JobTable } from "@/app/(main)/(pages)/tracker/components/jobtable";
 import { useState } from "react";
 import { format } from "date-fns";
-import PaginationControls from "@/components/screens/tracker/pagination";
-import JobToolbar from "@/components/screens/tracker/jobtoolbar";
+import PaginationControls from "@/app/(main)/(pages)/tracker/components/pagination";
+import JobToolbar from "@/app/(main)/(pages)/tracker/components/jobtoolbar";
 import { Job } from "@/types/job";
 
 const ITEMS_PER_PAGE = 5;
@@ -19,7 +19,7 @@ const initialJobs: Job[] = [
     statusIndex: 2,
     followers: "5M+ Followers",
     priority: false,
-    isEditing: false,
+    isModifying: false,
     archived: false,
     deleted: false,
   },
@@ -32,7 +32,7 @@ const initialJobs: Job[] = [
     statusIndex: 3,
     followers: "3M+ Followers",
     priority: false,
-    isEditing: false,
+    isModifying: false,
     archived: false,
     deleted: false,
   },
@@ -45,7 +45,7 @@ const initialJobs: Job[] = [
     statusIndex: 1,
     followers: "4M+ Followers",
     priority: false,
-    isEditing: false,
+    isModifying: false,
     archived: false,
     deleted: false,
   },
@@ -58,7 +58,7 @@ const initialJobs: Job[] = [
     statusIndex: 1,
     followers: "4M+ Followers",
     priority: false,
-    isEditing: false,
+    isModifying: false,
     archived: false,
     deleted: false,
   },
@@ -71,7 +71,7 @@ const initialJobs: Job[] = [
     statusIndex: 1,
     followers: "4M+ Followers",
     priority: false,
-    isEditing: false,
+    isModifying: false,
     archived: false,
     deleted: false,
   },
@@ -84,7 +84,7 @@ const initialJobs: Job[] = [
     statusIndex: 1,
     followers: "4M+ Followers",
     priority: false,
-    isEditing: false,
+    isModifying: false,
     archived: false,
     deleted: false,
   },
@@ -118,7 +118,7 @@ const TrackerPage = () => {
       statusIndex: 0,
       followers: "",
       priority: false,
-      isEditing: true,
+      isModifying: true,
       archived: false,
       deleted: false,
     };
@@ -136,7 +136,7 @@ const TrackerPage = () => {
           ? {
               ...job,
               postedDate: format(new Date(), "dd.MM.yyyy"),
-              isEditing: false,
+              isModifying: false,
               followers: job.followers ?? "0 Followers",
             }
           : job,
@@ -144,7 +144,7 @@ const TrackerPage = () => {
     );
   };
 
-  const handleCancelEditJob = (id: number) => {
+  const handleCancelModifyJob = (id: number) => {
     setJobs((prevJobs) => prevJobs.filter((job) => job.id !== id));
   };
 
@@ -173,7 +173,7 @@ const TrackerPage = () => {
           setTotalJobs={setTotalJobs}
           onUpdateJob={handleUpdateJob}
           onSaveJob={handleSaveJob}
-          onCancelEditJob={handleCancelEditJob}
+          onCancelModifyJob={handleCancelModifyJob}
         />
       </div>
       <PaginationControls

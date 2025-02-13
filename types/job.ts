@@ -6,7 +6,7 @@ export interface Job {
   link: string;
   statusIndex: number;
   priority: boolean;
-  isEditing: boolean;
+  isModifying: boolean;
   archived: boolean;
   deleted: boolean;
   followers?: string;
@@ -19,7 +19,7 @@ export interface JobTableProps {
   setTotalJobs: (total: number) => void;
   onUpdateJob: (jobId: number, updates: Partial<Job>) => void;
   onSaveJob: (jobId: number) => void;
-  onCancelEditJob: (jobId: number) => void;
+  onCancelModifyJob: (jobId: number) => void;
 }
 
 export interface JobToolbarProps {
@@ -34,23 +34,12 @@ export interface JobToolbarProps {
   onAddNewJob: () => void;
 }
 
-export interface AddJobProps {
-  onAddJob: (newJobFields: {
-    company: string;
-    title: string;
-    postedDate: string;
-    link: string;
-    statusIndex: number;
-    priority: boolean;
-  }) => void;
-  onCancelAdd: () => void;
-}
 
 export interface JobRowProps {
   job: Job;
   updateStatus: (jobId: number, direction: number) => void;
   togglePriority: (jobId: number) => void;
-  onEditJob?: (jobId: number) => void;
+  onModifyJob?: (jobId: number) => void;
   onArchiveJob?: (jobId: number) => void;
   onDeleteJob?: (jobId: number) => void;
 }
@@ -58,15 +47,15 @@ export interface JobRowProps {
 export interface JobActionsProps {
   priority: boolean;
   onTogglePriority: () => void;
-  onEdit: () => void;
+  onModify: () => void;
   onArchive: () => void;
   onDelete: () => void;
 }
 
-export interface EditJobRowProps {
+export interface ModifyJobRowProps {
   job: Job;
   onUpdateJob: (id: number, updatedFields: Partial<Job>) => void;
   onSaveJob: (id: number) => void;
-  onCancelEditJob: (id: number) => void;
+  onCancelModifyJob: (id: number) => void;
   updateStatus: (jobId: number, direction: number) => void;
 }

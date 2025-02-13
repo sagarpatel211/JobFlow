@@ -9,7 +9,7 @@ import { Archive, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
-export function JobRow({ job, updateStatus, togglePriority, onEditJob, onArchiveJob, onDeleteJob }: JobRowProps) {
+export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchiveJob, onDeleteJob }: JobRowProps) {
   const decreaseStatus = () => {
     updateStatus(job.id, -1);
   };
@@ -61,7 +61,6 @@ export function JobRow({ job, updateStatus, togglePriority, onEditJob, onArchive
             Fill with AI
           </span>
         </Link>
-
       </TableCell>
       <TableCell className="pr-2">
         <JobActions
@@ -69,8 +68,8 @@ export function JobRow({ job, updateStatus, togglePriority, onEditJob, onArchive
           onTogglePriority={() => {
             togglePriority(job.id);
           }}
-          onEdit={() => {
-            if (onEditJob) onEditJob(job.id);
+          onModify={() => {
+            if (onModifyJob) onModifyJob(job.id);
           }}
           onArchive={() => {
             if (onArchiveJob) onArchiveJob(job.id);

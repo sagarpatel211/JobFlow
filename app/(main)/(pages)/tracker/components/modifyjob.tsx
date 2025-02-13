@@ -1,30 +1,13 @@
-import React, { useState } from "react";
+import React from "react";
 import { parse, format } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { TableRow, TableCell } from "@/components/ui/table";
+import { ModifyJobRowProps } from "@/types/job";
 import { statuses, statusColors } from "@/lib/constants";
-import { AddJobProps } from "@/types/job";
 
-export function AddJob({ onAddJob, onCancelAdd }: AddJobProps) {
-  const [company, setCompany] = useState("");
-  const [title, setTitle] = useState("");
-  const [postedDate, setPostedDate] = useState(format(new Date(), "dd.MM.yyyy"));
-  const [link, setLink] = useState("");
-  const [statusIndex, setStatusIndex] = useState(0);
-
-  const isSaveDisabled = !company || !title || !postedDate || !link;
-
-  const updateStatus = (direction: number) => {
-    let newIndex = statusIndex + direction;
-    newIndex = Math.max(0, Math.min(statuses.length - 1, newIndex));
-    setStatusIndex(newIndex);
-  };
-
-  const handleSave = () => {
-    if (isSaveDisabled) return;
-    onAddJob({ company, title, postedDate, link, statusIndex, priority: false });
-  };
+export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, updateStatus }: ModifyJobRowProps) {
+  const isSaveDisabled = !job.company || !job.title || !job.postedDate || !job.link;
 
   return (
     <TableRow>
@@ -32,19 +15,19 @@ export function AddJob({ onAddJob, onCancelAdd }: AddJobProps) {
         <div className="flex flex-row gap-2 -mr-48">
           <Input
             name="company"
-            placeholder="Company Name"
-            value={company}
+            placeholder="Company"
+            value={job.company}
             onChange={(e) => {
-              setCompany(e.target.value);
+              onUpdateJob(job.id, { company: e.target.value });
             }}
-            className="w-36"
+            className="w-32"
           />
           <Input
             name="title"
             placeholder="Job Title"
-            value={title}
+            value={job.title}
             onChange={(e) => {
-              setTitle(e.target.value);
+              onUpdateJob(job.id, { title: e.target.value });
             }}
             className="w-52"
           />
@@ -56,10 +39,16 @@ export function AddJob({ onAddJob, onCancelAdd }: AddJobProps) {
           type="date"
           name="postedDate"
           className="w-40 -mr-14"
-          value={format(parse(postedDate, "dd.MM.yyyy", new Date()), "yyyy-MM-dd")}
+          value={
+            job.postedDate
+              ? format(parse(job.postedDate, "dd.MM.yyyy", new Date()), "yyyy-MM-dd")
+              : format(new Date(), "yyyy-MM-dd")
+          }
           onChange={(e) => {
             const newDate = new Date(e.target.value);
-            setPostedDate(format(newDate, "dd.MM.yyyy"));
+            onUpdateJob(job.id, {
+              postedDate: format(newDate, "dd.MM.yyyy"),
+            });
           }}
         />
       </TableCell>
@@ -68,9 +57,9 @@ export function AddJob({ onAddJob, onCancelAdd }: AddJobProps) {
         <Input
           name="link"
           placeholder="Job Link"
-          value={link}
+          value={job.link || ""}
           onChange={(e) => {
-            setLink(e.target.value);
+            onUpdateJob(job.id, { link: e.target.value });
           }}
           className="w-60"
         />
@@ -80,24 +69,24 @@ export function AddJob({ onAddJob, onCancelAdd }: AddJobProps) {
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              updateStatus(-1);
+              updateStatus(job.id, -1);
             }}
-            disabled={statusIndex === 0}
+            disabled={job.statusIndex === 0}
             className="disabled:opacity-50"
             title="Decrease status"
           >
             <ChevronLeft className="h-4 w-4 text-muted-foreground" />
           </button>
           <span
-            className={`inline-flex items-center rounded-full px-2 py-1 text-xs min-w-[100px] text-center justify-center ${statusColors[statusIndex]}`}
+            className={`inline-flex items-center rounded-full px-2 py-1 text-xs min-w-[100px] text-center justify-center ${statusColors[job.statusIndex]}`}
           >
-            {statuses[statusIndex]}
+            {statuses[job.statusIndex]}
           </span>
           <button
             onClick={() => {
-              updateStatus(1);
+              updateStatus(job.id, 1);
             }}
-            disabled={statusIndex === statuses.length - 1}
+            disabled={job.statusIndex === statuses.length - 1}
             className="disabled:opacity-50"
             title="Increase status"
           >
@@ -108,12 +97,19 @@ export function AddJob({ onAddJob, onCancelAdd }: AddJobProps) {
 
       <TableCell>
         <div className="flex gap-2">
-          <button className="text-blue-500" onClick={onCancelAdd}>
+          <button
+            className="text-blue-500"
+            onClick={() => {
+              onCancelModifyJob(job.id);
+            }}
+          >
             Cancel
           </button>
           <button
             className={`text-green-500 ${isSaveDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-            onClick={handleSave}
+            onClick={() => {
+              onSaveJob(job.id);
+            }}
             disabled={isSaveDisabled}
           >
             Save

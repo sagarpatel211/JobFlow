@@ -25,10 +25,7 @@ const BehavioralInterview = ({ onExit, duration }) => {
       const simulatedText = "Simulated speech input";
       setMessages((prev) => [...prev, { sender: "user", text: simulatedText }]);
       setTimeout(() => {
-        setMessages((prev) => [
-          ...prev,
-          { sender: "bot", text: "This is a bot response." },
-        ]);
+        setMessages((prev) => [...prev, { sender: "bot", text: "This is a bot response." }]);
       }, 1000);
     }
   };
@@ -50,9 +47,7 @@ const BehavioralInterview = ({ onExit, duration }) => {
               <div
                 key={index}
                 className={`my-2 p-2 rounded max-w-[70%] ${
-                  msg.sender === "user"
-                    ? "bg-blue-100 self-end text-right"
-                    : "bg-gray-100 self-start text-left"
+                  msg.sender === "user" ? "bg-blue-100 self-end text-right" : "bg-gray-100 self-start text-left"
                 }`}
               >
                 {msg.text}
