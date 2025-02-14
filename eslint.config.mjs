@@ -25,19 +25,29 @@ export default [
     "next/core-web-vitals",
     "next/typescript",
     "plugin:@typescript-eslint/recommended",
-    "plugin:@typescript-eslint/strict-type-checked",
+    "plugin:@typescript-eslint/strict-type-checked"
   ),
-  ...compat.plugins("@typescript-eslint"),
+  ...compat.plugins("@typescript-eslint", "unused-imports"),
   {
     rules: {
+      "unused-imports/no-unused-imports": "error",
+      "unused-imports/no-unused-vars": [
+        "warn",
+        {
+          vars: "all",
+          varsIgnorePattern: "^_",
+          args: "after-used",
+          argsIgnorePattern: "^_",
+        },
+      ],
+      "@typescript-eslint/no-unused-vars": "error",
       "@typescript-eslint/strict-boolean-expressions": "error",
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-non-null-assertion": "error",
       "@typescript-eslint/no-unsafe-assignment": "error",
       "@typescript-eslint/no-unsafe-return": "error",
       "@typescript-eslint/no-unsafe-call": "error",
-      "@typescript-eslint/no-unsafe-member-access": "error",
-      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unsafe-member-access": "error"
     },
   },
 ];
