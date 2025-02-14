@@ -40,7 +40,7 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
       </TableCell>
 
       <TableCell>
-        <div className="max-w-[200px] truncate">
+        <div className="max-w-[300px] truncate -mr-[48px]">
           <a href={job.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
             {job.link}
           </a>

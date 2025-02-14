@@ -1,5 +1,13 @@
+"use client";
+
 import { Clock, Briefcase, Code, Users, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import { motion } from "framer-motion";
+
+const rowVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0 },
+};
 
 const DashboardPage = () => {
   const tasks = [
@@ -24,8 +32,9 @@ const DashboardPage = () => {
       </h1>
       <div className="flex-grow grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 p-4 md:p-8 auto-rows-fr">
         {tasks.map((task, index) => (
-          <div
+          <motion.div
             key={index}
+            whileHover={{ scale: 1.05 }}
             className="bg-card text-card-foreground rounded-lg shadow-[0_8px_20px_rgba(0,0,0,0.5)] p-6 flex flex-col justify-between"
           >
             <div className="flex items-center justify-between mb-4">
@@ -36,16 +45,29 @@ const DashboardPage = () => {
               {task.done} / {task.total}
             </div>
             <div className="mt-2 h-2 bg-secondary rounded-full overflow-hidden">
-              <div className="h-full bg-primary" style={{ width: `${(task.done / task.total) * 100}%` }}></div>
+              <motion.div
+                className="h-full bg-primary"
+                initial={{ width: 0 }}
+                animate={{ width: `${(task.done / task.total) * 100}%` }}
+                transition={{ duration: 1 }}
+              ></motion.div>
             </div>
-          </div>
+          </motion.div>
         ))}
-        <div className="row-span-2 bg-card text-card-foreground rounded-lg shadow-[0_8px_20px_rgba(0,0,0,0.5)] p-6 flex flex-col justify-center items-center">
+
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          className="row-span-2 bg-card text-card-foreground rounded-lg shadow-[0_8px_20px_rgba(0,0,0,0.5)] p-6 flex flex-col justify-center items-center"
+        >
           <Clock className="w-8 h-8 mb-2" />
           <div className="text-lg font-semibold">New jobs released in</div>
           <div className="text-3xl font-bold mt-2">8 hours</div>
-        </div>
-        <div className="col-span-2 md:col-span-3 row-span-2 bg-card text-card-foreground rounded-lg shadow-[0_8px_20px_rgba(0,0,0,0.5)] p-6 flex flex-col">
+        </motion.div>
+
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          className="col-span-2 md:col-span-3 row-span-2 bg-card text-card-foreground rounded-lg shadow-[0_8px_20px_rgba(0,0,0,0.5)] p-6 flex flex-col"
+        >
           <h2 className="text-xl font-semibold mb-4">Recent Job Postings</h2>
           <div className="overflow-y-auto flex-grow">
             <table className="w-full">
@@ -57,9 +79,9 @@ const DashboardPage = () => {
                   <th className="pb-2">Link</th>
                 </tr>
               </thead>
-              <tbody>
+              <motion.tbody initial="hidden" animate="visible" transition={{ staggerChildren: 0.2 }}>
                 {jobs.map((job, index) => (
-                  <tr key={index} className="border-t border-border">
+                  <motion.tr key={index} variants={rowVariants} className="border-t border-border">
                     <td className="py-2">{job.company}</td>
                     <td className="py-2">{job.position}</td>
                     <td className="py-2 hidden md:table-cell">{job.datePosted}</td>
@@ -68,12 +90,12 @@ const DashboardPage = () => {
                         Apply <ExternalLink className="ml-1 w-4 h-4" />
                       </Link>
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
-              </tbody>
+              </motion.tbody>
             </table>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );

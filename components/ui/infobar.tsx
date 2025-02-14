@@ -13,9 +13,9 @@ const mockPaymentDetails = async () =>
   });
 
 const HealthBar: React.FC<HealthBarProps> = ({ value, maxValue, color }) => (
-  <div className="flex gap-[2px]">
+  <div className="flex gap-[1px]">
     {Array.from({ length: maxValue }, (_, index) => (
-      <div key={index} className={`w-3 h-2 rounded-full ${index < value ? color : "bg-gray-700"}`} />
+      <div key={index} className={`w-2 h-3 rounded-full ${index < value ? color : "bg-gray-700"}`} />
     ))}
   </div>
 );

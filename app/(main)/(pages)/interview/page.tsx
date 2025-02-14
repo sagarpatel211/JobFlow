@@ -21,7 +21,9 @@ const InterviewSetup = () => {
 
   return (
     <div className="flex flex-col gap-4 relative p-6">
-      <h1 className="text-4xl sticky top-0 z-[10] bg-background/50 backdrop-blur-lg border-b p-6">Interview Setup</h1>
+      <h1 className="text-4xl sticky top-0 z-[10] bg-background/50 backdrop-blur-lg border-b p-6">
+        Interview Setup and have a section to schedule calls with people
+      </h1>
       <div className="flex flex-col gap-6 items-center justify-center p-6">
         <Select value={interviewType} onValueChange={setInterviewType}>
           <SelectTrigger className="w-64">

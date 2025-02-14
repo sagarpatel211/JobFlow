@@ -7,10 +7,11 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Search, Filter, List, Star, Plus, Archive } from "lucide-react";
+import { Search, Filter, List, Star, Plus, Archive, Check } from "lucide-react";
 import { JobToolbarProps } from "@/types/job";
 
 const JobToolbar = ({
+  sortBy, // new prop for current sort option
   setSortBy,
   groupByCompany,
   setGroupByCompany,
@@ -41,21 +42,27 @@ const JobToolbar = ({
               onSelect={() => {
                 setSortBy("date");
               }}
+              className="flex items-center"
             >
+              {sortBy === "date" ? <Check className="mr-2 h-4 w-4" /> : <span className="w-4 mr-2" />}
               Date
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => {
                 setSortBy("status");
               }}
+              className="flex items-center"
             >
+              {sortBy === "status" ? <Check className="mr-2 h-4 w-4" /> : <span className="w-4 mr-2" />}
               Status
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => {
                 setSortBy("company");
               }}
+              className="flex items-center"
             >
+              {sortBy === "company" ? <Check className="mr-2 h-4 w-4" /> : <span className="w-4 mr-2" />}
               Company Name
             </DropdownMenuItem>
           </DropdownMenuContent>

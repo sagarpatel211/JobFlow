@@ -4,11 +4,9 @@ import React, { useState } from "react";
 import { Input } from "../../../../../components/ui/input";
 import { Textarea } from "../../../../../components/ui/textarea";
 import { Button } from "../../../../../components/ui/button";
-import { Switch } from "../../../../../components/ui/switch";
+import { Checkbox } from "../../../../../components/ui/checkbox";
 import { Loader2 } from "lucide-react";
-import { Card } from "../../../../../components/ui/card";
 import { UploadSection } from "./upload-section";
-import { motion } from "framer-motion";
 
 const ProfileForm = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -18,42 +16,33 @@ const ProfileForm = () => {
   const [university, setUniversity] = useState("");
   const [aboutMe, setAboutMe] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
+
+  // LeetCode states
   const [leetcodeEnabled, setLeetcodeEnabled] = useState(false);
   const [leetcodeUsername, setLeetcodeUsername] = useState("");
+  const [leetcodeGoal, setLeetcodeGoal] = useState("");
+
+  // Other track states
   const [behaviouralEnabled, setBehaviouralEnabled] = useState(false);
+  const [behaviouralGoal, setBehaviouralGoal] = useState("");
+
   const [jobsEnabled, setJobsEnabled] = useState(false);
+  const [jobsGoal, setJobsGoal] = useState("");
+
   const [systemDesignEnabled, setSystemDesignEnabled] = useState(false);
-  const [profilePic, setProfilePic] = useState(null);
-  const [resume, setResume] = useState(null);
-  const [transcript, setTranscript] = useState(null);
+  const [systemDesignGoal, setSystemDesignGoal] = useState("");
 
-  const ToggleSwitch = ({ checked, onCheckedChange }) => {
-    return (
-      <motion.div
-        className={`w-full h-10 flex items-center px-1 rounded-lg cursor-pointer ${checked ? "bg-[#2F006B]" : "bg-gray-300"}`}
-        onClick={() => onCheckedChange(!checked)}
-        initial={{ scale: 0.95 }}
-        animate={{ scale: 1 }}
-        transition={{ type: "spring", stiffness: 200, damping: 25, duration: 3 }}
-      >
-        <motion.div
-          className="h-8 w-10 bg-white rounded-md shadow-md"
-          layout
-          transition={{ type: "spring", stiffness: 150, damping: 25, duration: 0.5 }}
-          style={{ marginLeft: checked ? "calc(100% - 40px)" : "0px" }}
-        />
-      </motion.div>
-    );
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    // Perform any submission logic here
     setTimeout(() => setIsLoading(false), 1000);
   };
 
   return (
-    <div className="grid grid-cols-2 gap-8">
+    // "items-stretch" makes the grid items (columns) share the same row height.
+    // Wrapping UploadSection in a div with "h-full" forces it to fill the entire grid cell.
+    <div className="grid grid-cols-2 gap-8 items-stretch">
       <form className="grid grid-cols-1 gap-6" onSubmit={handleSubmit}>
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full Name" />
         <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" type="email" />
@@ -66,32 +55,88 @@ const ProfileForm = () => {
           placeholder="Phone Number"
           type="tel"
         />
-        <div className="grid grid-cols-4 gap-4 w-full">
-          <div className="flex flex-col items-center w-full">
-            <span>Track LeetCode</span>
-            <ToggleSwitch checked={leetcodeEnabled} onCheckedChange={setLeetcodeEnabled} />
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex items-center">
+            <Checkbox id="leetcode" checked={leetcodeEnabled} onCheckedChange={setLeetcodeEnabled} />
+            <label htmlFor="leetcode" className="ml-2">
+              Track LeetCode
+            </label>
           </div>
-          <div className="flex flex-col items-center w-full">
-            <span>Track Behavioral</span>
-            <ToggleSwitch checked={behaviouralEnabled} onCheckedChange={setBehaviouralEnabled} />
+          <div className="flex items-center">
+            <Checkbox id="behavioural" checked={behaviouralEnabled} onCheckedChange={setBehaviouralEnabled} />
+            <label htmlFor="behavioural" className="ml-2">
+              Track Behavioral
+            </label>
           </div>
-          <div className="flex flex-col items-center w-full">
-            <span>Track Jobs Applied</span>
-            <ToggleSwitch checked={jobsEnabled} onCheckedChange={setJobsEnabled} />
+          <div className="flex items-center">
+            <Checkbox id="jobs" checked={jobsEnabled} onCheckedChange={setJobsEnabled} />
+            <label htmlFor="jobs" className="ml-2">
+              Track Jobs Applied
+            </label>
           </div>
-          <div className="flex flex-col items-center w-full">
-            <span>Track System Design</span>
-            <ToggleSwitch checked={systemDesignEnabled} onCheckedChange={setSystemDesignEnabled} />
+          <div className="flex items-center">
+            <Checkbox id="systemDesign" checked={systemDesignEnabled} onCheckedChange={setSystemDesignEnabled} />
+            <label htmlFor="systemDesign" className="ml-2">
+              Track System Design
+            </label>
           </div>
         </div>
+
+        {/* LeetCode Inputs */}
         {leetcodeEnabled && (
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              value={leetcodeUsername}
+              onChange={(e) => setLeetcodeUsername(e.target.value)}
+              placeholder="LeetCode Username"
+              className="w-full"
+            />
+            <Input
+              value={leetcodeGoal}
+              onChange={(e) => setLeetcodeGoal(e.target.value)}
+              placeholder="LeetCode Goal"
+              type="number"
+              max={10}
+              className="w-full"
+            />
+          </div>
+        )}
+
+        {/* Other track inputs */}
+        {behaviouralEnabled && (
           <Input
-            value={leetcodeUsername}
-            onChange={(e) => setLeetcodeUsername(e.target.value)}
-            placeholder="LeetCode Username"
+            value={behaviouralGoal}
+            onChange={(e) => setBehaviouralGoal(e.target.value)}
+            placeholder="Behavioral Goal"
+            type="number"
+            max={10}
             className="w-full"
           />
         )}
+
+        {jobsEnabled && (
+          <Input
+            value={jobsGoal}
+            onChange={(e) => setJobsGoal(e.target.value)}
+            placeholder="Jobs Applied Goal"
+            type="number"
+            max={10}
+            className="w-full"
+          />
+        )}
+
+        {systemDesignEnabled && (
+          <Input
+            value={systemDesignGoal}
+            onChange={(e) => setSystemDesignGoal(e.target.value)}
+            placeholder="System Design Goal"
+            type="number"
+            max={10}
+            className="w-full"
+          />
+        )}
+
         <Button type="submit" className="self-start hover:bg-[#2F006B] hover:text-white">
           {isLoading ? (
             <>
@@ -99,11 +144,14 @@ const ProfileForm = () => {
               Saving
             </>
           ) : (
-            "Save User Settings"
+            "Save User Settings (if save success add a toast otherwise show error message)"
           )}
         </Button>
       </form>
-      <UploadSection />
+      {/* Wrap the UploadSection in a container with full height */}
+      <div className="h-full">
+        <UploadSection />
+      </div>
     </div>
   );
 };

@@ -16,3 +16,5 @@ for resume drag and drop:
 for each box, there should be a dropdown in the top right corner where it has an improve with ai based on job posting, shorten, lengthen, or modify text which will let us be able to modify the text with a standard text editor bar with bold underline, link, italicize, etc.
 each box needs a text editor like bold, add link, etc.
 _/
+
+add unit tests and github actions
