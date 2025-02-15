@@ -18,3 +18,11 @@ each box needs a text editor like bold, add link, etc.
 _/
 
 add unit tests and github actions
+
+use this architecture https://chatgpt.com/c/67affb73-32e4-8011-b21e-a6a4058b29d7
+
+https://chatgpt.com/c/67b0263d-972c-8011-8f2d-4003eede0401
+
+
+COME UP WITH A BETTER WAY THAN USING MICROSERVICES FOR THE SYSTEM DESIGN BECAUSE IT CAN BE EXPENSIVE AND HARD TO MAINTAIN
+and use kubernetes instead of docker-compose
