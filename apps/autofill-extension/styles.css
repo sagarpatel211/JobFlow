@@ -1,0 +1,92 @@
+/* Use DM Sans throughout */
+body {
+  font-family: 'DM Sans', sans-serif;
+  text-align: center;
+  width: 500px; /* Increased window width */
+  padding: 20px;
+  background-color: #0D0D0D; /* Dark mode, even darker */
+  color: #e0e0e0;
+  margin: 0 auto;
+}
+
+h2 {
+  color: #EDE7F6; /* Soft light purple */
+  margin-bottom: 20px;
+}
+
+.input-group {
+  display: flex;
+  align-items: center;
+  margin: 10px 0;
+  background: #1A001F; /* Dark purple background for inputs */
+  padding: 10px;
+  border-radius: 8px;
+  transition: background-color 0.3s;
+}
+
+.input-group:hover {
+  background: #2A0A30;
+}
+
+.input-group input {
+  background: transparent;
+  border: none;
+  outline: none;
+  padding: 10px;
+  width: 100%;
+  color: #e0e0e0;
+}
+
+.input-icon {
+  width: 24px;
+  margin-right: 10px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 15px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+button:hover {
+  transform: scale(1.02);
+}
+
+/* Sign In Button: Purple theme */
+#signin-btn {
+  background: #8A2BE2; /* Vivid purple */
+  color: white;
+}
+
+#signin-btn:hover {
+  background: #7921C8;
+}
+
+/* Fill with AI Button: Minimalist muted green */
+#fill-ai-btn {
+  background: #3B5A3B;
+  color: white;
+}
+
+#fill-ai-btn:hover {
+  background: #324F32;
+}
+
+/* Logout Button: Minimalist muted red */
+.logout {
+  background: #5A3B3B;
+  color: white;
+}
+
+.logout:hover {
+  background: #503333;
+}
+
+.hidden {
+  display: none;
+}

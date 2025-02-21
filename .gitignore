@@ -1,3 +1,10 @@
 # Environment variables
 .env.local
 .env
+
+# Node modules
+**/node_modules
+
+# Build directory
+**/build
+**/static

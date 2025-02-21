@@ -14,7 +14,7 @@ const initialJobs: Job[] = [
     id: 1,
     company: "Google",
     title: "Software Engineer",
-    link: "https://www.google.com/fddfkdfjdjfkdfjkdfjkdfkjdfkjfdkjdfkjfdkjfdkjdfkjdfdkfjfddfkdfjdjfkdfjkdfjkdfkjdfkjfdkjdfkjfdkjfdkjdfkjdfdkfj",
+    link: "https://www.jotform.com/build/250508845087261?s=templates",
     postedDate: "01.02.2024",
     statusIndex: 2,
     followers: "5M+ Followers",

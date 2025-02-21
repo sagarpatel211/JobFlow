@@ -20,7 +20,7 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
             onChange={(e) => {
               onUpdateJob(job.id, { company: e.target.value });
             }}
-            className="w-32"
+            className="w-24"
           />
           <Input
             name="title"
@@ -29,7 +29,7 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
             onChange={(e) => {
               onUpdateJob(job.id, { title: e.target.value });
             }}
-            className="w-52"
+            className="w-40"
           />
         </div>
       </TableCell>

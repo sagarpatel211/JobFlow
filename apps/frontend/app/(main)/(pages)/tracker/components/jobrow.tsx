@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/strict-boolean-expressions */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import React from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { TableRow, TableCell } from "@/components/ui/table";
@@ -53,8 +57,14 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
           onIncreaseStatus={increaseStatus}
         />
         <Link
-          href="/fill-with-ai"
+          href={job.link}
+          target="_blank"
+          rel="noopener noreferrer"
           className="group relative inline-flex h-8 overflow-hidden rounded-md p-[2px] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-50"
+          onClick={(e) => {
+            e.preventDefault();
+            handleFillWithAI(job.link);
+          }}
         >
           <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] group-hover:animate-[spin_2s_linear_reverse_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#B0D0FF_0%,#1E3A8A_50%,#B0D0FF_100%)] group-hover:bg-[conic-gradient(from_90deg_at_50%_50%,#A0C4FF_0%,#162D70_50%,#A0C4FF_100%)] transition-[background] duration-3000 ease-in-out" />
           <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-md bg-slate-100 dark:bg-slate-950 px-3 py-1 text-sm font-medium dark:text-white backdrop-blur-3xl">
@@ -81,4 +91,32 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
       </TableCell>
     </TableRow>
   );
+}
+
+async function handleFillWithAI(link: string) {
+  try {
+    await navigator.clipboard.writeText(link); // Ensure clipboard operation completes
+
+    if (typeof chrome !== "undefined" && chrome.runtime && typeof chrome.runtime.sendMessage === "function") {
+      await new Promise<void>((resolve, reject) => {
+        chrome.runtime.sendMessage({ message: "EXTRACT_JOB_INFO", link }, (response) => {
+          if (chrome.runtime.lastError && typeof chrome.runtime.lastError.message === "string") {
+            console.error("Error sending message:", chrome.runtime.lastError.message);
+            reject(new Error(chrome.runtime.lastError.message));
+          } else {
+            console.log("EXTRACT_JOB_INFO message sent", response);
+            resolve();
+          }
+        });
+      });
+    } else {
+      console.warn("Chrome extension runtime is not available.");
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      console.error("Error in handleFillWithAI:", error.message);
+    } else {
+      console.error("Unknown error in handleFillWithAI:", error);
+    }
+  }
 }

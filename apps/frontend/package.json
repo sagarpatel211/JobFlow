@@ -59,6 +59,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@types/chrome": "^0.0.304",
     "@types/date-fns": "^2.5.3",
     "@types/node": "^20",
     "@types/react": "^19",
