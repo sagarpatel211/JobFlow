@@ -1,6 +1,11 @@
-// background.js
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === "authenticate") {
+    // Simulating authentication response
+    sendResponse({ success: true }); // Ensure a response is always sent
+  }
+  return true; // Ensures the message port remains open
+});
 
-const OPENAI_API_KEY = "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"; // Replace with your API key
 
 // Define your user profile – you can extend this as needed.
 const userProfile = {

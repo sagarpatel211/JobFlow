@@ -28,12 +28,15 @@ const SignIn: React.FC<SignInProps> = ({ onLogin }) => {
   };
 
   const handleSignIn = () => {
-    // ADD AUTHENTICATION LOGIC HERE
     chrome.runtime.sendMessage({ action: "authenticate" }, (response) => {
+      if (chrome.runtime.lastError) {
+        toast.error("Failed to communicate with backend.");
+        return;
+      }  
       if (response?.success) {
         onLogin();
       } else {
-        toast.error("Authentication failed");
+        toast.error("Authentication failed.");
       }
     });
   };
