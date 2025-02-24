@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/strict-boolean-expressions */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import React from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { TableRow, TableCell } from "@/components/ui/table";
@@ -95,7 +91,7 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
 
 async function handleFillWithAI(link: string) {
   try {
-    await navigator.clipboard.writeText(link); // Ensure clipboard operation completes
+    await navigator.clipboard.writeText(link);
 
     if (typeof chrome !== "undefined" && chrome.runtime && typeof chrome.runtime.sendMessage === "function") {
       await new Promise<void>((resolve, reject) => {

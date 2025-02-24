@@ -1,5 +1,5 @@
 {
-  "name": "lockedin",
+  "name": "jobflow-extension",
   "version": "1.0.0",
   "description": "",
   "homepage": "./",
@@ -16,6 +16,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fontsource/dm-sans": "^5.1.1",
     "@heroicons/react": "^2.2.0",
     "@next/font": "^14.2.15",
     "@radix-ui/react-dropdown-menu": "^2.1.6",
@@ -40,6 +41,7 @@
     "recharts": "^2.15.1",
     "serialize-javascript": "^6.0.2",
     "shadcn": "^2.3.0",
+    "tabler-icons-react": "^1.56.0",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7"
   },

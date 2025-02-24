@@ -7,7 +7,9 @@
     "storage",
     "scripting",
     "activeTab",
-    "contextMenus"
+    "contextMenus",
+    "tabs",
+    "webNavigation"
   ],
   "host_permissions": ["<all_urls>"],
   "background": {
@@ -29,7 +31,18 @@
   "content_scripts": [
     {
       "matches": ["https://*/*", "http://*/*"],
-      "js": ["content.js"]
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "backend/form_filler.js",
+        "backend/llm_helper.js",
+        "backend/dispatch_events.js"
+      ],
+      "matches": ["<all_urls>"]
     }
   ]
 }
