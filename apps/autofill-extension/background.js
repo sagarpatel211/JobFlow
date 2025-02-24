@@ -1,35 +1,46 @@
+const OPENAI_API_KEY = "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";
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "authenticate") {
-    // Simulating authentication response
-    sendResponse({ success: true }); // Ensure a response is always sent
+    sendResponse({ success: true, token: "fake_auth_token" });
+  } else if (request.action === "downloadResume") {
+    fetchResume(request.resumeUrl, sendResponse);
+    return true; // Ensures async response
+  } else if (request.action === "processJobs") {
+    processJobsSequentially(request.jobs);
+    sendResponse({ status: "Processing started" });
   }
-  return true; // Ensures the message port remains open
+  return true;
 });
 
+async function fetchResume(url, sendResponse) {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = () => {
+      sendResponse({ success: true, dataURL: reader.result });
+    };
+  } catch (error) {
+    console.error("Error downloading resume:", error);
+    sendResponse({ success: false, error: error.message });
+  }
+}
 
-// Define your user profile – you can extend this as needed.
 const userProfile = {
   personal: {
     firstName: "John",
     lastName: "Doe",
     email: "johndoe@example.com",
-    phone: "123-456-7890"
-  },
-  resume: "https://example.com/resume.pdf",           // URL or resume text
-  coverLetter: "This is my cover letter text.",         // Cover letter text
-  additionalQuestions: {
-    sponsorship: "No",                                 // Sponsorship answer
-    dei: "I support diversity and inclusion."          // DEI background/disability info
+    phone: "+1 123-456-7890",
+    countryCode: "+1",
+    country: "Canada",
+    state: "Ontario",
+    city: "Toronto",
+    resume: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
   }
 };
-
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "processJobs") {
-    const jobs = request.jobs;
-    processJobsSequentially(jobs);
-    sendResponse({ status: "Processing started" });
-  }
-});
 
 function processJobsSequentially(jobs) {
   let index = 0;
@@ -39,19 +50,15 @@ function processJobsSequentially(jobs) {
       return;
     }
     const job = jobs[index];
-    console.log(`Processing job ${job.id}: ${job.link}`);
+    console.log(`Processing job: ${job.link}`);
     chrome.tabs.create({ url: job.link, active: false }, (tab) => {
-      // Wait a few seconds for the page to load.
       setTimeout(() => {
-        // Send message to content script with API key and profile data.
         chrome.tabs.sendMessage(tab.id, {
           action: "fillForm",
           apiKey: OPENAI_API_KEY,
-          userProfile: userProfile
+          userProfile
         });
-        console.log(`Job ${job.id} form processing initiated. Tab remains open for review.`);
         index++;
-        // Process the next job after a short delay (5 seconds)
         setTimeout(processNext, 5000);
       }, 3000);
     });

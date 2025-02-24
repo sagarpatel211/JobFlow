@@ -30,13 +30,20 @@ const SignIn: React.FC<SignInProps> = ({ onLogin }) => {
   const handleSignIn = () => {
     chrome.runtime.sendMessage({ action: "authenticate" }, (response) => {
       if (chrome.runtime.lastError) {
-        toast.error("Failed to communicate with backend.");
+        console.error("Runtime error:", chrome.runtime.lastError.message);
+        toast.error("Failed to communicate with authentication service.");
         return;
-      }  
-      if (response?.success) {
-        onLogin();
+      }
+      if (!response) {
+        toast.error("No response from authentication service.");
+        return;
+      }
+      if (response.success && response.token) {
+        chrome.storage.sync.set({ authToken: response.token }, () => {
+          onLogin();
+        });
       } else {
-        toast.error("Authentication failed.");
+        toast.error("Authentication failed. Please try again.");
       }
     });
   };

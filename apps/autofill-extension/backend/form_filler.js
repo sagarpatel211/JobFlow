@@ -2,15 +2,18 @@
 
 console.log("Inside form_filler.js");
 
-async function capturePageAndFillForm(openaiApiKey, userProfile) {
-  console.log("🚀 Starting form filling process in capturePageAndFillForm");
-  
-  // Ensure the page is fully loaded.
+// This function waits for the page to load and then processes name fields.
+async function capturePageAndFillNameFields(openaiApiKey, userProfile) {
+  console.log("🚀 Starting name field filling process in capturePageAndFillNameFields");
+
+  // Wait until the page is fully loaded.
   if (document.readyState !== "complete") {
     await new Promise((resolve) => window.addEventListener("load", resolve));
   }
-  
-  async function processInput(input) {
+
+  // Process each input/textarea that is visible and enabled.
+  async function processNameInput(input) {
+    // Determine the field description from common attributes.
     let fieldDesc = input.getAttribute("placeholder") || input.getAttribute("aria-label") || "";
     if (!fieldDesc) {
       const id = input.id;
@@ -20,7 +23,8 @@ async function capturePageAndFillForm(openaiApiKey, userProfile) {
       }
     }
     fieldDesc = (fieldDesc || "").toLowerCase();
-    
+
+    // Helper to fill the field and dispatch input events.
     async function fillField(value) {
       if (value && value.length > 0) {
         input.value = value;
@@ -28,8 +32,8 @@ async function capturePageAndFillForm(openaiApiKey, userProfile) {
         console.log(`✔ Filled field "${fieldDesc}" with value: ${value}`);
       }
     }
-    
-    // Direct matching for common fields.
+
+    // Direct matching for common name fields.
     if (fieldDesc.includes("first name") || fieldDesc.includes("given name")) {
       await fillField(userProfile.personal.firstName);
       return;
@@ -38,64 +42,47 @@ async function capturePageAndFillForm(openaiApiKey, userProfile) {
       await fillField(userProfile.personal.lastName);
       return;
     }
-    if (fieldDesc.includes("email")) {
-      await fillField(userProfile.personal.email);
+    if (fieldDesc.includes("full name") || fieldDesc.trim() === "name") {
+      const fullName = `${userProfile.personal.firstName} ${userProfile.personal.lastName}`;
+      await fillField(fullName);
       return;
     }
-    if (fieldDesc.includes("phone")) {
-      await fillField(userProfile.personal.phone);
-      return;
-    }
-    if (fieldDesc.includes("resume")) {
-      await fillField(userProfile.resume);
-      return;
-    }
-    if (fieldDesc.includes("cover letter") || fieldDesc.includes("cover-letter")) {
-      await fillField(userProfile.coverLetter);
-      return;
-    }
-    if (fieldDesc.includes("sponsorship")) {
-      await fillField(userProfile.additionalQuestions.sponsorship);
-      return;
-    }
-    if (fieldDesc.includes("dei") || fieldDesc.includes("disability") || fieldDesc.includes("background")) {
-      await fillField(userProfile.additionalQuestions.dei);
-      return;
-    }
-    
-    // Use GPT fallback for ambiguous fields.
-    const gptResult = await window.identifyFieldType(fieldDesc, openaiApiKey);
+
+    // Use GPT fallback to identify the type of name field.
+    const gptResult = await window.identifyNameFieldType(fieldDesc, openaiApiKey);
     console.log(`🤖 GPT result for "${fieldDesc}":`, gptResult);
-    
+
+    // Only fill if GPT is sufficiently confident.
     if (gptResult.confidence < 80) {
       console.log(`⚠ Confidence (${gptResult.confidence}%) too low for field "${fieldDesc}". Skipping.`);
       return;
     }
-    
+
+    // Map GPT output to our profile data.
     const fieldMap = {
       "first_name": userProfile.personal.firstName,
       "last_name": userProfile.personal.lastName,
-      "email": userProfile.personal.email,
-      "phone": userProfile.personal.phone,
-      "resume": userProfile.resume,
-      "cover_letter": userProfile.coverLetter,
-      "sponsorship": userProfile.additionalQuestions.sponsorship,
-      "dei": userProfile.additionalQuestions.dei
+      "full_name": `${userProfile.personal.firstName} ${userProfile.personal.lastName}`
     };
-    
-    await fillField(fieldMap[gptResult.type]);
+
+    if (gptResult.type in fieldMap) {
+      await fillField(fieldMap[gptResult.type]);
+    } else {
+      console.log(`⚠ GPT returned unknown type "${gptResult.type}" for field "${fieldDesc}". Skipping.`);
+    }
   }
-  
+
+  // Iterate over all input and textarea elements.
   const inputs = document.querySelectorAll("input, textarea");
   for (const input of inputs) {
     if (input.offsetParent !== null && !input.disabled) {
-      await processInput(input);
+      await processNameInput(input);
     }
   }
-  
-  console.log("✅ Form filled using modularized GPT-assisted approach.");
+
+  console.log("✅ Name fields filled using modularized GPT-assisted approach.");
 }
 
-// Expose the function globally.
-window.capturePageAndFillForm = capturePageAndFillForm;
-console.log("capturePageAndFillForm attached to window:", window.capturePageAndFillForm);
+// Expose the function globally so that your content script can call it.
+window.capturePageAndFillNameFields = capturePageAndFillNameFields;
+console.log("capturePageAndFillNameFields attached to window:", window.capturePageAndFillNameFields);

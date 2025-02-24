@@ -5,9 +5,16 @@ import { parse, format } from "date-fns";
 import { JobRowProps } from "@/types/job";
 import { StatusBadge } from "./statusbadge";
 import { JobActions } from "./jobactions";
-import { Archive, Star } from "lucide-react";
+import { Archive, MoreVertical, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchiveJob, onDeleteJob }: JobRowProps) {
   const decreaseStatus = () => {
@@ -16,6 +23,9 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
   const increaseStatus = () => {
     updateStatus(job.id, 1);
   };
+  const onBlacklistCompany = (company: string) => {
+    console.log("Blacklist company:", company);
+  }
 
   return (
     <TableRow>
@@ -24,13 +34,29 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
           <Avatar className="h-6 w-6">
             <Image src="/globe.svg" alt={job.company} width={24} height={24} />
           </Avatar>
-          <div>
-            <div className="flex items-center">
-              {job.company}
-              {job.priority && <Star className="ml-1 h-4 w-4 text-amber-500" />}
-              {job.archived && <Archive className="ml-1 h-4 w-4 text-gray-500" />}
+          <div className="flex items-center gap-2">
+            <div>
+              <div className="flex items-center">
+                {job.company}
+                {job.priority && <Star className="ml-1 h-4 w-4 text-amber-500" />}
+                {job.archived && <Archive className="ml-1 h-4 w-4 text-gray-500" />}
+              </div>
+              <div className="text-xs text-muted-foreground">{job.title}</div>
             </div>
-            <div className="text-xs text-muted-foreground">{job.title}</div>
+
+            {/* Dropdown Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem onClick={() => onBlacklistCompany(job.company)}>
+                  Blacklist Company
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </TableCell>
