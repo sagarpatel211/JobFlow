@@ -4,6 +4,8 @@
 - Possibly emails the user when the application is submitted with a link to the package
 - The queue should be able to be set from the frontend so it will show on the extension with an API
 
+- fix scripts for backend for chrome extension so it is automated
+
 - Add this to auto apply!! https://chatgpt.com/c/67b9492b-ba24-8011-8749-860df34646f1
 
 - figure out how to apply when the job posting is like a workday link that requires signing in

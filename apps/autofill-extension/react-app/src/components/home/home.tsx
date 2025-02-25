@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Check, X } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { GoogleGeminiEffect } from "@/components/ui/google-gemini-effect";
+import { Input } from "@/components/ui/input";
+import { getStoredApiKey, setStoredApiKey } from "@/lib/storage";
 
 interface StatusIndicatorProps {
   status: string;
@@ -61,19 +63,40 @@ const Home: React.FC<HomeProps> = ({ onLogout }) => {
     []
   );
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
+  const [apiKey, setApiKey] = useState("");
+  const [isDirty, setIsDirty] = useState(false); // Track if user made changes
+
   useEffect(() => {
+    getStoredApiKey().then((key) => {
+      if (key !== null) {
+        setApiKey(key);
+      }
+    });
     const interval = setInterval(() => {
       setCurrentStageIndex((prev) => (prev + 1) % stages.length);
     }, 4000);
     return () => clearInterval(interval);
   }, [stages.length]);
+
   const progress = stages[currentStageIndex];
 
+  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setApiKey(e.target.value.trim());
+    setIsDirty(true);
+  };
+
+  const handleApiKeyBlur = async () => {
+    if (isDirty) {
+      await setStoredApiKey(apiKey);
+      toast.success("API Key saved successfully!");
+      setIsDirty(false);
+    }
+  };
+
   const handleProcessJobs = () => {
-    // Send the initialJobs list to the background for processing
     chrome.runtime.sendMessage({ action: "processJobs", jobs: jobs }, (response) => {
       console.log("Background processing response:", response);
-      toast.success("Processing job queue in background...");
+      toast.loading("Processing job queue in background...");
     });
   };
 
@@ -81,7 +104,7 @@ const Home: React.FC<HomeProps> = ({ onLogout }) => {
     <div className="w-[400px] h-[500px] mx-auto p-6 shadow-lg bg-black text-white font-sans">
       <h3 className="text-lg font-semibold mb-2">Job Queue</h3>
       <div className="overflow-hidden">
-        <div className="rounded overflow-hidden max-h-[130px] overflow-y-auto custom-scrollbar">
+        <div className="rounded overflow-hidden max-h-[100px] overflow-y-auto custom-scrollbar">
           <table className="w-full text-[10px]">
             <thead className="sticky top-0 bg-gray-950/40 backdrop-blur-2xl border-b border-gray-600 text-xs">
               <tr>
@@ -112,6 +135,16 @@ const Home: React.FC<HomeProps> = ({ onLogout }) => {
           </table>
         </div>
       </div>
+      <div className="relative flex flex-col space-y-2 mt-4">
+        <Input
+          type="text"
+          placeholder="Enter OpenAI API Key"
+          value={apiKey}
+          onChange={handleApiKeyChange}
+          onBlur={handleApiKeyBlur}
+          className="relative z-10 w-full px-3 py-2 rounded-md bg-neutral-950 text-white border border-neutral-900 focus:ring focus:ring-neutral-500 focus:border-neutral-700"
+        />
+      </div>
       <h3 className="text-lg font-semibold mt-2 flex items-center">
         <span className="w-[350px] truncate">
           Status: <span className="text-xs mx-1">{jobs[0].company}</span> &{" "}
@@ -121,11 +154,10 @@ const Home: React.FC<HomeProps> = ({ onLogout }) => {
       <div className="h-[90px] flex items-center justify-center">
         <GoogleGeminiEffect progress={progress} buttonTitle={buttonTitles[currentStageIndex]} />
       </div>
-      <div className="bg-gray-600 my-4 h-px w-full" />
-      <div className="flex flex-col space-y-4">
+      <div className="flex flex-col space-y-3">
         <button
           onClick={handleProcessJobs}
-          className="inline-flex h-12 w-full animate-shimmer px-4 items-center justify-center rounded-md border-2 border-slate-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%] font-medium text-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50"
+          className="inline-flex h-12 mt-8 w-full animate-shimmer px-4 items-center justify-center rounded-md border-2 border-slate-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%] font-medium text-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50"
         >
           Fill Current Page
         </button>
@@ -142,19 +174,3 @@ const Home: React.FC<HomeProps> = ({ onLogout }) => {
 };
 
 export default Home;
-
-//   I need to be able to have a queue of applying for jobs
-//    but i need to be able to fill out current tab form with a
-//    button so it should mention that on the button and
-
-// instead of putting the status in the queue, have a current
-// status box which shows what the current work is being done
-// and use https://ui.aceternity.com/components/multi-step-loader
-// and make sure if we automate 10 mill jobs, we need pagination or
-// we need to make sure that it clears regularly so we avoid too
-// many listed for the user or we just show the top 5 and have the queue shown on the applications page on jobflow
-
-// clicking fill with ai should add to queue first and then fill out the form
-// and then remove from queue, cuz it needs to track on jobflow and progress. or we can have a toggle that says don't track on jobflow
-
-// ADD A SECTION THAT SAYS "UPDATE PERSONAL INFO" ON JOBFLOW TO REFLLECT THE CURRENT INFO ON THE EXTENSION. ADD A TOGGLE TO CREATE NEW RESUME AND COVER LETTER. PLAN HOW THE ENTIRE PROCESS WILL WORK CUZ IF IT UPDATES WILL WE CREATE A NEW RESUME WHEN AUTOAPPLYING? HOW CAN THE USER MAKE SURE THE RESUME IS GOOD, ETC.

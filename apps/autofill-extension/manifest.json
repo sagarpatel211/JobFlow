@@ -13,7 +13,8 @@
   ],
   "host_permissions": ["<all_urls>"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "action": {
     "default_popup": "popup.html",
@@ -35,6 +36,12 @@
         "content.js"
       ],
       "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["scripts/authentication.js", "scripts/jobprocessor.js", "scripts/storage.js", "scripts/utils.js"],
+      "matches": ["<all_urls>"]
     }
   ]
 }

@@ -38,8 +38,10 @@ const SignIn: React.FC<SignInProps> = ({ onLogin }) => {
         toast.error("No response from authentication service.");
         return;
       }
+      console.log("Authentication response:", response);
       if (response.success && response.token) {
         chrome.storage.sync.set({ authToken: response.token }, () => {
+          console.log("Auth token stored, logging in...");
           onLogin();
         });
       } else {
