@@ -26,6 +26,7 @@ Provide a similarity score between 0 (no match) and 1 (perfect match) in JSON fo
     try {
       const response = await axios.post(LLM_API_URL, { prompt, model: "deepseek-r1:1.5b", max_tokens: 50 });
       const data = response.data;
+      console.log("LLM API Response:", data);
       return data?.score || 0;
     } catch (error) {
       console.error("LLM API Error:", error.message);
