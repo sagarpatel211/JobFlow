@@ -1,173 +1,87 @@
-(async () => {
-  const { dispatchInputEvents, navigateNextPage } = await import(chrome.runtime.getURL("scripts/utils.js"));
-
-  function normalizeText(text) {
-    return text.trim().toLowerCase();
-  }
-
-  async function capturePageHTML(apiKey, serverURL) {
-    try {
-      console.log("Capturing HTML for AI processing...");
-      const pageHTML = document.documentElement.outerHTML;
-      await sendHTMLToServer(serverURL, pageHTML);
-    } catch (error) {
-      console.error("Error capturing page HTML:", error);
+// content.js
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "fillForm") {
+    if (window.hasSentRequest) {
+      console.warn("Form processing request already sent. Skipping duplicate request.");
+      return;
     }
-  }
+    window.hasSentRequest = true;
 
-  async function sendHTMLToServer(serverURL, pageHTML) {
-    try {
-      let endpoint = serverURL.endsWith("/process-html") ? serverURL : `${serverURL}/process-html`;
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ htmlData: pageHTML })
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        await fillFormFields(data.formData);
-      } else {
-        console.error("Server error:", data.error);
-      }
-    } catch (error) {
-      console.error("Error sending HTML to server:", error);
-    }
-  }
-
-  async function fillFormFields(mapping) {
-    for (const [fieldKey, fieldMapping] of Object.entries(mapping)) {
-      const { selector, value } = fieldMapping;
-
-      if (!selector) {
-        console.warn(`Skipping field "${fieldKey}" due to missing selector.`);
-        continue;
-      }
-
-      const inputElem = document.querySelector(selector);
-      if (!inputElem) {
-        console.warn(`No element found for selector "${selector}" (field: "${fieldKey}")`);
-        continue;
-      }
-
-      if (inputElem.type === 'file') {
-        console.log(`Uploading file for "${fieldKey}"`);
-        await setFileInputValue(inputElem, value);
-      } else if (inputElem.tagName.toLowerCase() === 'select') {
-        console.log(`Selecting dropdown "${fieldKey}" with value "${value}"`);
-        let optionFound = false;
-        const normalizedValue = normalizeText(value);
-
-        for (const option of inputElem.options) {
-          if (normalizeText(option.text).includes(normalizedValue) || normalizeText(option.value) === normalizedValue) {
-            inputElem.value = option.value;
-            dispatchInputEvents(inputElem);
-            optionFound = true;
-            break;
+    function processForm() {
+      console.log("Capturing page HTML and sending to server...");
+      const html = document.documentElement.outerHTML;
+      fetch("http://localhost:3005/processForm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ html })
+      })
+        .then((response) => response.json())
+        .then(async (data) => {
+          console.log("Received form fill instructions:", data);
+          if (!Array.isArray(data.fillInstructions)) {
+            console.error("fillInstructions is not iterable:", data.fillInstructions);
+            sendResponse({ status: "error", error: "fillInstructions is not an array" });
+            window.hasSentRequest = false;
+            return;
           }
-        }
-
-        if (!optionFound) console.warn(`No matching option found for "${value}" in "${selector}"`);
-      } else {
-        console.log(`Filling input "${fieldKey}" with value "${value}"`);
-        inputElem.value = value;
-        dispatchInputEvents(inputElem);
-      }
-    }
-  }
-
-  async function setFileInputValue(inputElement, fileUrl) {
-    try {
-      console.log("Fetching file for upload...");
-
-      const response = await fetch(fileUrl);
-      const blob = await response.blob();
-      const fileName = fileUrl.split('/').pop() || 'resume.pdf';
-      const file = new File([blob], fileName, { type: blob.type });
-
-      if (window.location.href.includes("explore.jobs.netflix.net")) {
-        console.log("Uploading resume via Netflix API...");
-
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("domain", "netflix.com");
-        formData.append("user_mode", "logged_out_candidate");
-
-        const uploadResponse = await fetch("https://explore.jobs.netflix.net/api/application/v2/resume_upload", {
-          method: "POST",
-          body: formData,
-          credentials: "include",
+          const instructions = data.fillInstructions;
+          for (const instruction of instructions) {
+            const element = document.querySelector(instruction.selector);
+            if (!element) {
+              console.error("Element not found for selector:", instruction.selector);
+              continue;
+            }
+            if (instruction.action === "fill") {
+              element.value = instruction.value;
+              element.dispatchEvent(new Event("input", { bubbles: true }));
+              element.dispatchEvent(new Event("change", { bubbles: true }));
+              console.log(`Filled field: ${instruction.selector} with value: ${instruction.value}`);
+            } else if (instruction.action === "select") {
+              let found = false;
+              for (let i = 0; i < element.options.length; i++) {
+                if (element.options[i].text.toLowerCase().includes(String(instruction.value).toLowerCase())) {
+                  element.selectedIndex = i;
+                  element.dispatchEvent(new Event("change", { bubbles: true }));
+                  found = true;
+                  console.log(`Selected dropdown: ${instruction.selector} -> ${instruction.value}`);
+                  break;
+                }
+              }
+              if (!found) {
+                console.error(`No matching option found for ${instruction.value} in ${instruction.selector}`);
+              }
+            } else if (instruction.action === "upload") {
+              try {
+                console.log(`Uploading file from: ${instruction.value}`);
+                const fileResponse = await fetch(instruction.value);
+                const blob = await fileResponse.blob();
+                const fileName = instruction.value.split("/").pop() || "file";
+                const file = new File([blob], fileName, { type: blob.type });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                element.files = dataTransfer.files;
+                element.dispatchEvent(new Event("change", { bubbles: true }));
+                console.log(`Uploaded file: ${fileName} to ${instruction.selector}`);
+              } catch (error) {
+                console.error(`Error uploading file for ${instruction.candidateField}:`, error);
+              }
+            }
+          }
+          sendResponse({ status: "formFilled" });
+          window.hasSentRequest = false;
+        })
+        .catch((err) => {
+          console.error("Error processing form:", err);
+          sendResponse({ status: "error", error: err });
+          window.hasSentRequest = false;
         });
-
-        if (!uploadResponse.ok) {
-          console.error("Netflix Resume Upload Failed:", await uploadResponse.text());
-        } else {
-          console.log("Netflix Resume Successfully Uploaded!");
-        }
-        return;
-      }
-
-      const dataTransfer = new DataTransfer();
-      dataTransfer.items.add(file);
-      inputElement.files = dataTransfer.files;
-      dispatchInputEvents(inputElement);
-
-      console.log("File input successfully set.");
-    } catch (err) {
-      console.error('Error setting file input value:', err);
     }
-  }
-
-  async function clickApplyButton() {
-    console.log("Checking for 'Apply' button...");
-    const applyBtn = [...document.querySelectorAll("button, a")].find(btn =>
-      btn.textContent.toLowerCase().includes("apply")
-    );
-
-    if (applyBtn) {
-      console.log("Clicking 'Apply' button.");
-      applyBtn.click();
-      await waitForNavigation();
+    if (document.readyState === "complete") {
+      processForm();
     } else {
-      console.log("'Apply' button not found. Continuing...");
+      window.addEventListener("load", processForm);
     }
+
+    return true;
   }
-
-  function waitForNavigation(timeout = 10000) {
-    return new Promise(resolve => {
-      const observer = new MutationObserver(() => {
-        if (document.readyState === "complete") {
-          observer.disconnect();
-          resolve();
-        }
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
-
-      setTimeout(() => {
-        observer.disconnect();
-        resolve();
-      }, timeout);
-    });
-  }
-
-  async function capturePageAndFillForm(apiKey, serverURL) {
-    console.log("Starting form fill process...");
-    await clickApplyButton();
-    console.log("Waiting for form page...");
-    await waitForNavigation();
-
-    setTimeout(async () => {
-      await capturePageHTML(apiKey, serverURL);
-    }, 3000);
-
-    navigateNextPage();
-  }
-
-  chrome.runtime.onMessage.addListener((request) => {
-    if (request.action === "fillForm") {
-      capturePageAndFillForm(request.apiKey, request.serverURL);
-    }
-  });
-
-})();
+});

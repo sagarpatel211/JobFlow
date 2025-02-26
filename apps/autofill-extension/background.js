@@ -1,61 +1,25 @@
-import { getStoredApiKey } from "./storage.js";
-
-export function processJobsSequentially(jobs) {
-  let index = 0;
-
-  async function processNext() {
-    if (index >= jobs.length) {
-      console.log("✅ All jobs processed.");
-      return;
-    }
-
-    const job = jobs[index];
-    console.log(`🔄 Processing job: ${job.link}`);
-
-    let apiKey;
-    try {
-      apiKey = await getStoredApiKey();
-      if (!apiKey) {
-        console.error("❌ OpenAI API key missing. Skipping job.");
-        index++;
-        setTimeout(processNext, 500); // Short delay before skipping to next job
-        return;
-      }
-    } catch (error) {
-      console.error("❌ Error retrieving API key:", error);
-      index++;
-      setTimeout(processNext, 500);
-      return;
-    }
-
-    chrome.tabs.create({ url: job.link, active: false }, (tab) => {
-      if (!tab || !tab.id) {
-        console.error("❌ Failed to create tab. Skipping job.");
-        index++;
-        setTimeout(processNext, 500);
-        return;
-      }
-
-      setTimeout(() => {
-        chrome.scripting.executeScript(
-          { target: { tabId: tab.id }, files: ["content.js"] },
-          () => {
-            chrome.tabs.sendMessage(tab.id, {
-              action: "fillForm",
-              apiKey,
-              job,
-              serverURL: "https://localhost:3005",
-            });
-
-            console.log(`📩 Sent message to tab ${tab.id} for job: ${job.link}`);
-          }
-        );
-
-        index++;
-        setTimeout(processNext, 8000); // Wait before processing next job
-      }, 5000);
-    });
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.action === "authenticate") {
+    const token = "sample_auth_token"; // Replace with a real token as needed.
+    console.log("Returning simulated auth token.");
+    sendResponse({ success: true, token });
+    return true;
   }
-
-  processNext();
-}
+  if (message.action === "processJobs") {
+    const jobs = message.jobs;
+    jobs.forEach((job) => {
+      chrome.tabs.create({ url: job.link, active: false }, (tab) => {
+        chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
+          if (tabId === tab.id && changeInfo.status === "complete") {
+            chrome.tabs.sendMessage(tab.id, { action: "fillForm" }, (response) => {
+              console.log("Form fill response:", response);
+            });
+            chrome.tabs.onUpdated.removeListener(listener);
+          }
+        });
+      });
+    });
+    sendResponse({ status: "jobsProcessing" });
+    return true;
+  }
+});

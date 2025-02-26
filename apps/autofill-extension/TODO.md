@@ -6,7 +6,21 @@
 
 - fix scripts for backend for chrome extension so it is automated
 
+- make the script work so if there is an apply button on the link we click that and there is no form field since we might be on the pre-application page, also add a next button look for the next button and click that  so we can continue the process
+
 - Add this to auto apply!! https://chatgpt.com/c/67b9492b-ba24-8011-8749-860df34646f1
+
+https://chatgpt.com/c/67be8a81-d7d4-8011-a2c0-f39bc6dd286e?model=o3-mini-high
+
+in the extract js file we need to look for buttons that say apply or add experience and click those buttons and then click the next button if there is one
+
+sometimes jobs ask for entire history so if there are fields for that we need to be able to click Add Experience and add the experience
+
+make sure we do an auth check for the server endpoint so only premium users can use the service
+
+connect the backend to the frontend so that the 5 stage process connects to the backend and all errors are reported to frontend
+
+fix home page so no gpt api key
 
 - figure out how to apply when the job posting is like a workday link that requires signing in
 
