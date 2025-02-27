@@ -2,8 +2,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Check, X } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { GoogleGeminiEffect } from "@/components/ui/google-gemini-effect";
-import { Input } from "@/components/ui/input";
-import { getStoredApiKey, setStoredApiKey } from "@/lib/storage";
 
 interface StatusIndicatorProps {
   status: string;
@@ -28,6 +26,27 @@ interface HomeProps {
 const jobs: Job[] = [
   {
     id: 1,
+    company: "Acme Corp",
+    title: "Student Developer",
+    status: "queued",
+    link: "https://explore.jobs.netflix.net/careers/apply?pid=790301171659&query=intern&utm_source=Netflix%20Careersite",
+  },
+  {
+    id: 2,
+    company: "Acme Corp",
+    title: "Student Developer",
+    status: "queued",
+    link: "https://explore.jobs.netflix.net/careers/apply?pid=790301171659&query=intern&utm_source=Netflix%20Careersite",
+  },
+  {
+    id: 3,
+    company: "Acme Corp",
+    title: "Student Developer",
+    status: "queued",
+    link: "https://explore.jobs.netflix.net/careers/apply?pid=790301171659&query=intern&utm_source=Netflix%20Careersite",
+  },
+  {
+    id: 4,
     company: "Acme Corp",
     title: "Student Developer",
     status: "queued",
@@ -63,15 +82,8 @@ const Home: React.FC<HomeProps> = ({ onLogout }) => {
     []
   );
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
-  const [apiKey, setApiKey] = useState("");
-  const [isDirty, setIsDirty] = useState(false); // Track if user made changes
 
   useEffect(() => {
-    getStoredApiKey().then((key) => {
-      if (key !== null) {
-        setApiKey(key);
-      }
-    });
     const interval = setInterval(() => {
       setCurrentStageIndex((prev) => (prev + 1) % stages.length);
     }, 4000);
@@ -79,19 +91,6 @@ const Home: React.FC<HomeProps> = ({ onLogout }) => {
   }, [stages.length]);
 
   const progress = stages[currentStageIndex];
-
-  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setApiKey(e.target.value.trim());
-    setIsDirty(true);
-  };
-
-  const handleApiKeyBlur = async () => {
-    if (isDirty) {
-      await setStoredApiKey(apiKey);
-      toast.success("API Key saved successfully!");
-      setIsDirty(false);
-    }
-  };
 
   const handleProcessJobs = () => {
     chrome.runtime.sendMessage({ action: "processJobs", jobs: jobs }, (response) => {
@@ -101,7 +100,7 @@ const Home: React.FC<HomeProps> = ({ onLogout }) => {
   };
 
   return (
-    <div className="w-[400px] h-[500px] mx-auto p-6 shadow-lg bg-black text-white font-sans">
+    <div className="w-[400px] h-[500px] mx-auto p-6 shadow-lg bg-black text-white font-sans flex flex-col justify-between">
       <h3 className="text-lg font-semibold mb-2">Job Queue</h3>
       <div className="overflow-hidden">
         <div className="rounded overflow-hidden max-h-[100px] overflow-y-auto custom-scrollbar">
@@ -134,16 +133,6 @@ const Home: React.FC<HomeProps> = ({ onLogout }) => {
             </tbody>
           </table>
         </div>
-      </div>
-      <div className="relative flex flex-col space-y-2 mt-4">
-        <Input
-          type="text"
-          placeholder="Enter OpenAI API Key"
-          value={apiKey}
-          onChange={handleApiKeyChange}
-          onBlur={handleApiKeyBlur}
-          className="relative z-10 w-full px-3 py-2 rounded-md bg-neutral-950 text-white border border-neutral-900 focus:ring focus:ring-neutral-500 focus:border-neutral-700"
-        />
       </div>
       <h3 className="text-lg font-semibold mt-2 flex items-center">
         <span className="w-[350px] truncate">

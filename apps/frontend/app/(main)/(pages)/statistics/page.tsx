@@ -41,7 +41,7 @@ interface ChartData {
   goal: number;
 }
 
-function StatsChart({ data, color }: { data: ChartData[], color: string }) {
+function StatsChart({ data, color }: { data: ChartData[]; color: string }) {
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">

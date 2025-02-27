@@ -25,7 +25,7 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
   };
   const onBlacklistCompany = (company: string) => {
     console.log("Blacklist company:", company);
-  }
+  };
 
   return (
     <TableRow>
@@ -52,9 +52,7 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
-                <DropdownMenuItem onClick={() => onBlacklistCompany(job.company)}>
-                  Blacklist Company
-                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onBlacklistCompany(job.company)}>Blacklist Company</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

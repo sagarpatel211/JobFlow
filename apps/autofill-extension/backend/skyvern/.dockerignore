@@ -1,0 +1,26 @@
+**/videos
+**/artifacts
+**/traces
+**/inputs
+**/har
+**/.git
+**/.github
+**/.mypy_cache
+**/.venv
+**/.vscode
+*.env*
+# Streamlit ignores
+**/secrets*.toml
+
+# Skyvern
+docs
+images
+
+# Front
+skyvern-frontend/.env*
+skyvern-frontend/dist
+skyvern-frontend/node_modules
+
+.dockerignore
+.gitignore
+Dockerfile

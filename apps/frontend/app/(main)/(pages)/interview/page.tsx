@@ -43,7 +43,9 @@ const InterviewSetup = () => {
           {["Easy", "Medium", "Hard"].map((level) => (
             <Button
               key={level}
-              onClick={() => {setDifficulty(level)}}
+              onClick={() => {
+                setDifficulty(level);
+              }}
               className={`px-4 py-2 rounded-xl ${
                 difficulty === level
                   ? "bg-primary text-white"

@@ -61,7 +61,9 @@ const DashboardPage = () => {
         >
           <Clock className="w-8 h-8 mb-2" />
           <div className="text-lg font-semibold">Scraping jobs finished in</div>
-          <div className="text-3xl font-bold mt-2">8 hours (make the clock tick) and have an arrow point to bottom left so they know</div>
+          <div className="text-3xl font-bold mt-2">
+            8 hours (make the clock tick) and have an arrow point to bottom left so they know
+          </div>
         </motion.div>
 
         <motion.div
