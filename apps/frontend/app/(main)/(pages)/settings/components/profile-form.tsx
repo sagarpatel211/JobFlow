@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
 import { UploadSection } from "./upload-section";
 import { useToast } from "@/hooks/use-toast"; // Correct import
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"; // Import Select component
 
 const ProfileForm = () => {
   const { toast } = useToast(); // Use useToast hook
@@ -33,6 +34,9 @@ const ProfileForm = () => {
 
   const [systemDesignEnabled, setSystemDesignEnabled] = useState(false);
   const [systemDesignGoal, setSystemDesignGoal] = useState("");
+
+  // Archive unapplied jobs state
+  const [archiveDuration, setArchiveDuration] = useState("A Month");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,50 +66,34 @@ const ProfileForm = () => {
   return (
     <div className="grid grid-cols-2 gap-8 items-stretch">
       <form className="grid grid-cols-1 gap-6" onSubmit={handleSubmit}>
-        <Input
-          value={name}
-          onChange={(e) => {
-            setName(e.target.value);
-          }}
-          placeholder="Full Name"
-        />
-        <Input
-          value={email}
-          onChange={(e) => {
-            setEmail(e.target.value);
-          }}
-          placeholder="Email"
-          type="email"
-        />
-        <Textarea
-          value={address}
-          onChange={(e) => {
-            setAddress(e.target.value);
-          }}
-          placeholder="Address"
-        />
-        <Input
-          value={university}
-          onChange={(e) => {
-            setUniversity(e.target.value);
-          }}
-          placeholder="University"
-        />
-        <Textarea
-          value={aboutMe}
-          onChange={(e) => {
-            setAboutMe(e.target.value);
-          }}
-          placeholder="About Me"
-        />
+        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full Name" />
+        <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" type="email" />
+        <Textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Address" />
+        <Input value={university} onChange={(e) => setUniversity(e.target.value)} placeholder="University" />
+        <Textarea value={aboutMe} onChange={(e) => setAboutMe(e.target.value)} placeholder="About Me" />
         <Input
           value={phoneNumber}
-          onChange={(e) => {
-            setPhoneNumber(e.target.value);
-          }}
+          onChange={(e) => setPhoneNumber(e.target.value)}
           placeholder="Phone Number"
           type="tel"
         />
+
+        {/* Archive Unapplied Jobs Dropdown */}
+        <div>
+          <label className="block text-sm font-medium">Automatically Archive Unapplied Jobs</label>
+          <Select value={archiveDuration} onValueChange={setArchiveDuration}>
+            <SelectTrigger className="w-full mt-1">
+              <SelectValue placeholder="Select duration" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="2 Weeks">2 Weeks</SelectItem>
+              <SelectItem value="A Month">A Month</SelectItem>
+              <SelectItem value="3 Months">3 Months</SelectItem>
+              <SelectItem value="A Year">A Year</SelectItem>
+              <SelectItem value="Never">Never</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="flex items-center">
@@ -134,22 +122,17 @@ const ProfileForm = () => {
           </div>
         </div>
 
-        {/* LeetCode Inputs */}
         {leetcodeEnabled && (
           <div className="grid grid-cols-2 gap-4">
             <Input
               value={leetcodeUsername}
-              onChange={(e) => {
-                setLeetcodeUsername(e.target.value);
-              }}
+              onChange={(e) => setLeetcodeUsername(e.target.value)}
               placeholder="LeetCode Username"
               className="w-full"
             />
             <Input
               value={leetcodeGoal}
-              onChange={(e) => {
-                setLeetcodeGoal(e.target.value);
-              }}
+              onChange={(e) => setLeetcodeGoal(e.target.value)}
               placeholder="LeetCode Goal"
               type="number"
               max={10}
@@ -161,9 +144,7 @@ const ProfileForm = () => {
         {behaviouralEnabled && (
           <Input
             value={behaviouralGoal}
-            onChange={(e) => {
-              setBehaviouralGoal(e.target.value);
-            }}
+            onChange={(e) => setBehaviouralGoal(e.target.value)}
             placeholder="Behavioral Goal"
             type="number"
             max={10}
@@ -174,9 +155,7 @@ const ProfileForm = () => {
         {jobsEnabled && (
           <Input
             value={jobsGoal}
-            onChange={(e) => {
-              setJobsGoal(e.target.value);
-            }}
+            onChange={(e) => setJobsGoal(e.target.value)}
             placeholder="Jobs Applied Goal"
             type="number"
             max={10}
@@ -187,9 +166,7 @@ const ProfileForm = () => {
         {systemDesignEnabled && (
           <Input
             value={systemDesignGoal}
-            onChange={(e) => {
-              setSystemDesignGoal(e.target.value);
-            }}
+            onChange={(e) => setSystemDesignGoal(e.target.value)}
             placeholder="System Design Goal"
             type="number"
             max={10}

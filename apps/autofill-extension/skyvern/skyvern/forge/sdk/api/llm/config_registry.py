@@ -57,6 +57,21 @@ if not any(
 ):
     raise NoProviderEnabledError()
 
+if settings.ENABLE_CUSTOM_LLM:
+    LLMConfigRegistry.register_config(
+        "CUSTOM_LLM",
+        LLMConfig(
+            "custom-llm",
+            ["CUSTOM_LLM_API_KEY"],
+            supports_vision=False,
+            add_assistant_prefix=False,
+            litellm_params=LiteLLMParams(
+                api_base=settings.CUSTOM_LLM_API_BASE,
+                api_key=settings.CUSTOM_LLM_API_KEY,
+                api_version=settings.CUSTOM_LLM_API_VERSION,
+                model_info={"model_name": "custom-llm"},
+        ),
+    )
 
 if settings.ENABLE_OPENAI:
     LLMConfigRegistry.register_config(

@@ -39,13 +39,7 @@ type LoadingState = {
   text: string;
 };
 
-const LoaderCore = ({
-  loadingStates,
-  value = 0,
-}: {
-  loadingStates: LoadingState[];
-  value?: number;
-}) => {
+const LoaderCore = ({ loadingStates, value = 0 }: { loadingStates: LoadingState[]; value?: number }) => {
   return (
     <div className="flex relative justify-start max-w-xl mx-auto flex-col mt-40">
       {loadingStates.map((loadingState, index) => {
@@ -61,15 +55,12 @@ const LoaderCore = ({
             transition={{ duration: 0.5 }}
           >
             <div>
-              {index > value && (
-                <CheckIcon className="text-black dark:text-white" />
-              )}
+              {index > value && <CheckIcon className="text-black dark:text-white" />}
               {index <= value && (
                 <CheckFilled
                   className={cn(
                     "text-black dark:text-white",
-                    value === index &&
-                      "text-black dark:text-lime-500 opacity-100"
+                    value === index && "text-black dark:text-lime-500 opacity-100",
                   )}
                 />
               )}
@@ -77,7 +68,7 @@ const LoaderCore = ({
             <span
               className={cn(
                 "text-black dark:text-white",
-                value === index && "text-black dark:text-lime-500 opacity-100"
+                value === index && "text-black dark:text-lime-500 opacity-100",
               )}
             >
               {loadingState.text}
@@ -113,7 +104,7 @@ export const MultiStepLoader = ({
           ? prevState === loadingStates.length - 1
             ? 0
             : prevState + 1
-          : Math.min(prevState + 1, loadingStates.length - 1)
+          : Math.min(prevState + 1, loadingStates.length - 1),
       );
     }, duration);
 

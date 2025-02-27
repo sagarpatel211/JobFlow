@@ -13,7 +13,7 @@ const initialJobs: Job[] = [
   {
     id: 1,
     company: "Google",
-    title: "Software Engineer",
+    title: "Softwarsdse Engineer but super long like hiiiiiii hello",
     link: "https://www.jotform.com/build/250508845087261?s=templates",
     postedDate: "01.02.2024",
     statusIndex: 2,
@@ -152,10 +152,10 @@ const TrackerPage = () => {
     <div className="flex flex-col gap-4 relative">
       <h1 className="text-sm sticky top-0 z-[10] p-6 bg-background/50 backdrop-blur-lg flex items-center border-b">
         Tracker (DO THESE https://chatgpt.com/c/67aff962-9138-8011-899e-158f73e29f84 hover row to add labels, and track
-        application). The AI should be designed to queue applications when the "Fill" button is clicked, rather than
+        application). The AI should be designed to queue applications when the Fill button is clicked, rather than
         applying immediately. This ensures that applications are only submitted to major companies, allowing me to
         quickly skim through them and decide which ones to finalize. The system should automatically add a new row in
-        the applications page with a "Queued" tag, making it easy to review and submit later with a polished resume and
+        the applications page with a Queued tag, making it easy to review and submit later with a polished resume and
         cover letter. Additionally, it should record all actions by screen recording and attaching the footage to each
         application, providing a transparent history of how the process works. To efficiently manage the job tracker,
         which will contain up to 10,000 listings, stale postings should disappear while important ones remain at the
@@ -166,7 +166,10 @@ const TrackerPage = () => {
         relevant postings. A better approach needs to be developed, possibly involving an intelligent archiving system
         that prioritizes important opportunities without excessive clutter. Lastly, GPT should be consulted for
         additional features on the application page, helping refine the system further to improve efficiency and
-        usability.
+        usability. ALSO MAKE IT SO WHEN WE CLICK FILL WITH AI IT PUTS IN QUEUE ON THIS SCREEN AND THE APPLICATION
+        SCREEN. add tags for the jobs and make it so we can filter by tags.
+        https://chatgpt.com/c/67c0a1ac-6ddc-8011-bede-6a82cd70f5ed also add an email service that users could
+        potentially subscribe to so it will tell them what jobs were applied to today
       </h1>
 
       <JobToolbar

@@ -70,30 +70,33 @@ export default function LoginPage() {
             <div className="bg-gradient-to-r from-transparent via-neutral-300 dark:via-neutral-700 to-transparent my-8 h-[1px] w-full" />
 
             <div className="flex flex-col space-y-4">
-                          <button
-                            className="relative group/btn flex space-x-2 items-center justify-start px-4 w-full text-white rounded-md h-10 font-medium shadow-input bg-gray-50 dark:bg-zinc-900 dark:shadow-[0px_0px_1px_1px_var(--neutral-800)]"
-                            type="button"
-                            disabled={loading}
-                          >
-                            <IconBrandGithub className="h-4 w-4 text-white" />
-                            <span className="text-white text-sm">GitHub</span>
-                            <BottomGradient />
-                          </button>
-                          <button
-                            className="relative group/btn flex space-x-2 items-center justify-start px-4 w-full text-black rounded-md h-10 font-medium shadow-input bg-gray-50 dark:bg-zinc-900 dark:shadow-[0px_0px_1px_1px_var(--neutral-800)]"
-                            type="button"
-                            disabled={loading}
-                          >
-                            <IconBrandGoogle className="h-4 w-4 text-neutral-800 dark:text-neutral-300 group-hover/btn:text-[#fad3d3]" />
-                            <span className="text-neutral-700 dark:text-neutral-300 text-sm group-hover/btn:text-[#fad3d3]">
-                              Google
-                            </span>
-                            <BottomGradient />
-                          </button>
-                        </div>
+              <button
+                className="relative group/btn flex space-x-2 items-center justify-start px-4 w-full text-white rounded-md h-10 font-medium shadow-input bg-gray-50 dark:bg-zinc-900 dark:shadow-[0px_0px_1px_1px_var(--neutral-800)]"
+                type="button"
+                disabled={loading}
+              >
+                <IconBrandGithub className="h-4 w-4 text-white" />
+                <span className="text-white text-sm">GitHub</span>
+                <BottomGradient />
+              </button>
+              <button
+                className="relative group/btn flex space-x-2 items-center justify-start px-4 w-full text-black rounded-md h-10 font-medium shadow-input bg-gray-50 dark:bg-zinc-900 dark:shadow-[0px_0px_1px_1px_var(--neutral-800)]"
+                type="button"
+                disabled={loading}
+              >
+                <IconBrandGoogle className="h-4 w-4 text-neutral-800 dark:text-neutral-300 group-hover/btn:text-[#fad3d3]" />
+                <span className="text-neutral-700 dark:text-neutral-300 text-sm group-hover/btn:text-[#fad3d3]">
+                  Google
+                </span>
+                <BottomGradient />
+              </button>
+            </div>
           </form>
           <p className="text-center text-sm text-neutral-600 dark:text-neutral-400 mt-4">
-            Don't have an account? <Link href="/signup" className="text-blue-500 hover:underline">Sign up</Link>
+            Don't have an account?{" "}
+            <Link href="/signup" className="text-blue-500 hover:underline">
+              Sign up
+            </Link>
           </p>
         </div>
       </div>

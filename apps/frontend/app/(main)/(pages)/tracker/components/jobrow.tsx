@@ -35,13 +35,13 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
             <Image src="/globe.svg" alt={job.company} width={24} height={24} />
           </Avatar>
           <div className="flex items-center gap-2">
-            <div>
-              <div className="flex items-center">
+            <div className="w-[200px]">
+              <div className="flex items-center truncate">
                 {job.company}
                 {job.priority && <Star className="ml-1 h-4 w-4 text-amber-500" />}
                 {job.archived && <Archive className="ml-1 h-4 w-4 text-gray-500" />}
               </div>
-              <div className="text-xs text-muted-foreground">{job.title}</div>
+              <div className="text-xs text-muted-foreground truncate">{job.title}</div>
             </div>
 
             {/* Dropdown Menu */}
