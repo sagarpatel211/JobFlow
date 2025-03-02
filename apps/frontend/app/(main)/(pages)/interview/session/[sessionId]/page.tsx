@@ -2,14 +2,17 @@
 
 import React from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import BehavioralInterview from "@/app/(main)/(pages)/interview/components/BehavioralInterview";
-import TechnicalInterview from "@/app/(main)/(pages)/interview/components/TechnicalInterview";
-import ResumeScreeningInterview from "@/app/(main)/(pages)/interview/components/ResumeScreeningInterview";
+import BehavioralInterview from "@/app/(main)/(pages)/interview/components/behavioralinterview";
+import TechnicalInterview from "@/app/(main)/(pages)/interview/components/technicalinterview";
+import ResumeScreeningInterview from "@/app/(main)/(pages)/interview/components/resumescreeninginterview";
 
 const SessionPage = () => {
   const searchParams = useSearchParams();
-  const interviewType = searchParams.get("type") || "Behavioral";
-  const duration = parseInt(searchParams.get("duration") || "30", 10);
+  const typeParam = searchParams.get("type");
+  const interviewType = typeParam !== null && typeParam !== "" ? typeParam : "Behavioral";
+  const durationParam = searchParams.get("duration");
+  const duration = durationParam !== null && durationParam !== "" ? parseInt(durationParam, 10) : 30;
+
   // const difficulty = searchParams.get("difficulty") || "Medium";
 
   const router = useRouter();

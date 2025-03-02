@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { FileUpload } from "./file-upload";
+import { FileUpload } from "../../../../../components/ui/file-upload";
 
 export function UploadSection() {
-  const [_profilePic, setProfilePic] = useState<File | null>(null);
-  const [_resume, setResume] = useState<File | null>(null);
-  const [_transcript, setTranscript] = useState<File | null>(null);
+  const [profilePic, setProfilePic] = useState<File | null>(null);
+  const [resume, setResume] = useState<File | null>(null);
+  const [transcript, setTranscript] = useState<File | null>(null);
 
   return (
     <div className="flex flex-col gap-6 h-full">
@@ -14,24 +14,23 @@ export function UploadSection() {
           setProfilePic(file);
         }}
       />
+      {profilePic && <p>Selected Profile Picture: {profilePic.name}</p>}
+
       <FileUpload
         title="Upload Resume"
         onFileChange={(file) => {
           setResume(file);
         }}
       />
+      {resume && <p>Selected Resume: {resume.name}</p>}
+
       <FileUpload
         title="Upload Transcript"
         onFileChange={(file) => {
           setTranscript(file);
         }}
       />
-      <FileUpload
-        title="Upload Resume LaTeX (.zip)"
-        onFileChange={(file) => {
-          setTranscript(file);
-        }}
-      />
+      {transcript && <p>Selected Transcript: {transcript.name}</p>}
     </div>
   );
 }

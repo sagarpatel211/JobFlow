@@ -22,7 +22,7 @@ const filterOptions = [
 ];
 
 const JobToolbar = ({
-  sortBy, // new prop for current sort option
+  sortBy,
   setSortBy,
   groupByCompany,
   setGroupByCompany,

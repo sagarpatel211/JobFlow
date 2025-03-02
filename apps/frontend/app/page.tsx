@@ -22,7 +22,7 @@ export default function Home() {
         <LampComponent />
         <Pricing />
       </section>
-      <Footer/>
+      <Footer />
     </main>
   );
 }

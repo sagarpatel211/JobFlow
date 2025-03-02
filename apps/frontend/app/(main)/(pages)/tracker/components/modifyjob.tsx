@@ -1,5 +1,5 @@
 import React from "react";
-import { parse, format } from "date-fns";
+import { parse, format, isValid } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { TableRow, TableCell } from "@/components/ui/table";
@@ -40,9 +40,17 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
           name="postedDate"
           className="w-40 -mr-14"
           value={
-            job.postedDate
-              ? format(parse(job.postedDate, "dd.MM.yyyy", new Date()), "yyyy-MM-dd")
-              : format(new Date(), "yyyy-MM-dd")
+            job.postedDate && typeof job.postedDate === "string"
+              ? (() => {
+                  try {
+                    const parsedDate = parse(job.postedDate);
+                    return isValid(parsedDate) ? format(parsedDate, "MMM d, yyyy") : "";
+                  } catch {
+                    console.error("Invalid date format:", job.postedDate);
+                    return "";
+                  }
+                })()
+              : ""
           }
           onChange={(e) => {
             const newDate = new Date(e.target.value);

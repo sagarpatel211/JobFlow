@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import InterviewHeader from "./InterviewHeader";
+import InterviewHeader from "./interviewheader";
 
 interface BehavioralInterviewProps {
   onExit: () => void;

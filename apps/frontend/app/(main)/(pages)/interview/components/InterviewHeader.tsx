@@ -24,7 +24,9 @@ const InterviewHeader: React.FC<InterviewHeaderProps> = ({ onExit, duration }) =
         return newElapsed;
       });
     }, 1000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [totalSeconds]);
 
   const progressPercent = (elapsed / totalSeconds) * 100;

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import InterviewHeader from "./InterviewHeader";
+import InterviewHeader from "./interviewheader";
 import Editor from "@monaco-editor/react";
 
 interface TechnicalInterviewProps {
@@ -13,7 +13,11 @@ const TechnicalInterview: React.FC<TechnicalInterviewProps> = ({ onExit, duratio
   const [code, setCode] = useState("// Write your code here...");
 
   const handleEditorChange = (value: string | undefined) => {
-    setCode(value || "");
+    if (value === undefined || value === null) {
+      setCode("");
+    } else {
+      setCode(value);
+    }
   };
 
   return (

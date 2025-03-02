@@ -188,7 +188,9 @@ const ResumeBuilder = () => {
         </div>
       </div>
       <DragOverlay>
-        {activeId && getItemById(activeId) ? <ItemOverlay item={getItemById(activeId) as ResumeComponent} /> : null}
+        {activeId !== null && activeId !== "" && getItemById(activeId) ? (
+          <ItemOverlay item={getItemById(activeId) as ResumeComponent} />
+        ) : null}
       </DragOverlay>
     </DndContext>
   );
@@ -212,7 +214,6 @@ const ResumeSection = () => {
 const GenerateAppPage = () => {
   const [coverLetterEnabled, setCoverLetterEnabled] = useState(true);
   const [resumeEnabled, setResumeEnabled] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
@@ -241,7 +242,7 @@ const GenerateAppPage = () => {
           <Checkbox
             checked={coverLetterEnabled}
             onCheckedChange={(checked) => {
-              setCoverLetterEnabled(!!checked);
+              setCoverLetterEnabled(checked === true);
             }}
           />
           <Label>Cover Letter</Label>
@@ -250,7 +251,7 @@ const GenerateAppPage = () => {
           <Checkbox
             checked={resumeEnabled}
             onCheckedChange={(checked) => {
-              setResumeEnabled(!!checked);
+              setResumeEnabled(checked === true);
             }}
           />
           <Label>Resume</Label>
@@ -290,7 +291,7 @@ const GenerateAppPage = () => {
                 <span className="mt-4">Generating PDF...</span>
               </div>
             )}
-            {showResults && !loading && (
+            {showResults && loading && (
               <>
                 <div className="border border-dashed h-96 flex items-center justify-center">
                   <span>Empty PDF</span>

@@ -13,9 +13,9 @@ const InterviewSetup = () => {
   const [difficulty, setDifficulty] = useState("Medium");
 
   const startInterview = () => {
-    const sessionId = Date.now();
+    const sessionId = Date.now().toString();
     router.push(
-      `interview/session/${sessionId}?type=${encodeURIComponent(interviewType)}&duration=${duration}&difficulty=${difficulty}`,
+      `interview/session/${sessionId}?type=${encodeURIComponent(interviewType)}&duration=${duration.toString()}&difficulty=${difficulty}`,
     );
   };
 
@@ -37,7 +37,15 @@ const InterviewSetup = () => {
         </Select>
         <div className="flex flex-col items-center w-64">
           <span className="text-muted-foreground mb-2">Duration: {duration} min</span>
-          <Slider max={45} min={5} step={5} value={[duration]} onValueChange={(value) => setDuration(value[0])} />
+          <Slider
+            max={45}
+            min={5}
+            step={5}
+            value={[duration]}
+            onValueChange={(value) => {
+              setDuration(value[0]);
+            }}
+          />
         </div>
         <div className="flex gap-2">
           {["Easy", "Medium", "Hard"].map((level) => (

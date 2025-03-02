@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import InterviewHeader from "./InterviewHeader";
-import ChatInterface from "./ChatInterface";
-import ResumeViewer from "./ResumeViewer";
+import InterviewHeader from "./interviewheader";
+import ChatInterface from "./chatinterface";
+import ResumeViewer from "./resumeviewer";
+import { Message } from "@/types/interview";
 
 interface ResumeScreeningInterviewProps {
   onExit: () => void;
@@ -11,7 +12,7 @@ interface ResumeScreeningInterviewProps {
 }
 
 const ResumeScreeningInterview = ({ onExit, duration }: ResumeScreeningInterviewProps) => {
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   return (
     <div className="flex flex-col h-screen">

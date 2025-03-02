@@ -5,13 +5,23 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
-const fetchLeetCodeStats = async () => {
+interface LeetCodeStats {
+  submissionCalendar: Record<string, number>;
+}
+
+const fetchLeetCodeStats = async (): Promise<Record<string, number>> => {
   const response = await fetch(`https://leetcode-stats-api.herokuapp.com/funy7rjCsA`);
-  const data = await response.json();
-  return data.submissionCalendar || {};
+  const data = (await response.json()) as LeetCodeStats;
+  return data.submissionCalendar ?? {};
 };
 
-const generateData = (days: number, actual: number[], goal: number[]) => {
+interface ChartData {
+  date: string;
+  actual: number;
+  goal: number;
+}
+
+const generateData = (days: number, actual: number[], goal: number[]): ChartData[] => {
   return Array.from({ length: days }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() - (days - 1 - i));
@@ -23,7 +33,7 @@ const generateData = (days: number, actual: number[], goal: number[]) => {
   });
 };
 
-const generateFakeData = (days: number) => {
+const generateFakeData = (days: number): ChartData[] => {
   return Array.from({ length: days }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() - (days - 1 - i));
@@ -35,10 +45,11 @@ const generateFakeData = (days: number) => {
   });
 };
 
-interface ChartData {
-  date: string;
-  actual: number;
-  goal: number;
+interface CustomTooltipPayload {
+  value: number;
+  payload: {
+    date: string;
+  };
 }
 
 function StatsChart({ data, color }: { data: ChartData[]; color: string }) {
@@ -56,17 +67,18 @@ function StatsChart({ data, color }: { data: ChartData[]; color: string }) {
           <YAxis tick={{ fontSize: 12, fill: "gray" }} tickLine={false} axisLine={false} domain={[0, "dataMax + 1"]} />
           <Tooltip
             content={({ active, payload }) => {
-              if (active && payload && payload.length) {
+              if (active === true && Array.isArray(payload) && payload.length > 0) {
+                const safePayload = payload as CustomTooltipPayload[];
                 return (
                   <div className="rounded-lg border bg-background p-2 shadow-sm">
                     <div className="grid grid-cols-2 gap-2">
                       <div className="flex flex-col">
                         <span className="text-[0.70rem] uppercase text-muted-foreground">Value</span>
-                        <span className="font-bold text-muted-foreground">{payload[0].value}</span>
+                        <span className="font-bold text-muted-foreground">{safePayload[0].value}</span>
                       </div>
                       <div className="flex flex-col">
                         <span className="text-[0.70rem] uppercase text-muted-foreground">Date</span>
-                        <span className="font-bold">{payload[0].payload.date}</span>
+                        <span className="font-bold">{safePayload[0].payload.date}</span>
                       </div>
                     </div>
                   </div>
@@ -83,30 +95,31 @@ function StatsChart({ data, color }: { data: ChartData[]; color: string }) {
 }
 
 const StatisticsPage = () => {
-  const [leetcodeData, setLeetcodeData] = useState([]);
-  const [jobsData, setJobsData] = useState([]);
-  const [behavioralData, setBehavioralData] = useState([]);
-  const [systemDesignData, setSystemDesignData] = useState([]);
-  const [timeRange, setTimeRange] = useState(30);
+  const [leetcodeData, setLeetcodeData] = useState<ChartData[]>([]);
+  const [jobsData, setJobsData] = useState<ChartData[]>([]);
+  const [behavioralData, setBehavioralData] = useState<ChartData[]>([]);
+  const [systemDesignData, setSystemDesignData] = useState<ChartData[]>([]);
+  const [timeRange, setTimeRange] = useState<number>(30);
 
   useEffect(() => {
     const fetchStats = async () => {
       const lcSubmissions = await fetchLeetCodeStats();
       const days = timeRange;
-      const actual = Array(days).fill(0);
+      const actual: number[] = new Array<number>(days).fill(0);
       Object.keys(lcSubmissions).forEach((timestamp) => {
-        const date = new Date(timestamp * 1000);
-        const index = Math.floor((Date.now() - date) / (1000 * 60 * 60 * 24));
+        const ts = Number(timestamp);
+        const date = new Date(ts * 1000);
+        const index = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24));
         if (index >= 0 && index < days) {
           actual[days - 1 - index] = lcSubmissions[timestamp];
         }
       });
-      setLeetcodeData(generateData(days, actual, Array(days).fill(4)));
+      setLeetcodeData(generateData(days, actual, new Array<number>(days).fill(4)));
       setJobsData(generateFakeData(days));
       setBehavioralData(generateFakeData(days));
       setSystemDesignData(generateFakeData(days));
     };
-    fetchStats();
+    void fetchStats();
   }, [timeRange]);
 
   return (

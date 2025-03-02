@@ -31,14 +31,12 @@ const applications = [
   },
 ];
 
-// Function to determine ATS score color
 const getAtsColor = (score: number) => {
   if (score > 75) return "bg-green-500";
   if (score >= 45) return "bg-yellow-500";
   return "bg-red-500";
 };
 
-// Function to render status
 const renderStatus = (status: string) => {
   switch (status) {
     case "queued":

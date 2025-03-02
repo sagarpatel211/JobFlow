@@ -1,11 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-
-interface Message {
-  sender: string;
-  text: string;
-}
+import { Message } from "@/types/interview";
 
 interface ChatInterfaceProps {
   messages: Message[];
@@ -31,9 +27,27 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, setMessages, bo
     if (e.code === "Space" && isRecording) {
       setIsRecording(false);
       const simulatedText = "Simulated speech input";
-      setMessages((prev) => [...prev, { sender: "user", text: simulatedText }]);
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          sender: "user",
+          text: simulatedText,
+          timestamp: new Date(),
+        },
+      ]);
+
       setTimeout(() => {
-        setMessages((prev) => [...prev, { sender: "bot", text: botReply }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            sender: "bot",
+            text: botReply,
+            timestamp: new Date(),
+          },
+        ]);
       }, 1000);
     }
   };

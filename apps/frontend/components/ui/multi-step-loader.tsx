@@ -44,7 +44,7 @@ const LoaderCore = ({ loadingStates, value = 0 }: { loadingStates: LoadingState[
     <div className="flex relative justify-start max-w-xl mx-auto flex-col mt-40">
       {loadingStates.map((loadingState, index) => {
         const distance = Math.abs(index - value);
-        const opacity = Math.max(1 - distance * 0.2, 0); // Minimum opacity is 0, keep it 0.2 if you're sane.
+        const opacity = Math.max(1 - distance * 0.2, 0);
 
         return (
           <motion.div
@@ -94,25 +94,28 @@ export const MultiStepLoader = ({
   const [currentState, setCurrentState] = useState(0);
 
   useEffect(() => {
-    if (!loading) {
+    if (loading !== true) {
       setCurrentState(0);
       return;
     }
     const timeout = setTimeout(() => {
-      setCurrentState((prevState) =>
-        loop
-          ? prevState === loadingStates.length - 1
-            ? 0
-            : prevState + 1
-          : Math.min(prevState + 1, loadingStates.length - 1),
-      );
+      setCurrentState((prevState) => {
+        if (loop) {
+          return prevState === loadingStates.length - 1 ? 0 : prevState + 1;
+        } else {
+          return Math.min(prevState + 1, loadingStates.length - 1);
+        }
+      });
     }, duration);
 
-    return () => clearTimeout(timeout);
+    return () => {
+      clearTimeout(timeout);
+    };
   }, [currentState, loading, loop, loadingStates.length, duration]);
+
   return (
     <AnimatePresence mode="wait">
-      {loading && (
+      {loading === true && (
         <motion.div
           initial={{
             opacity: 0,

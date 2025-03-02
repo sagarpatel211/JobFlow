@@ -3,16 +3,21 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
+type Product = {
+  id: string;
+  nickname: string;
+};
+
 type Props = {
   onPayment: (id: string) => void;
-  products: any[];
+  products: Product[];
   tier: string;
 };
 
 export const SubscriptionCard = ({ onPayment, products, tier }: Props) => {
   return (
     <section className="flex w-full justify-center md:flex-row flex-col gap-6">
-      {products.map((product: any) => (
+      {products.map((product: Product) => (
         <Card className="p-3" key={product.id}>
           <CardHeader>
             <CardTitle>{product.nickname}</CardTitle>
@@ -28,8 +33,7 @@ export const SubscriptionCard = ({ onPayment, products, tier }: Props) => {
             <div className="flex justify-between">
               <p>{product.nickname === "Free" ? "10" : product.nickname === "Pro" ? "100" : "unlimited"} credits</p>
               <p className="font-bold">
-                {product.nickname === "Free" ? "Free" : product.nickname === "Pro" ? "29.99" : "99.99"}
-                /mo
+                {product.nickname === "Free" ? "Free" : product.nickname === "Pro" ? "29.99" : "99.99"}/mo
               </p>
             </div>
             {product.nickname === tier ? (
@@ -37,7 +41,12 @@ export const SubscriptionCard = ({ onPayment, products, tier }: Props) => {
                 Active
               </Button>
             ) : (
-              <Button onClick={() => onPayment(product.id)} variant="outline">
+              <Button
+                onClick={() => {
+                  onPayment(product.id);
+                }}
+                variant="outline"
+              >
                 Purchase
               </Button>
             )}

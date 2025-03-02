@@ -48,7 +48,7 @@ const DashboardPage = () => {
               <motion.div
                 className={`h-full ${task.done >= task.total ? "bg-green-500" : "bg-primary"}`}
                 initial={{ width: 0 }}
-                animate={{ width: `${(task.done / task.total) * 100}%` }}
+                animate={{ width: `${String((task.done / task.total) * 100)}%` }}
                 transition={{ duration: 1 }}
               ></motion.div>
             </div>

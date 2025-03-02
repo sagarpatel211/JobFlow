@@ -18,7 +18,6 @@ export const AuroraBackground = ({ className, showRadialGradient = true, ...prop
       >
         <div className="absolute inset-0 overflow-hidden z-0">
           <div
-            //   I'm sorry but this is what peak developer performance looks like // trigger warning
             className={cn(
               `
             [--white-gradient:repeating-linear-gradient(100deg,var(--white)_0%,var(--white)_7%,var(--transparent)_10%,var(--transparent)_12%,var(--white)_16%)]
