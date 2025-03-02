@@ -129,7 +129,7 @@ const StatisticsPage = () => {
         <Button
           size="sm"
           variant="ghost"
-          className={timeRange === 1 ? "bg-primary text-white text-zinc-900" : ""}
+          className={timeRange === 1 ? "bg-primary text-white dark:text-zinc-900" : ""}
           onClick={() => {
             setTimeRange(1);
           }}
@@ -139,7 +139,7 @@ const StatisticsPage = () => {
         <Button
           size="sm"
           variant="ghost"
-          className={timeRange === 7 ? "bg-primary text-white text-zinc-900" : ""}
+          className={timeRange === 7 ? "bg-primary text-white dark:text-zinc-900" : ""}
           onClick={() => {
             setTimeRange(7);
           }}
@@ -149,7 +149,7 @@ const StatisticsPage = () => {
         <Button
           size="sm"
           variant="ghost"
-          className={timeRange === 30 ? "bg-primary text-white text-zinc-900" : ""}
+          className={timeRange === 30 ? "bg-primary text-white dark:text-zinc-900" : ""}
           onClick={() => {
             setTimeRange(30);
           }}
@@ -159,7 +159,7 @@ const StatisticsPage = () => {
         <Button
           size="sm"
           variant="ghost"
-          className={timeRange === 180 ? "bg-primary text-white text-zinc-900" : ""}
+          className={timeRange === 180 ? "bg-primary text-white dark:text-zinc-900" : ""}
           onClick={() => {
             setTimeRange(180);
           }}
@@ -169,7 +169,7 @@ const StatisticsPage = () => {
         <Button
           size="sm"
           variant="ghost"
-          className={timeRange === 365 ? "bg-primary text-white text-zinc-900" : ""}
+          className={timeRange === 365 ? "bg-primary text-white dark:text-zinc-900" : ""}
           onClick={() => {
             setTimeRange(365);
           }}
