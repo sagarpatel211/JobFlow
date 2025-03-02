@@ -18,11 +18,11 @@ export default function Home() {
       <section id="features">
         <BentoGridDisplay />
       </section>
-      <section id="pricing">
+      <section id="pricing" className="mb-36">
         <LampComponent />
         <Pricing />
       </section>
-      <Footer />
+      <Footer/>
     </main>
   );
 }
