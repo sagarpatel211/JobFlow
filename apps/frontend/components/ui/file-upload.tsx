@@ -39,8 +39,9 @@ export function FileUpload({ title, onFileChange }: FileUploadProps) {
       <h2 className="text-xl mb-4">{title}</h2>
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-6 cursor-pointer transition-colors ${isDragActive ? "border-green-500 bg-green-50" : "border-gray-300"
-          }`}
+        className={`border-2 border-dashed rounded-lg p-6 cursor-pointer transition-colors ${
+          isDragActive ? "border-green-500 bg-green-50" : "border-gray-300"
+        }`}
       >
         <input {...getInputProps()} />
         {file ? (

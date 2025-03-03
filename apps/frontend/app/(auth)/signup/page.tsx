@@ -44,9 +44,7 @@ export default function SignUpPage() {
       <AuroraBackground className="absolute inset-0 -z-10" />
       <div className="relative z-50 h-screen flex items-center justify-center">
         <div className="max-w-md w-full mx-auto rounded-none md:rounded-2xl p-4 md:p-8 shadow-input bg-white dark:bg-black">
-          <h2 className="font-bold text-xl text-neutral-800 dark:text-neutral-200">
-            Welcome to JobFlow
-          </h2>
+          <h2 className="font-bold text-xl text-neutral-800 dark:text-neutral-200">Welcome to JobFlow</h2>
           <p className="text-neutral-600 text-sm max-w-sm mt-2 dark:text-neutral-300">
             Sign up to JobFlow to start automating the job process!
           </p>
@@ -75,7 +73,7 @@ export default function SignUpPage() {
                 "relative group/btn w-full rounded-md h-10 font-medium flex justify-center items-center text-white",
                 isDark
                   ? "bg-gradient-to-br from-zinc-900 to-zinc-900 dark:bg-zinc-800"
-                  : "bg-gradient-to-br from-blue-500 to-blue-600"
+                  : "bg-gradient-to-br from-blue-500 to-blue-600",
               )}
               type="submit"
               disabled={loading}
@@ -131,12 +129,6 @@ const BottomGradient = () => {
   );
 };
 
-const LabelInputContainer = ({
-  children,
-  className,
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => {
+const LabelInputContainer = ({ children, className }: { children: React.ReactNode; className?: string }) => {
   return <div className={cn("flex flex-col space-y-2 w-full", className)}>{children}</div>;
 };

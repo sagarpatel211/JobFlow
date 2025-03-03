@@ -1,34 +1,47 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { LogOut, Minus, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { LogOut, Minus, Plus, Settings } from "lucide-react";
 import { signOut } from "next-auth/react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { HealthBarProps, ProgressItem } from "@/types/infobar";
 import { HoverBorderGradient } from "./hover-border-gradient";
 
 const HealthBar: React.FC<HealthBarProps> = ({ value, maxValue, color }) => (
   <div className="flex gap-[1px]">
     {Array.from({ length: maxValue }, (_, index) => (
-      <div key={index} className={`w-3 h-3 rounded-full ${index < value ? color : "bg-gray-700"}`} />
+      <div
+        key={index}
+        className={`w-3 h-3 rounded-full 
+                    ${index < value ? color : "bg-gray-300 dark:bg-gray-700"}`}
+      />
     ))}
   </div>
 );
 
 function HoverBorderGradientDemo() {
   return (
-    <div className="flex justify-center text-center">
+    <div className="justify-center text-center h-10 flex items-center">
       <HoverBorderGradient
         containerClassName="rounded-full"
         as="button"
-        className="dark:bg-black bg-white text-black dark:text-white flex items-center space-x-2"
+        className="bg-white dark:bg-black text-black dark:text-white flex items-center space-x-2 px-4 py-2 
+                   border border-gray-300 dark:border-gray-700 shadow-md dark:shadow-none 
+                   hover:bg-gray-100 dark:hover:bg-gray-900 transition-all duration-200"
       >
-        <span className="text-sm">Pro</span>
+        <span className="text-sm font-medium">Pro</span>
       </HoverBorderGradient>
     </div>
   );
 }
 
 const InfoBar = () => {
+  const router = useRouter();
   const [leetcodeDone, setLeetcodeDone] = useState(0);
   const [jobsApplied, setJobsApplied] = useState(0);
   const [behavioralDone, setBehavioralDone] = useState(0);
@@ -104,22 +117,34 @@ const InfoBar = () => {
           </div>
         ))}
       </div>
-      <div className="flex items-center gap-6">
+
+      <div className="flex items-center gap-4">
         <HoverBorderGradientDemo />
-        <TooltipProvider>
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger
-              onClick={() => {
-                void signOut();
-              }}
+
+        {/* Profile Dropdown Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger>
+            <img
+              src="https://i.pravatar.cc/100"
+              alt="Profile"
+              className="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-600 cursor-pointer"
+            />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="dark:bg-gray-800 bg-white border-gray-300 dark:border-gray-600 shadow-md rounded-md">
+            <DropdownMenuItem
+              onClick={() => router.push("/settings")}
+              className="flex items-center gap-2 cursor-pointer dark:hover:bg-gray-700 hover:bg-gray-100 p-2 rounded-md"
             >
-              <LogOut className="cursor-pointer text-gray-500 dark:hover:text-white hover:text-black" />
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Log Out</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+              <Settings size={16} /> Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => signOut()}
+              className="flex items-center gap-2 cursor-pointer dark:hover:bg-gray-700 hover:bg-gray-100 p-2 rounded-md"
+            >
+              <LogOut size={16} /> Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

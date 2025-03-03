@@ -58,7 +58,10 @@ const ApplicationPage = () => {
   return (
     <div className="flex flex-col gap-4 p-6">
       <h1 className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/50 p-6 text-4xl backdrop-blur-lg">
-        <span>Applications (have a section where if its not a generated resume or cover letter then the download button is disabled and on hover it explains why)</span>
+        <span>
+          Applications (have a section where if its not a generated resume or cover letter then the download button is
+          disabled and on hover it explains why)
+        </span>
       </h1>
 
       <Table>

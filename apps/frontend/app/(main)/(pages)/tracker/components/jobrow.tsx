@@ -15,20 +15,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
-export function JobRow({
-  job,
-  updateStatus,
-  togglePriority,
-  onModifyJob,
-  onArchiveJob,
-  onDeleteJob,
-}: JobRowProps) {
+export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchiveJob, onDeleteJob }: JobRowProps) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [generateResume, setGenerateResume] = useState(false);
   const [generateCoverLetter, setGenerateCoverLetter] = useState(false);
@@ -48,11 +37,7 @@ export function JobRow({
       // Copy job link to clipboard
       await navigator.clipboard.writeText(job.link);
       // Sending additional options with the message
-      if (
-        typeof chrome !== "undefined" &&
-        "runtime" in chrome &&
-        typeof chrome.runtime?.sendMessage === "function"
-      ) {
+      if (typeof chrome !== "undefined" && "runtime" in chrome && typeof chrome.runtime?.sendMessage === "function") {
         await new Promise<void>((resolve, reject) => {
           chrome.runtime.sendMessage(
             {
@@ -61,20 +46,14 @@ export function JobRow({
               options: { generateResume, generateCoverLetter },
             },
             (response) => {
-              if (
-                chrome.runtime.lastError !== undefined &&
-                typeof chrome.runtime.lastError.message === "string"
-              ) {
-                console.error(
-                  "Error sending message:",
-                  chrome.runtime.lastError.message
-                );
+              if (chrome.runtime.lastError !== undefined && typeof chrome.runtime.lastError.message === "string") {
+                console.error("Error sending message:", chrome.runtime.lastError.message);
                 reject(new Error(chrome.runtime.lastError.message));
               } else {
                 console.log("EXTRACT_JOB_INFO message sent", response);
                 resolve();
               }
-            }
+            },
           );
         });
       } else {
@@ -103,16 +82,10 @@ export function JobRow({
             <div className="w-[200px]">
               <div className="flex items-center truncate">
                 {job.company}
-                {job.priority && (
-                  <Star className="ml-1 h-4 w-4 text-amber-500" />
-                )}
-                {job.archived && (
-                  <Archive className="ml-1 h-4 w-4 text-gray-500" />
-                )}
+                {job.priority && <Star className="ml-1 h-4 w-4 text-amber-500" />}
+                {job.archived && <Archive className="ml-1 h-4 w-4 text-gray-500" />}
               </div>
-              <div className="text-xs text-muted-foreground truncate">
-                {job.title}
-              </div>
+              <div className="text-xs text-muted-foreground truncate">{job.title}</div>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -139,9 +112,7 @@ export function JobRow({
             ? (() => {
                 try {
                   const parsedDate = parse(job.postedDate);
-                  return isValid(parsedDate)
-                    ? format(parsedDate, "MMM d, yyyy")
-                    : "";
+                  return isValid(parsedDate) ? format(parsedDate, "MMM d, yyyy") : "";
                 } catch {
                   console.error("Invalid date format:", job.postedDate);
                   return "";
@@ -154,12 +125,7 @@ export function JobRow({
       </TableCell>
       <TableCell>
         <div className="max-w-[300px] truncate -mr-[48px]">
-          <a
-            href={job.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:underline"
-          >
+          <a href={job.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
             {job.link}
           </a>
         </div>

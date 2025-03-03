@@ -36,25 +36,15 @@ export const SubscriptionCard = ({ onPayment, products, tier }: Props) => {
               <CardContainer className="dm-sans w-full max-w-lg">
                 <PricingCard
                   title={product.nickname}
-                  price={
-                    product.nickname === "Free"
-                      ? "$0"
-                      : product.nickname === "Pro"
-                      ? "$29"
-                      : "$99"
-                  }
+                  price={product.nickname === "Free" ? "$0" : product.nickname === "Pro" ? "$29" : "$99"}
                   description={
                     product.nickname === "Unlimited"
                       ? "Enjoy a monthly torrent of credits flooding your account, empowering you to tackle even the most ambitious automation tasks effortlessly."
                       : product.nickname === "Pro"
-                      ? "Experience a monthly surge of credits to supercharge your automation efforts. Ideal for small to medium-sized projects seeking consistent support."
-                      : "Get a monthly wave of credits to automate your tasks with ease. Perfect for starters looking to dip their toes into Fuzzie's automation capabilities."
+                        ? "Experience a monthly surge of credits to supercharge your automation efforts. Ideal for small to medium-sized projects seeking consistent support."
+                        : "Get a monthly wave of credits to automate your tasks with ease. Perfect for starters looking to dip their toes into Fuzzie's automation capabilities."
                   }
-                  features={[
-                    "3 Free automations",
-                    "100 tasks per month",
-                    "Two-step Actions",
-                  ]}
+                  features={["3 Free automations", "100 tasks per month", "Two-step Actions"]}
                   primaryAction={{ label: "Get Started Now", path: "/signup" }}
                   secondaryAction={{ label: "Try now", path: "/signup" }}
                 />
@@ -64,25 +54,15 @@ export const SubscriptionCard = ({ onPayment, products, tier }: Props) => {
             <CardContainer className="dm-sans w-full max-w-lg">
               <PricingCard
                 title={product.nickname}
-                price={
-                  product.nickname === "Free"
-                    ? "$0"
-                    : product.nickname === "Pro"
-                    ? "$29"
-                    : "$99"
-                }
+                price={product.nickname === "Free" ? "$0" : product.nickname === "Pro" ? "$29" : "$99"}
                 description={
                   product.nickname === "Unlimited"
                     ? "Enjoy a monthly torrent of credits flooding your account, empowering you to tackle even the most ambitious automation tasks effortlessly."
                     : product.nickname === "Pro"
-                    ? "Experience a monthly surge of credits to supercharge your automation efforts. Ideal for small to medium-sized projects seeking consistent support."
-                    : "Get a monthly wave of credits to automate your tasks with ease. Perfect for starters looking to dip their toes into Fuzzie's automation capabilities."
+                      ? "Experience a monthly surge of credits to supercharge your automation efforts. Ideal for small to medium-sized projects seeking consistent support."
+                      : "Get a monthly wave of credits to automate your tasks with ease. Perfect for starters looking to dip their toes into Fuzzie's automation capabilities."
                 }
-                features={[
-                  "3 Free automations",
-                  "100 tasks per month",
-                  "Two-step Actions",
-                ]}
+                features={["3 Free automations", "100 tasks per month", "Two-step Actions"]}
                 primaryAction={{ label: "Get Started Now", path: "/signup" }}
                 secondaryAction={{ label: "Try now", path: "/signup" }}
               />
