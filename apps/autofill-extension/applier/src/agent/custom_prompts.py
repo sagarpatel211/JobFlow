@@ -43,7 +43,9 @@ class CustomSystemPrompt(SystemPrompt):
        {"go_to_url": {"url": "https://example.com"}},
        {"extract_page_content": {}}
      ]
-
+   - File upload: [
+       {"upload_file": {"index": 4, "file_path": "path/to/file"}}
+     ]
 
 3. ELEMENT INTERACTION:
    - Only use indexes that exist in the provided element list

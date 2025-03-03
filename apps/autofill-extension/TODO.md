@@ -40,3 +40,9 @@ fix home page so no gpt api key
 
 // ADD A SECTION THAT SAYS "UPDATE PERSONAL INFO" ON JOBFLOW TO REFLLECT THE CURRENT INFO ON THE EXTENSION. ADD A TOGGLE TO CREATE NEW RESUME AND COVER LETTER. PLAN HOW THE ENTIRE PROCESS WILL WORK CUZ IF IT UPDATES WILL WE CREATE A NEW RESUME WHEN AUTOAPPLYING? HOW CAN THE USER MAKE SURE THE RESUME IS GOOD, ETC.
 
+
+
+
+make an automated script and make a readme 
+that mentions about edge://version/
+or chrome://version/ and how to get the user path and user data path

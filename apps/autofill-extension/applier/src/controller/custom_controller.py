@@ -4,6 +4,7 @@ import pyperclip
 from typing import Optional, Type
 from pydantic import BaseModel
 from browser_use.agent.views import ActionResult
+from browser_use.browser.views import BrowserState
 from browser_use.browser.context import BrowserContext
 from browser_use.controller.service import Controller, DoneAction
 from main_content_extractor import MainContentExtractor
@@ -47,3 +48,23 @@ class CustomController(Controller):
             await page.keyboard.type(text)
 
             return ActionResult(extracted_content=text)
+
+        @self.registry.action("upload_file")
+        async def upload_file(browser: BrowserContext, index: int):
+            page = await browser.get_current_page()
+            file_buttons = await page.query_selector_all("button:has-text('Select file')")
+            if not file_buttons:
+                print("\033[31mNo file upload button found.\033[0m")
+                return ActionResult(extracted_content=None, error="No file upload button found.", is_done=False)
+            if index < 0 or index >= len(file_buttons):
+                print("\033[31mProvided index %s out of range, using index 0 instead.\033[0m" % index)
+                index = 0
+            file_button = file_buttons[index]
+            print("\033[31mClicking file upload button at index %s\033[0m" % index)
+            async with page.expect_file_chooser() as fc_info:
+                await file_button.click(no_wait_after=True)
+            file_chooser = await fc_info.value
+            print("\033[31mFile chooser event captured. Uploading file 'C:\\Users\\Sagar\\Downloads\\1.pdf'\033[0m")
+            await file_chooser.set_files("C:\\Users\\Sagar\\Downloads\\1.pdf")
+            print("\033[31mFile upload complete.\033[0m")
+            return ActionResult(extracted_content="1.pdf", error=None, is_done=False)
