@@ -39,9 +39,8 @@ export function FileUpload({ title, onFileChange }: FileUploadProps) {
       <h2 className="text-xl mb-4">{title}</h2>
       <div
         {...getRootProps()}
-        className={`border-2 border-dashed rounded-lg p-6 cursor-pointer transition-colors ${
-          isDragActive ? "border-green-500 bg-green-50" : "border-gray-300"
-        }`}
+        className={`border-2 border-dashed rounded-lg p-6 cursor-pointer transition-colors ${isDragActive ? "border-green-500 bg-green-50" : "border-gray-300"
+          }`}
       >
         <input {...getInputProps()} />
         {file ? (
@@ -60,7 +59,7 @@ export function FileUpload({ title, onFileChange }: FileUploadProps) {
       </div>
       {file && progress < 100 && (
         <div className="mt-4">
-          <Progress value={progress} className="w-full h-2 bg-gray-600">
+          <Progress value={progress} className="w-full h-2 bg-gray-300 dark:bg-gray-600">
             <div
               className="h-full bg-green-500 transition-all duration-300 ease-in-out"
               style={{ width: `${progress.toString()}%` }}
