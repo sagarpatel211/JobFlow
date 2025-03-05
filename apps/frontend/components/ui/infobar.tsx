@@ -118,7 +118,7 @@ const InfoBar = () => {
         ))}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-x-6">
         <HoverBorderGradientDemo />
 
         {/* Profile Dropdown Menu */}

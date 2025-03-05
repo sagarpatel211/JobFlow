@@ -4,7 +4,7 @@ import { CardBody, CardItem } from "@/components/ui/3d-card";
 import { CheckIcon } from "lucide-react";
 import { PricingCardProps } from "@/types/pricing";
 
-const PricingCard = ({ title, price, description, features, primaryAction, secondaryAction }: PricingCardProps) => {
+const PricingCard = ({ title, price, description, features, primaryAction, secondaryAction, active }: PricingCardProps) => {
   const router = useRouter();
 
   return (
@@ -24,24 +24,34 @@ const PricingCard = ({ title, price, description, features, primaryAction, secon
           ))}
         </ul>
       </CardItem>
-      <div className="flex justify-between items-center mt-8">
-        <button
-          onClick={() => {
-            router.push(secondaryAction.path);
-          }}
-          className="px-4 py-2 rounded-xl text-xs font-normal dark:text-white"
-        >
-          {secondaryAction.label} →
-        </button>
-        <button
-          onClick={() => {
-            router.push(primaryAction.path);
-          }}
-          className="px-4 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-xs font-bold"
-        >
-          {primaryAction.label}
-        </button>
-      </div>
+
+      {(primaryAction || secondaryAction) && (
+        <div className="flex justify-between items-center mt-8">
+          {secondaryAction && (
+            <button
+              onClick={() => router.push(secondaryAction.path)}
+              className="px-4 py-2 rounded-xl text-xs font-normal dark:text-white"
+            >
+              {secondaryAction.label} →
+            </button>
+          )}
+          {primaryAction && (
+            <button
+              onClick={() => {
+                if (!active) router.push(primaryAction.path);
+              }}
+              disabled={active}
+              className={`px-4 py-2 rounded-xl text-xs font-bold ${
+                active
+                  ? "bg-gray-400 dark:bg-gray-600 text-white cursor-not-allowed"
+                  : "bg-black dark:bg-white dark:text-black text-white"
+              }`}
+            >
+              {active ? "Active Plan" : primaryAction.label}
+            </button>
+          )}
+        </div>
+      )}
     </CardBody>
   );
 };
