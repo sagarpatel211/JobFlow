@@ -69,8 +69,7 @@ const CoverLetterForm = () => {
             <div className="flex flex-col gap-2">
               <Progress value={50} className="h-4" />
               <p className="text-sm text-muted-foreground">
-                ATS Score: 50%. This score indicates that your profile partially matches the job posting
-                requirements.
+                ATS Score: 50%. This score indicates that your profile partially matches the job posting requirements.
               </p>
             </div>
             <Button variant="destructive" onClick={handleClear}>

@@ -4,7 +4,15 @@ import { CardBody, CardItem } from "@/components/ui/3d-card";
 import { CheckIcon } from "lucide-react";
 import { PricingCardProps } from "@/types/pricing";
 
-const PricingCard = ({ title, price, description, features, primaryAction, secondaryAction, active }: PricingCardProps) => {
+const PricingCard = ({
+  title,
+  price,
+  description,
+  features,
+  primaryAction,
+  secondaryAction,
+  active,
+}: PricingCardProps) => {
   const router = useRouter();
 
   return (

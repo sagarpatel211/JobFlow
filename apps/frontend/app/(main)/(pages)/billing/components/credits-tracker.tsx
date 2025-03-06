@@ -15,8 +15,7 @@ type CreditTrackerProps = {
 };
 
 const CreditTracker = ({ interviews, generations, aiApplier }: CreditTrackerProps) => {
-  const getPercentage = (credit: CreditInfo) =>
-    credit.max === "Unlimited" ? 100 : (credit.used / credit.max) * 100;
+  const getPercentage = (credit: CreditInfo) => (credit.max === "Unlimited" ? 100 : (credit.used / credit.max) * 100);
 
   const renderCreditRow = (label: string, credit: CreditInfo, defaultColor: string) => {
     const progressClasses =
@@ -28,9 +27,7 @@ const CreditTracker = ({ interviews, generations, aiApplier }: CreditTrackerProp
       <div className="flex flex-col">
         <div className="flex items-center justify-between">
           <span className="text-sm font-bold">{label}</span>
-          <span className="text-sm">
-            {credit.max === "Unlimited" ? "Unlimited" : `${credit.used}/${credit.max}`}
-          </span>
+          <span className="text-sm">{credit.max === "Unlimited" ? "Unlimited" : `${credit.used}/${credit.max}`}</span>
         </div>
         <Progress value={getPercentage(credit)} className={progressClasses} />
       </div>

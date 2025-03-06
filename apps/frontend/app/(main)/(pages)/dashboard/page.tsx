@@ -28,7 +28,7 @@ const DashboardPage = () => {
   return (
     <div className="flex flex-col min-h-3.5 bg-background">
       <h1 className="text-4xl sticky top-0 z-[10] p-6 bg-background/50 backdrop-blur-lg flex items-center border-b shadow-md">
-        Dashboard
+        Dashboard (add a graph that shows lifetime of jobs applied, interviews, offers, etc.)
       </h1>
       <div className="flex-grow grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8 p-4 md:p-8 auto-rows-fr">
         {tasks.map((task, index) => (

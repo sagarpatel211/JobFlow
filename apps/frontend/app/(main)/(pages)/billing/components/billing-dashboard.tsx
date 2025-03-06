@@ -3,13 +3,13 @@ import React from "react";
 import { SubscriptionCard } from "./subscription-card";
 import CreditTracker from "./credits-tracker";
 import ApplyDiscount from "./apply-discounts";
-import toast, { Toaster } from 'react-hot-toast';
+import toast, { Toaster } from "react-hot-toast";
 import { useTheme } from "next-themes";
 
 const BillingDashboard = () => {
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  
+
   const dummyProducts = [
     { id: "1", nickname: "Free" },
     { id: "2", nickname: "Pro" },
@@ -20,18 +20,16 @@ const BillingDashboard = () => {
     console.log("Initiating payment for product:", productId);
   };
 
-  
-
   return (
     <>
       <Toaster
-              toastOptions={{
-                style: {
-                  background: isDark ? "#333" : "#fff",
-                  color: isDark ? "#fff" : "#000",
-                },
-              }}
-            />
+        toastOptions={{
+          style: {
+            background: isDark ? "#333" : "#fff",
+            color: isDark ? "#fff" : "#000",
+          },
+        }}
+      />
       <div className="flex gap-10 p-6 items-start">
         {/* Left column: Subscriptions */}
         <div className="w-2/3 flex flex-col gap-6">

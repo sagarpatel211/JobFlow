@@ -13,17 +13,16 @@ import {
   useSensors,
   useDroppable,
 } from "@dnd-kit/core";
-import {
-  SortableContext,
-  verticalListSortingStrategy,
-  arrayMove,
-  useSortable,
-} from "@dnd-kit/sortable";
+import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-// Hypothetical import from a client-side TeX Live compilation library
-// e.g., an NPM package or local utility that wraps texlive.js
-// import { texliveCompile } from "@/lib/texCompiler"; 
+// Import shadcn dropdown components
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 // --- Types ---
 export interface ResumeComponent {
@@ -72,10 +71,36 @@ const initialData: ContainersType = {
   ],
 };
 
+// --- SectionDropdown Component ---
+// Minimalist shadcn dropdown for each section
+const SectionDropdown = ({ sectionId }: { sectionId: string }) => {
+  const handleAction = (action: string) => {
+    console.log(`Action "${action}" selected for section ${sectionId}`);
+    // Here you can add your AI processing logic
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger className="p-1">
+        {/* Simple vertical dots icon */}
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 3a2 2 0 110-4 2 2 0 010 4zm0 3a2 2 0 110-4 2 2 0 010 4z" />
+        </svg>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="min-w-[200px]">
+        <DropdownMenuItem onClick={() => handleAction("Longer with AI")}>Longer with AI</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleAction("Shorten with AI")}>Shorten with AI</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => handleAction("Perfect ATS based on Job posting")}>
+          Perfect ATS based on Job posting
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
 // --- SortableItem ---
 const SortableItem = ({ id, title, content }: ResumeComponent) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -88,8 +113,12 @@ const SortableItem = ({ id, title, content }: ResumeComponent) => {
       style={style}
       {...attributes}
       {...listeners}
-      className="p-4 mb-2 cursor-move"
+      className="p-4 mb-2 cursor-move relative" // Added relative for absolute positioning
     >
+      {/* Dropdown in top-right corner */}
+      <div className="absolute top-2 right-2">
+        <SectionDropdown sectionId={id} />
+      </div>
       <Label className="font-bold">{title}</Label>
       <p className="text-sm whitespace-pre-wrap">{content}</p>
     </Card>
@@ -107,12 +136,13 @@ const ItemOverlay = ({ item }: { item: ResumeComponent }) => {
 };
 
 // --- DroppableZone ---
-const DroppableZone: React.FC<{ id: string; children: React.ReactNode }> = ({
-  id,
-  children,
-}) => {
+const DroppableZone: React.FC<{ id: string; children: React.ReactNode }> = ({ id, children }) => {
   const { setNodeRef } = useDroppable({ id });
-  return <div ref={setNodeRef} className="min-h-[100px]">{children}</div>;
+  return (
+    <div ref={setNodeRef} className="min-h-[100px]">
+      {children}
+    </div>
+  );
 };
 
 // --- ResumeBuilder ---
@@ -149,11 +179,9 @@ const ResumeBuilder = ({ onChange }: ResumeBuilderProps) => {
     if (!over) return;
 
     const activeContainer = Object.keys(containers).find((key) =>
-      containers[key].some((item) => item.id === active.id)
+      containers[key].some((item) => item.id === active.id),
     );
-    let overContainer = Object.keys(containers).find((key) =>
-      containers[key].some((item) => item.id === over.id)
-    );
+    let overContainer = Object.keys(containers).find((key) => containers[key].some((item) => item.id === over.id));
     if (!overContainer) {
       if (over.id === "main-zone") overContainer = "main";
       else if (over.id === "holding-zone") overContainer = "holding";
@@ -172,15 +200,11 @@ const ResumeBuilder = ({ onChange }: ResumeBuilderProps) => {
       });
     } else {
       // Moving to a different container.
-      const activeItem = containers[activeContainer].find(
-        (item) => item.id === active.id
-      );
+      const activeItem = containers[activeContainer].find((item) => item.id === active.id);
       if (!activeItem) return;
       updateContainers({
         ...containers,
-        [activeContainer]: containers[activeContainer].filter(
-          (item) => item.id !== active.id
-        ),
+        [activeContainer]: containers[activeContainer].filter((item) => item.id !== active.id),
         [overContainer]: [...containers[overContainer], activeItem],
       });
     }
@@ -199,10 +223,7 @@ const ResumeBuilder = ({ onChange }: ResumeBuilderProps) => {
         <div className="border rounded-lg p-4 min-h-[300px]">
           <h3 className="font-semibold mb-2">Main Resume Components</h3>
           <DroppableZone id="main-zone">
-            <SortableContext
-              items={containers.main.map((item) => item.id)}
-              strategy={verticalListSortingStrategy}
-            >
+            <SortableContext items={containers.main.map((item) => item.id)} strategy={verticalListSortingStrategy}>
               {containers.main.map((item) => (
                 <SortableItem key={item.id} {...item} />
               ))}
@@ -212,10 +233,7 @@ const ResumeBuilder = ({ onChange }: ResumeBuilderProps) => {
         <div className="border rounded-lg p-4 min-h-[150px]">
           <h3 className="font-semibold mb-2">Holding Zone (Unused Components)</h3>
           <DroppableZone id="holding-zone">
-            <SortableContext
-              items={containers.holding.map((item) => item.id)}
-              strategy={verticalListSortingStrategy}
-            >
+            <SortableContext items={containers.holding.map((item) => item.id)} strategy={verticalListSortingStrategy}>
               {containers.holding.map((item) => (
                 <SortableItem key={item.id} {...item} />
               ))}
@@ -223,31 +241,25 @@ const ResumeBuilder = ({ onChange }: ResumeBuilderProps) => {
           </DroppableZone>
         </div>
       </div>
-      <DragOverlay>
-        {activeId && getItemById(activeId) && (
-          <ItemOverlay item={getItemById(activeId)!} />
-        )}
-      </DragOverlay>
+      <DragOverlay>{activeId && getItemById(activeId) && <ItemOverlay item={getItemById(activeId)!} />}</DragOverlay>
     </DndContext>
   );
 };
 
 // --- PDF Generation Helpers ---
 
-// 1) Build a LaTeX document from resume data.
+// Build a LaTeX document from resume data.
 const generateLatexFromResume = (data: ContainersType): string => {
   let latex = `
 \\documentclass{article}
 \\usepackage[margin=1in]{geometry}
 \\begin{document}
 `;
-  // For each "zone" (like main/holding), we can create sections or skip the "holding" if you only want the main
-  // For demonstration, let's transform every container into a separate section
+  // For each "zone", transform into a section.
   for (const zone of Object.keys(data)) {
     latex += `\\section*{${zone.toUpperCase()}}\n`;
     data[zone].forEach((comp) => {
       latex += `\\subsection*{${comp.title}}\n`;
-      // Convert newlines to LaTeX line breaks
       latex += comp.content.replace(/\n/g, "\\\\") + "\n\n";
     });
   }
@@ -255,35 +267,30 @@ const generateLatexFromResume = (data: ContainersType): string => {
   return latex;
 };
 
-// 2) Actually compile the LaTeX to a PDF with a real client-side LaTeX compiler
-//    E.g., from texlive.js or another WASM-based approach.
-const compileLatexToPDF = async (latex: string): Promise<Uint8Array> => {
-  // Here is where you'd call your actual compile method. For example:
-  // const pdfBytes = await texliveCompile(latex);
-  // return pdfBytes;
-
-  throw new Error("No actual compiler implemented. Add your WASM TeX library here!");
-};
-
 // --- ResumeSection Component ---
 const ResumeSection = () => {
   const [resumeData, setResumeData] = useState<ContainersType>(initialData);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [compiling, setCompiling] = useState(false);
-
-  // Debounce: track a timer to avoid immediate regeneration on every drag
+  const [selectedCompiler, setSelectedCompiler] = useState<string>("pdflatex");
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
 
   const handleResumeChange = useCallback((data: ContainersType) => {
     setResumeData(data);
   }, []);
 
+  // Call our server-side PDF generation endpoint.
   const generatePDF = async () => {
     setCompiling(true);
     const latex = generateLatexFromResume(resumeData);
     try {
-      const pdfBytes = await compileLatexToPDF(latex);
-      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const response = await fetch("/api/compile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ latex, compiler: selectedCompiler }),
+      });
+      if (!response.ok) throw new Error("Server error");
+      const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       setPdfUrl(url);
     } catch (err) {
@@ -294,7 +301,7 @@ const ResumeSection = () => {
     }
   };
 
-  // Whenever resumeData changes, wait 500ms, then compile.
+  // Debounce PDF generation on resumeData or compiler changes.
   useEffect(() => {
     if (debounceTimer) clearTimeout(debounceTimer);
 
@@ -303,27 +310,32 @@ const ResumeSection = () => {
     }, 500);
     setDebounceTimer(newTimer);
 
-    return () => {
-      if (newTimer) clearTimeout(newTimer);
-    };
-  }, [resumeData]);
+    return () => clearTimeout(newTimer);
+  }, [resumeData, selectedCompiler]);
 
   return (
     <div className="p-6">
       <div className="w-full flex flex-col gap-4">
         <div className="flex gap-4">
           <div className="flex-1">
-            {/* The ResumeBuilder. All changes flow up via handleResumeChange */}
             <ResumeBuilder onChange={handleResumeChange} />
           </div>
           <div className="flex-1 border border-dashed rounded-lg p-4 min-h-[300px] flex flex-col">
-            <span className="text-center mb-2">Resume PDF Preview</span>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-center">Resume PDF Preview</span>
+              {/* LaTeX Compiler Dropdown */}
+              <select
+                value={selectedCompiler}
+                onChange={(e) => setSelectedCompiler(e.target.value)}
+                className="border rounded p-1"
+              >
+                <option value="pdflatex">pdfLaTeX</option>
+                <option value="xelatex">XeLaTeX</option>
+                <option value="lualatex">LuaLaTeX</option>
+              </select>
+            </div>
             {pdfUrl ? (
-              <iframe
-                src={pdfUrl}
-                title="Resume PDF"
-                className="w-full h-full border"
-              />
+              <iframe src={pdfUrl} title="Resume PDF" className="w-full h-full border" />
             ) : (
               <div className="flex flex-col items-center justify-center h-full">
                 {compiling ? <span>Compiling PDF...</span> : <span>No PDF generated yet.</span>}
