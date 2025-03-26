@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import toast from "react-hot-toast";
 
 export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchiveJob, onDeleteJob }: JobRowProps) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
@@ -30,6 +31,24 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
   };
   const onBlacklistCompany = (company: string) => {
     console.log("Blacklist company:", company);
+  
+    toast((t) => (
+      <div className="w-[400px] flex items-center">
+        <div className="flex-1 truncate whitespace-nowrap">
+          Blacklisted <b>{company}</b>
+        </div>
+        <Button
+          variant="link"
+          className="ml-2 text-blue-500 underline shrink-0"
+          onClick={() => {
+            // Add your undo logic here if needed
+            toast.dismiss(t.id);
+          }}
+        >
+          Undo
+        </Button>
+      </div>
+    ), { duration: 5000 });
   };
 
   const handleSubmitAI = async () => {
@@ -87,22 +106,24 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
               </div>
               <div className="text-xs text-muted-foreground truncate">{job.title}</div>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem
-                  onClick={() => {
-                    onBlacklistCompany(job.company);
-                  }}
-                >
-                  Blacklist Company
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-1">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" sideOffset={-14}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      onBlacklistCompany(job.company);
+                    }}
+                  >
+                    Blacklist Company
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </div>
       </TableCell>
@@ -110,14 +131,14 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
         title={
           job.postedDate && typeof job.postedDate === "string"
             ? (() => {
-                try {
-                  const parsedDate = parse(job.postedDate);
-                  return isValid(parsedDate) ? format(parsedDate, "MMM d, yyyy") : "";
-                } catch {
-                  console.error("Invalid date format:", job.postedDate);
-                  return "";
-                }
-              })()
+              try {
+                const parsedDate = parse(job.postedDate);
+                return isValid(parsedDate) ? format(parsedDate, "MMM d, yyyy") : "";
+              } catch {
+                console.error("Invalid date format:", job.postedDate);
+                return "";
+              }
+            })()
             : ""
         }
       >
@@ -144,7 +165,6 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
               rel="noopener noreferrer"
               className="group relative inline-flex h-8 overflow-hidden rounded-md p-[2px] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-50"
               onClick={(e) => {
-                // Prevent default navigation and open the popover instead
                 e.preventDefault();
                 setIsPopoverOpen(true);
               }}
@@ -175,22 +195,57 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
         </Popover>
       </TableCell>
       <TableCell className="pr-2">
-        <JobActions
-          priority={job.priority}
-          onTogglePriority={() => {
-            togglePriority(job.id);
-          }}
-          onModify={() => {
-            if (onModifyJob) onModifyJob(job.id);
-          }}
-          onArchive={() => {
-            if (onArchiveJob) onArchiveJob(job.id);
-          }}
-          onDelete={() => {
-            if (onDeleteJob) onDeleteJob(job.id);
-          }}
-        />
-      </TableCell>
+  <JobActions
+    priority={job.priority}
+    onTogglePriority={() => {
+      togglePriority(job.id);
+    }}
+    onModify={() => {
+      onModifyJob(job.id);
+    }}
+    onArchive={() => {
+      // onArchiveJob(job.id);
+      toast((t) => (
+        <div className="w-[400px] flex items-center">
+          <div className="flex-1 truncate whitespace-nowrap">
+            Archived <b>{job.title} @ {job.company}</b>
+          </div>
+          <Button
+            variant="link"
+            className="ml-2 text-blue-500 underline shrink-0"
+            onClick={() => {
+              // onUpdateJob(job.id, { archived: false });
+              toast.dismiss(t.id);
+            }}
+          >
+            Undo
+          </Button>
+        </div>
+      ), { duration: 7000 });
+    }}
+    onDelete={() => {
+      // onDeleteJob(job.id);
+      toast((t) => (
+        <div className="w-[400px] flex items-center">
+          <div className="flex-1 truncate whitespace-nowrap">
+            Deleted <b>{job.title} @ {job.company}</b>
+          </div>
+          <Button
+            variant="link"
+            className="ml-2 text-blue-500 underline shrink-0"
+            onClick={() => {
+              // onUpdateJob(job.id, { deleted: false });
+              toast.dismiss(t.id);
+            }}
+          >
+            Undo
+          </Button>
+        </div>
+      ), { duration: 7000 });
+    }}
+  />
+</TableCell>
+
     </TableRow>
   );
 }

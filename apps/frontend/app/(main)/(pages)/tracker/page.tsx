@@ -6,6 +6,8 @@ import { format } from "date-fns";
 import PaginationControls from "@/app/(main)/(pages)/tracker/components/pagination";
 import JobToolbar from "@/app/(main)/(pages)/tracker/components/jobtoolbar";
 import { Job } from "@/types/job";
+import { Toaster } from "react-hot-toast";
+import { useTheme } from "next-themes";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -98,6 +100,7 @@ const TrackerPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalJobs, setTotalJobs] = useState(0);
   const [jobs, setJobs] = useState(initialJobs);
+  const { theme } = useTheme();
 
   const totalPages = Math.ceil(totalJobs / ITEMS_PER_PAGE);
 
@@ -147,8 +150,20 @@ const TrackerPage = () => {
   const handleCancelModifyJob = (id: number) => {
     setJobs((prevJobs) => prevJobs.filter((job) => job.id !== id));
   };
+  const isDark = theme === "dark";
 
   return (
+    <>
+    <Toaster
+  toastOptions={{
+    style: {
+      maxWidth: "500px",
+      background: isDark ? "#111" : "#fff",
+      color: isDark ? "#fff" : "#000",
+      border: isDark ? "1px solid #333" : "1px solid #ddd",
+    },
+  }}
+/>
     <div className="flex flex-col gap-4 relative">
       <h1 className="text-sm sticky top-0 z-[10] p-6 bg-background/50 backdrop-blur-lg flex items-center border-b">
         Tracker (DO THESE https://chatgpt.com/c/67aff962-9138-8011-899e-158f73e29f84 hover row to add labels, and track
@@ -169,7 +184,8 @@ const TrackerPage = () => {
         usability. ALSO MAKE IT SO WHEN WE CLICK FILL WITH AI IT PUTS IN QUEUE ON THIS SCREEN AND THE APPLICATION
         SCREEN. add tags for the jobs and make it so we can filter by tags.
         https://chatgpt.com/c/67c0a1ac-6ddc-8011-bede-6a82cd70f5ed also add an email service that users could
-        potentially subscribe to so it will tell them what jobs were applied to today
+        potentially subscribe to so it will tell them what jobs were applied to today. add tags so we can search by something like important tag
+        or remote or big tech
       </h1>
 
       <JobToolbar
@@ -201,6 +217,7 @@ const TrackerPage = () => {
         onNext={goToNextPage}
       />
     </div>
+    </>
   );
 };
 
