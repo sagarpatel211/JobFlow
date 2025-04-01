@@ -5,33 +5,65 @@ This document outlines the architecture of the **Job Scraper and Tracker** proje
 ## **High-Level Architecture**
 
 ```
-                +-----------------------+
-                |       Frontend        |
-                |     (Next.js)         |
-                +----------+------------+
-                           |
-                           v
-                +----------+------------+
-                |   API Gateway (GraphQL) |
-                |     (Apollo Server)     |
-                +----------+------------+
-                           |
-        +------------------+------------------+
-        |                                     |
-        v                                     v
-+-------------------+          +---------------------------+
-|    Job Tracker    |          |      Job Scraper          |
-| (tRPC Microservice)|          | (Airflow + Scrapy + Kafka)|
-+-------------------+          +---------------------------+
-        |                                     |
-        v                                     v
-+-------------------+          +---------------------------+
-|      Database     |          |     Data Pipeline         |
-| (PostgreSQL +     |          |  (Kafka, S3, Spark)       |
-|  Elasticsearch)   |          +---------------------------+
-+-------------------+
+                              +-------------------------------+
+                              |          Frontend             |
+                              |         (Next.js 13+)         |
+                              |    - App Router (SSR)         |
+                              |    - Server Components        |
+                              |    - Auth (NextAuth)          |
+                              +-------------------------------+
+                                          |
+                                          v
+                              +-------------------------------+
+                              |   GraphQL API Gateway (Go)    |
+                              |    - gqlgen schema             |
+                              |    - REST proxy to services    |
+                              |    - Auth/session validation   |
+                              +-------------------------------+
+                                          |
+                 +------------------------+-------------------------+
+                 |                                                  |
+                 v                                                  v
+     +--------------------------+                      +-----------------------------+
+     |   Job Tracker Service    |                      |   Job Scraper Pipeline      |
+     |   - Tracker logic        |                      |   - Scrapy (Python)         |
+     |   - GraphQL mutations    |                      |   - Scheduled via Cron/Job  |
+     |   - Reads from DB        |                      |   - Emits to Kafka topic    |
+     +--------------------------+                      +-----------------------------+
+                 |                                                  |
+                 v                                                  |
+     +--------------------------+                        +----------------------------+
+     |     PostgreSQL Database   | <--------------------- | Kafka (job scraping topic) |
+     |   - Users / Jobs / Tracker|                        +----------------------------+
+     |   - Session data          |
+     +--------------------------+
+                 |
+                 v
+     +--------------------------+
+     |     Redis Cache Layer    |
+     |   - Sessions / lookups   |
+     +--------------------------+
+                 |
+                 v
+     +--------------------------+
+     |   Elasticsearch Cluster  |
+     |   - Full-text job search |
+     |   - Search filters       |
+     +--------------------------+
+
+                                          |
+                                          v
+                               +----------------------------+
+                               |  File Storage (e.g., S3)   |
+                               |  - Resumes / Transcripts   |
+                               +----------------------------+
 
 
+                                      Monitoring & Logging
+                                      +--------------------+
+                                      |  Grafana + PromQL  |
+                                      |  Loki / Elastic     |
+                                      +--------------------+
 
 ```
 
