@@ -1,3 +1,15 @@
+# Step by Step TODO
+- [ ] remove application page
+- [ ] add application column with ats, application and resume+cover letter with option to uplaod to tracker
+- [ ] add stats below the tracker table
+- [ ] finish auto generation of resume and cover letter tool
+- [ ] clean up dashboard and remove sidebar animation
+- [ ] get server side rendering working for all pages by mocking the api calls
+- [ ] build the frontend fully and host it to begin working on backend
+
+
+
+
 set up chrome browser and info path given in the readme of the web-ui repo (https://chatgpt.com/c/67c51d3b-0e54-8011-8aff-e7ca348c0e29)
 
 # Files to Update

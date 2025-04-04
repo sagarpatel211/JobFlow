@@ -1,5 +1,4 @@
 "use client";
-
 import { JobTable } from "@/app/(main)/(pages)/tracker/components/jobtable";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -8,8 +7,9 @@ import JobToolbar from "@/app/(main)/(pages)/tracker/components/jobtoolbar";
 import { Job } from "@/types/job";
 import { Toaster } from "react-hot-toast";
 import { useTheme } from "next-themes";
+import { ChartsSection } from "./components/chartsection";
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 4;
 
 const initialJobs: Job[] = [
   {
@@ -92,6 +92,16 @@ const initialJobs: Job[] = [
   },
 ];
 
+const statusCounts = {
+  "Nothing Done": 2,
+  Applying: 3,
+  Applied: 4,
+  OA: 1,
+  Interview: 2,
+  Offer: 1,
+  Rejected: 100,
+};
+
 const TrackerPage = () => {
   const [sortBy, setSortBy] = useState("date");
   const [groupByCompany, setGroupByCompany] = useState(false);
@@ -104,12 +114,8 @@ const TrackerPage = () => {
 
   const totalPages = Math.ceil(totalJobs / ITEMS_PER_PAGE);
 
-  const goToNextPage = () => {
-    setCurrentPage((prev) => Math.min(prev + 1, totalPages));
-  };
-  const goToPrevPage = () => {
-    setCurrentPage((prev) => Math.max(prev - 1, 1));
-  };
+  const goToNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+  const goToPrevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
 
   const handleAddNewJob = () => {
     const newJob = {
@@ -150,73 +156,59 @@ const TrackerPage = () => {
   const handleCancelModifyJob = (id: number) => {
     setJobs((prevJobs) => prevJobs.filter((job) => job.id !== id));
   };
+
   const isDark = theme === "dark";
 
   return (
     <>
-    <Toaster
-  toastOptions={{
-    style: {
-      maxWidth: "500px",
-      background: isDark ? "#111" : "#fff",
-      color: isDark ? "#fff" : "#000",
-      border: isDark ? "1px solid #333" : "1px solid #ddd",
-    },
-  }}
-/>
-    <div className="flex flex-col gap-4 relative">
-      <h1 className="text-sm sticky top-0 z-[10] p-6 bg-background/50 backdrop-blur-lg flex items-center border-b">
-        Tracker (DO THESE https://chatgpt.com/c/67aff962-9138-8011-899e-158f73e29f84 hover row to add labels, and track
-        application). The AI should be designed to queue applications when the Fill button is clicked, rather than
-        applying immediately. This ensures that applications are only submitted to major companies, allowing me to
-        quickly skim through them and decide which ones to finalize. The system should automatically add a new row in
-        the applications page with a Queued tag, making it easy to review and submit later with a polished resume and
-        cover letter. Additionally, it should record all actions by screen recording and attaching the footage to each
-        application, providing a transparent history of how the process works. To efficiently manage the job tracker,
-        which will contain up to 10,000 listings, stale postings should disappear while important ones remain at the
-        top, sorted by LinkedIn followers. However, managing such a large volume of jobs still poses a challenge. The AI
-        should explore advanced filtering techniques to avoid manual sorting. A possible solution is an auto-archive
-        setting for jobs older than five days, but this alone may not be sufficient. While auto-deleting listings after
-        30 days could help, it poses a risk—some employers might reach out months later, making it crucial to retain
-        relevant postings. A better approach needs to be developed, possibly involving an intelligent archiving system
-        that prioritizes important opportunities without excessive clutter. Lastly, GPT should be consulted for
-        additional features on the application page, helping refine the system further to improve efficiency and
-        usability. ALSO MAKE IT SO WHEN WE CLICK FILL WITH AI IT PUTS IN QUEUE ON THIS SCREEN AND THE APPLICATION
-        SCREEN. add tags for the jobs and make it so we can filter by tags.
-        https://chatgpt.com/c/67c0a1ac-6ddc-8011-bede-6a82cd70f5ed also add an email service that users could
-        potentially subscribe to so it will tell them what jobs were applied to today. add tags so we can search by something like important tag
-        or remote or big tech
-      </h1>
+      <Toaster
+        toastOptions={{
+          style: {
+            maxWidth: "500px",
+            background: isDark ? "#111" : "#fff",
+            color: isDark ? "#fff" : "#000",
+            border: isDark ? "1px solid #333" : "1px solid #ddd",
+          },
+        }}
+      />
 
-      <JobToolbar
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-        groupByCompany={groupByCompany}
-        setGroupByCompany={setGroupByCompany}
-        showArchived={showArchived}
-        setShowArchived={setShowArchived}
-        showPriorityOnly={showPriorityOnly}
-        setShowPriorityOnly={setShowPriorityOnly}
-        onAddNewJob={handleAddNewJob}
-      />
-      <div className="mx-4">
-        <JobTable
-          jobs={jobs}
-          currentPage={currentPage}
-          itemsPerPage={ITEMS_PER_PAGE}
-          setTotalJobs={setTotalJobs}
-          onUpdateJob={handleUpdateJob}
-          onSaveJob={handleSaveJob}
-          onCancelModifyJob={handleCancelModifyJob}
+      <div className="flex flex-col gap-4 relative">
+        <h1 className="sticky top-0 z-[10] flex items-center justify-between border-b bg-background/50 p-6 text-4xl backdrop-blur-lg">
+          Tracker
+        </h1>
+
+        <JobToolbar
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          groupByCompany={groupByCompany}
+          setGroupByCompany={setGroupByCompany}
+          showArchived={showArchived}
+          setShowArchived={setShowArchived}
+          showPriorityOnly={showPriorityOnly}
+          setShowPriorityOnly={setShowPriorityOnly}
+          onAddNewJob={handleAddNewJob}
         />
+
+        <div className="mx-4">
+          <JobTable
+            jobs={jobs}
+            currentPage={currentPage}
+            itemsPerPage={ITEMS_PER_PAGE}
+            setTotalJobs={setTotalJobs}
+            onUpdateJob={handleUpdateJob}
+            onSaveJob={handleSaveJob}
+            onCancelModifyJob={handleCancelModifyJob}
+          />
+        </div>
+
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages || 1}
+          onPrev={goToPrevPage}
+          onNext={goToNextPage}
+        />
+        <ChartsSection statusCounts={statusCounts} />
       </div>
-      <PaginationControls
-        currentPage={currentPage}
-        totalPages={totalPages || 1}
-        onPrev={goToPrevPage}
-        onNext={goToNextPage}
-      />
-    </div>
     </>
   );
 };

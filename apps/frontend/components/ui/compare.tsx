@@ -44,8 +44,7 @@ export const Compare = ({
     const startTime = Date.now();
     const animate = () => {
       const elapsedTime = Date.now() - startTime;
-      const progress =
-        (elapsedTime % (autoplayDuration * 2)) / autoplayDuration;
+      const progress = (elapsedTime % (autoplayDuration * 2)) / autoplayDuration;
       const percentage = progress <= 1 ? progress * 100 : (2 - progress) * 100;
 
       setSliderXPercent(percentage);
@@ -89,7 +88,7 @@ export const Compare = ({
         setIsDragging(true);
       }
     },
-    [slideMode]
+    [slideMode],
   );
 
   const handleEnd = useCallback(() => {
@@ -110,18 +109,12 @@ export const Compare = ({
         });
       }
     },
-    [slideMode, isDragging]
+    [slideMode, isDragging],
   );
 
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => handleStart(e.clientX),
-    [handleStart]
-  );
+  const handleMouseDown = useCallback((e: React.MouseEvent) => handleStart(e.clientX), [handleStart]);
   const handleMouseUp = useCallback(() => handleEnd(), [handleEnd]);
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent) => handleMove(e.clientX),
-    [handleMove]
-  );
+  const handleMouseMove = useCallback((e: React.MouseEvent) => handleMove(e.clientX), [handleMove]);
 
   const handleTouchStart = useCallback(
     (e: React.TouchEvent) => {
@@ -129,7 +122,7 @@ export const Compare = ({
         handleStart(e.touches[0].clientX);
       }
     },
-    [handleStart, autoplay]
+    [handleStart, autoplay],
   );
 
   const handleTouchEnd = useCallback(() => {
@@ -144,7 +137,7 @@ export const Compare = ({
         handleMove(e.touches[0].clientX);
       }
     },
-    [handleMove, autoplay]
+    [handleMove, autoplay],
   );
 
   return (
@@ -199,7 +192,7 @@ export const Compare = ({
             <motion.div
               className={cn(
                 "absolute inset-0 z-20 rounded-2xl flex-shrink-0 w-full h-full select-none overflow-hidden",
-                firstImageClassName
+                firstImageClassName,
               )}
               style={{
                 clipPath: `inset(0 ${100 - sliderXPercent}% 0 0)`,
@@ -211,7 +204,7 @@ export const Compare = ({
                 src={firstImage}
                 className={cn(
                   "absolute inset-0  z-20 rounded-2xl flex-shrink-0 w-full h-full select-none",
-                  firstImageClassName
+                  firstImageClassName,
                 )}
                 draggable={false}
               />
@@ -223,10 +216,7 @@ export const Compare = ({
       <AnimatePresence initial={false}>
         {secondImage ? (
           <motion.img
-            className={cn(
-              "absolute top-0 left-0 z-[19]  rounded-2xl w-full h-full select-none",
-              secondImageClassname
-            )}
+            className={cn("absolute top-0 left-0 z-[19]  rounded-2xl w-full h-full select-none", secondImageClassname)}
             alt="second image"
             src={secondImage}
             draggable={false}

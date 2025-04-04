@@ -6,7 +6,6 @@ import Payment from "@/components/icons/billing";
 import Settings from "@/components/icons/settings";
 import Workflows from "@/components/icons/interviews";
 import { Feature } from "@/types/header";
-import FileFolder from "@/components/icons/filefolder";
 
 export const statuses = ["Nothing Done", "Applying", "Applied", "OA", "Interview", "Offer", "Rejected"];
 
@@ -19,6 +18,8 @@ export const statusColors = [
   "bg-purple-500/10 text-purple-500",
   "bg-gray-500/10 text-gray-500",
 ];
+
+export const statusFillColors = ["#f87171", "#facc15", "#4ade80", "#60a5fa", "#818cf8", "#a78bfa", "#9ca3af"];
 
 export const features: Feature[] = [
   {
@@ -103,7 +104,6 @@ export const features: Feature[] = [
 export const menuOptions = [
   { name: "Dashboard", Component: Home, href: "/dashboard" },
   { name: "Tracker", Component: Tracker, href: "/tracker" },
-  { name: "Job Applications", Component: FileFolder, href: "/applications" },
   { name: "Generate Application", Component: Logs, href: "/generate" },
   { name: "Mock Interviews", Component: Workflows, href: "/interview" },
   { name: "Statistics", Component: Templates, href: "/statistics" },

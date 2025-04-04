@@ -47,6 +47,7 @@ export function JobTable({
           <TableHead>Posted Date</TableHead>
           <TableHead>Link</TableHead>
           <TableHead>Application Status</TableHead>
+          <TableHead>Information</TableHead>
           <TableHead>Actions</TableHead>
         </TableRow>
       </TableHeader>
