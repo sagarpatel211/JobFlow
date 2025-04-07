@@ -9,7 +9,7 @@ const MockInterviewPage = () => {
       <div className="flex flex-col items-center justify-center flex-1 p-8">
         <p className="text-2xl font-semibold">Coming Soon...</p>
         <p className="mt-2 text-lg text-muted-foreground">
-          We're working hard to bring you mock interview sessions. Stay tuned!
+          We&apos;re working hard to bring you mock interview sessions. Stay tuned!
         </p>
       </div>
     </div>

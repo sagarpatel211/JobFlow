@@ -9,7 +9,8 @@ export interface Job {
   isModifying: boolean;
   archived: boolean;
   deleted: boolean;
-  followers?: string;
+  atsScore?: number;
+  tags?: string[];
 }
 
 export interface JobTableProps {

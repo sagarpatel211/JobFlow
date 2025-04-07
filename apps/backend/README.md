@@ -1,2 +1,2 @@
 # Backend
-This is my GraphQL API written in Go!b
+This is my GraphQL API written in Python

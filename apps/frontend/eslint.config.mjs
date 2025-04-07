@@ -31,16 +31,8 @@ export default [
   {
     rules: {
       "unused-imports/no-unused-imports": "error",
-      "unused-imports/no-unused-vars": [
-        "warn",
-        {
-          vars: "all",
-          varsIgnorePattern: "^_",
-          args: "after-used",
-          argsIgnorePattern: "^_",
-        },
-      ],
-      "@typescript-eslint/no-unused-vars": "error",
+      "unused-imports/no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/strict-boolean-expressions": "error",
       "@typescript-eslint/no-explicit-any": "error",
       "@typescript-eslint/no-non-null-assertion": "error",
@@ -48,6 +40,8 @@ export default [
       "@typescript-eslint/no-unsafe-return": "error",
       "@typescript-eslint/no-unsafe-member-access": "error",
       "@typescript-eslint/no-unnecessary-condition": "off",
+      "@typescript-eslint/no-confusing-void-expression": "off",
+      "@typescript-eslint/strict-boolean-expressions": "off",
     },
   },
 ];

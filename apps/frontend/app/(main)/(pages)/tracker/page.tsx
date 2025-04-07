@@ -1,166 +1,188 @@
 "use client";
-import { JobTable } from "@/app/(main)/(pages)/tracker/components/jobtable";
-import { useState } from "react";
-import { format } from "date-fns";
-import PaginationControls from "@/app/(main)/(pages)/tracker/components/pagination";
-import JobToolbar from "@/app/(main)/(pages)/tracker/components/jobtoolbar";
-import { Job } from "@/types/job";
-import { Toaster } from "react-hot-toast";
+
+import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "next-themes";
-import { ChartsSection } from "./components/chartsection";
+import { useQuery, useMutation } from "@apollo/client";
+import { useApollo } from "@/lib/apolloClient";
+import { useRouter, useSearchParams } from "next/navigation";
+import { format } from "date-fns";
+import { Toaster } from "react-hot-toast";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { JobTable } from "./jobtable";
+import PaginationControls from "./pagination";
+import JobToolbar from "./jobtoolbar";
+import { ChartsSection } from "./chartsection";
+import {
+  GET_TRACKER_DATA,
+  ADD_JOB,
+  UPDATE_JOB,
+  START_SCRAPE,
+  CANCEL_SCRAPE,
+} from "@/lib/graphql";
+import { TrackerData } from "@/types/tracker";
+import { Job } from "@/types/job";
+import { HeartPulse } from "lucide-react";
 
-const ITEMS_PER_PAGE = 4;
+interface TrackerClientProps {
+  initialData: any;
+  initialPage: number;
+}
 
-const initialJobs: Job[] = [
-  {
-    id: 1,
-    company: "Google",
-    title: "Softwarsdse Engineer but super long like hiiiiiii hello",
-    link: "https://www.jotform.com/build/250508845087261?s=templates",
-    postedDate: "01.02.2024",
-    statusIndex: 2,
-    followers: "5M+ Followers",
-    priority: false,
-    isModifying: false,
-    archived: false,
-    deleted: false,
-  },
-  {
-    id: 2,
-    company: "Microsoft",
-    title: "Data Analyst",
-    link: "https://www.microsoft.com",
-    postedDate: "15.01.2024",
-    statusIndex: 3,
-    followers: "3M+ Followers",
-    priority: false,
-    isModifying: false,
-    archived: false,
-    deleted: false,
-  },
-  {
-    id: 3,
-    company: "Amazon",
-    title: "Backend Developer",
-    link: "https://www.amazon.com",
-    postedDate: "10.01.2024",
-    statusIndex: 1,
-    followers: "4M+ Followers",
-    priority: false,
-    isModifying: false,
-    archived: false,
-    deleted: false,
-  },
-  {
-    id: 4,
-    company: "Amazon",
-    title: "Backend Developer",
-    link: "https://www.amazon.com",
-    postedDate: "10.01.2024",
-    statusIndex: 1,
-    followers: "4M+ Followers",
-    priority: false,
-    isModifying: false,
-    archived: false,
-    deleted: false,
-  },
-  {
-    id: 5,
-    company: "Amazon",
-    title: "Backend Developer",
-    link: "https://www.amazon.com",
-    postedDate: "10.01.2024",
-    statusIndex: 1,
-    followers: "4M+ Followers",
-    priority: false,
-    isModifying: false,
-    archived: false,
-    deleted: false,
-  },
-  {
-    id: 6,
-    company: "Amazon",
-    title: "Backend Developer",
-    link: "https://www.amazon.com",
-    postedDate: "10.01.2024",
-    statusIndex: 1,
-    followers: "4M+ Followers",
-    priority: false,
-    isModifying: false,
-    archived: false,
-    deleted: false,
-  },
-];
+export default function TrackerClient({ initialData, initialPage }: TrackerClientProps) {
+  const client = useApollo(initialData);
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-const statusCounts = {
-  "Nothing Done": 2,
-  Applying: 3,
-  Applied: 4,
-  OA: 1,
-  Interview: 2,
-  Offer: 1,
-  Rejected: 100,
-};
+  // Create a memoized function to update the URL
+  const createQueryString = useMemo(() => {
+    return (name: string, value: string) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set(name, value);
+      return params.toString();
+    };
+  }, [searchParams]);
 
-const TrackerPage = () => {
-  const [sortBy, setSortBy] = useState("date");
-  const [groupByCompany, setGroupByCompany] = useState(false);
-  const [showArchived, setShowArchived] = useState(false);
-  const [showPriorityOnly, setShowPriorityOnly] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalJobs, setTotalJobs] = useState(0);
-  const [jobs, setJobs] = useState(initialJobs);
-  const { theme } = useTheme();
+  const [currentPage, setCurrentPage] = useState<number>(initialPage);
 
-  const totalPages = Math.ceil(totalJobs / ITEMS_PER_PAGE);
+  const { data, loading, error, refetch } = useQuery<{ trackerData: TrackerData }>(GET_TRACKER_DATA, {
+    variables: { page: currentPage },
+    client,
+    pollInterval: 60000,
+    // Add error handling and fetch policy
+    fetchPolicy: 'cache-and-network',
+    nextFetchPolicy: 'cache-first',
+    onError: (error) => console.error("GraphQL query error:", error)
+  });
 
-  const goToNextPage = () => setCurrentPage((prev) => Math.min(prev + 1, totalPages));
-  const goToPrevPage = () => setCurrentPage((prev) => Math.max(prev - 1, 1));
+  // Handle error properly
+  useEffect(() => {
+    if (error) {
+      console.error("Error fetching tracker data:", error);
+    }
+  }, [error]);
+
+  // Use the initialData directly to prevent null issues
+  const trackerData = useMemo<TrackerData>(() => {
+    return data?.trackerData || initialData?.trackerData || {
+      jobs: [],
+      statusCounts: { nothingDone: 0, applying: 0, applied: 0, OA: 0, interview: 0, offer: 0, rejected: 0 },
+      pagination: { totalJobs: 0, currentPage: initialPage, itemsPerPage: 4, totalPages: 1 },
+      scrapeInfo: { scraping: false, scrapeProgress: 0, estimatedSeconds: 0 },
+      health: { isHealthy: false },
+    };
+  }, [data, initialData, initialPage]);
+
+  const [localJobs, setLocalJobs] = useState<Job[]>(trackerData.jobs);
+
+  // Update local jobs when tracker data changes
+  useEffect(() => {
+    if (trackerData?.jobs) {
+      setLocalJobs(trackerData.jobs);
+    }
+  }, [trackerData.jobs]);
+
+  const [addJobMutation] = useMutation<{ addJob: Job }>(ADD_JOB, { client });
+  const [updateJobMutation] = useMutation<
+    { updateJob: Job },
+    { id: string; jobInput: Partial<Job> }
+  >(UPDATE_JOB, { client });
+  const [startScrapeMutation] = useMutation(START_SCRAPE, { client });
+  const [cancelScrapeMutation] = useMutation(CANCEL_SCRAPE, { client });
 
   const handleAddNewJob = () => {
-    const newJob = {
-      id: Date.now(),
+    const newJob: Job = {
+      id: -Date.now(),
       company: "",
       title: "",
-      link: "",
       postedDate: "",
+      link: "",
       statusIndex: 0,
-      followers: "",
       priority: false,
       isModifying: true,
       archived: false,
       deleted: false,
+      atsScore: 0,
+      tags: [],
     };
-    setJobs((prevJobs) => [newJob, ...prevJobs]);
+    setLocalJobs((prev) => [newJob, ...prev]);
   };
 
   const handleUpdateJob = (id: number, updatedFields: Partial<Job>) => {
-    setJobs((prevJobs) => prevJobs.map((job) => (job.id === id ? { ...job, ...updatedFields } : job)));
+    setLocalJobs((prev) => prev.map((job) => (job.id === id ? { ...job, ...updatedFields } : job)));
   };
 
-  const handleSaveJob = (id: number) => {
-    setJobs((prevJobs) =>
-      prevJobs.map((job) =>
-        job.id === id
-          ? {
-              ...job,
-              postedDate: format(new Date(), "dd.MM.yyyy"),
-              isModifying: false,
-              followers: job.followers ?? "0 Followers",
-            }
-          : job,
-      ),
-    );
+  const handleSaveJob = async (id: number) => {
+    const jobToSave = localJobs.find((job) => job.id === id);
+    if (!jobToSave) return;
+    const updatedJob: Job = {
+      ...jobToSave,
+      postedDate: format(new Date(), "dd.MM.yyyy"),
+      isModifying: false,
+    };
+    try {
+      if (jobToSave.id < 0) {
+        await addJobMutation({ variables: { jobInput: updatedJob } });
+      } else {
+        await updateJobMutation({ variables: { id: String(id), jobInput: updatedJob } });
+      }
+      await refetch();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleCancelModifyJob = (id: number) => {
-    setJobs((prevJobs) => prevJobs.filter((job) => job.id !== id));
+    const job = localJobs.find((job) => job.id === id);
+    if (job && job.isModifying && !job.company && !job.title) {
+      setLocalJobs((prev) => prev.filter((job) => job.id !== id));
+    } else {
+      refetch();
+    }
   };
 
+  const goToNextPage = () => {
+    if (trackerData.pagination && currentPage < trackerData.pagination.totalPages) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      router.push(`/tracker?${createQueryString('page', nextPage.toString())}`, { scroll: false });
+    }
+  };
+
+  const goToPrevPage = () => {
+    if (trackerData.pagination && currentPage > 1) {
+      const prevPage = currentPage - 1;
+      setCurrentPage(prevPage);
+      router.push(`/tracker?${createQueryString('page', prevPage.toString())}`, { scroll: false });
+    }
+  };
+
+  const handleScrape = async () => {
+    if (trackerData.scrapeInfo.scraping) {
+      await cancelScrapeMutation();
+    } else {
+      await startScrapeMutation();
+    }
+    await refetch();
+  };
+
+  const { theme } = useTheme();
   const isDark = theme === "dark";
+
+  if (loading) return <p>Loading...</p>;
+
+  const { statusCounts, pagination, scrapeInfo, health } = trackerData;
 
   return (
     <>
+      {/* Show error message if needed */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+          <p className="font-bold">Error</p>
+          <p>Failed to fetch data. Using cached or initial data.</p>
+        </div>
+      )}
+
       <Toaster
         toastOptions={{
           style: {
@@ -171,46 +193,82 @@ const TrackerPage = () => {
           },
         }}
       />
-
       <div className="flex flex-col gap-4 relative">
         <h1 className="sticky top-0 z-[10] flex items-center justify-between border-b bg-background/50 p-6 text-4xl backdrop-blur-lg">
-          Tracker
+          <span>Tracker</span>
+          <div className="flex items-center gap-4 text-base">
+            <div className="flex items-center gap-2">
+              <HeartPulse
+                className={`w-6 h-6 ${health?.isHealthy ? "text-green-500 animate-pulse" : "text-red-500"
+                  }`}
+              />
+              <span
+                className={`${health?.isHealthy ? "text-green-600" : "text-red-600"
+                  } font-medium`}
+              >
+                {health?.isHealthy ? "Healthy" : "Unhealthy"}
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <Button
+                variant={scrapeInfo?.scraping ? "destructive" : "default"}
+                onClick={handleScrape}
+              >
+                {scrapeInfo?.scraping ? "Cancel Scrape" : "Scrape"}
+              </Button>
+              {scrapeInfo?.scraping && (
+                <div className="flex items-center gap-3 w-[220px]">
+                  <Progress className="w-full" value={scrapeInfo.scrapeProgress} />
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">
+                    {scrapeInfo.estimatedSeconds}s
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </h1>
-
         <JobToolbar
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          groupByCompany={groupByCompany}
-          setGroupByCompany={setGroupByCompany}
-          showArchived={showArchived}
-          setShowArchived={setShowArchived}
-          showPriorityOnly={showPriorityOnly}
-          setShowPriorityOnly={setShowPriorityOnly}
+          sortBy="date"
+          setSortBy={() => { }}
+          groupByCompany={false}
+          setGroupByCompany={() => { }}
+          showArchived={false}
+          setShowArchived={() => { }}
+          showPriorityOnly={false}
+          setShowPriorityOnly={() => { }}
           onAddNewJob={handleAddNewJob}
         />
-
         <div className="mx-4">
           <JobTable
-            jobs={jobs}
-            currentPage={currentPage}
-            itemsPerPage={ITEMS_PER_PAGE}
-            setTotalJobs={setTotalJobs}
+            jobs={localJobs}
+            currentPage={pagination?.currentPage ?? currentPage}
+            itemsPerPage={pagination?.itemsPerPage ?? 4}
+            setTotalJobs={() => { }}
             onUpdateJob={handleUpdateJob}
             onSaveJob={handleSaveJob}
             onCancelModifyJob={handleCancelModifyJob}
           />
         </div>
-
         <PaginationControls
-          currentPage={currentPage}
-          totalPages={totalPages || 1}
+          currentPage={pagination?.currentPage ?? currentPage}
+          totalPages={pagination?.totalPages ?? 1}
           onPrev={goToPrevPage}
           onNext={goToNextPage}
         />
-        <ChartsSection statusCounts={statusCounts} />
+        <ChartsSection
+          statusCounts={
+            statusCounts ?? {
+              nothingDone: 0,
+              applying: 0,
+              applied: 0,
+              OA: 0,
+              interview: 0,
+              offer: 0,
+              rejected: 0,
+            }
+          }
+        />
       </div>
     </>
   );
-};
-
-export default TrackerPage;
+}

@@ -16,7 +16,7 @@ export function UploadSection() {
       <FileUpload title="Upload Resume (LaTeX)" onFileChange={(file) => setResume(file)} />
       {resume && <p>Selected Resume: {resume.name}</p>}
 
-      <FileUpload title="Upload Resume LaTeX (.zip)" onFileChange={(file) => setResumeLatexZip(file)} accept=".zip" />
+      <FileUpload title="Upload Resume LaTeX (.zip)" onFileChange={(file) => setResumeLatexZip(file)} />
       {resumeLatexZip && <p>Selected Resume LaTeX Zip: {resumeLatexZip.name}</p>}
 
       <FileUpload title="Upload Cover Letter" onFileChange={(file) => setCoverLetter(file)} />

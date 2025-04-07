@@ -32,8 +32,7 @@ export default function FinalStepForm({ formData, handleCheckboxChange }: FinalS
         <h2 className="text-xl font-semibold mb-2">JobFlow Terms of Service & Privacy Policy</h2>
         <p className="text-sm text-gray-700 dark:text-gray-300">
           Welcome to JobFlow, your automated job management and tracking tool. The following Terms of Service and
-          Privacy Policy (collectively, the "Terms") govern your use of our application and outline your rights and
-          responsibilities.
+          Privacy Policy (collectively, the &quot;Terms&quot;) govern your use of our application... responsibilities.
           <br />
           <br />
           <strong>1. Acceptance of Terms</strong>

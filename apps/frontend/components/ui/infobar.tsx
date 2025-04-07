@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Minus, Plus, Settings } from "lucide-react";
@@ -120,14 +121,14 @@ const InfoBar = () => {
 
       <div className="flex items-center gap-x-6">
         <HoverBorderGradientDemo />
-
-        {/* Profile Dropdown Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger>
-            <img
+            <Image
               src="https://i.pravatar.cc/100"
               alt="Profile"
-              className="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-600 cursor-pointer"
+              width={40}
+              height={40}
+              className="rounded-full border border-gray-300 dark:border-gray-600 cursor-pointer"
             />
           </DropdownMenuTrigger>
           <DropdownMenuContent className="dark:bg-gray-800 bg-white border-gray-300 dark:border-gray-600 shadow-md rounded-md">
@@ -138,7 +139,9 @@ const InfoBar = () => {
               <Settings size={16} /> Settings
             </DropdownMenuItem>
             <DropdownMenuItem
-              onClick={() => signOut()}
+              onClick={() => {
+                void signOut();
+              }}
               className="flex items-center gap-2 cursor-pointer dark:hover:bg-gray-700 hover:bg-gray-100 p-2 rounded-md"
             >
               <LogOut size={16} /> Logout

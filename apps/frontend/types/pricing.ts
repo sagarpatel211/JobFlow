@@ -7,7 +7,7 @@ export interface PricingCardProps {
     label: string;
     path: string;
   };
-  secondaryAction: {
+  secondaryAction?: {
     label: string;
     path: string;
   };

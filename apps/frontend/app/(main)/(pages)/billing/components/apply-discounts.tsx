@@ -11,10 +11,7 @@ const ApplyDiscount = () => {
 
   const applyDiscount = async () => {
     setLoading(true);
-    // Simulate an async operation (e.g., API call)
     await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    // 50% chance of success or failure
     if (Math.random() < 0.5) {
       toast.success("Discount applied successfully!");
     } else {
@@ -37,7 +34,7 @@ const ApplyDiscount = () => {
             disabled={loading}
           />
           <Button
-            onClick={applyDiscount}
+            onClick={() => void applyDiscount()}
             disabled={!discountCode || loading}
             className="bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700 text-white flex items-center gap-2"
           >

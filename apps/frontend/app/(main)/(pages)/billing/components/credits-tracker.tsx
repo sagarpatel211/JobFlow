@@ -27,7 +27,9 @@ const CreditTracker = ({ interviews, generations, aiApplier }: CreditTrackerProp
       <div className="flex flex-col">
         <div className="flex items-center justify-between">
           <span className="text-sm font-bold">{label}</span>
-          <span className="text-sm">{credit.max === "Unlimited" ? "Unlimited" : `${credit.used}/${credit.max}`}</span>
+          <span className="text-sm">
+            {credit.max === "Unlimited" ? "Unlimited" : `${String(credit.used)}/${String(credit.max)}`}
+          </span>
         </div>
         <Progress value={getPercentage(credit)} className={progressClasses} />
       </div>

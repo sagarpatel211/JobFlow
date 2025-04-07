@@ -3,7 +3,7 @@ import React from "react";
 import { SubscriptionCard } from "./subscription-card";
 import CreditTracker from "./credits-tracker";
 import ApplyDiscount from "./apply-discounts";
-import toast, { Toaster } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 import { useTheme } from "next-themes";
 
 const BillingDashboard = () => {
@@ -16,8 +16,9 @@ const BillingDashboard = () => {
     { id: "3", nickname: "Unlimited" },
   ];
 
-  const handlePayment = (productId: string) => {
+  const handlePayment = (productId: string): Promise<void> => {
     console.log("Initiating payment for product:", productId);
+    return Promise.resolve();
   };
 
   return (
@@ -31,11 +32,9 @@ const BillingDashboard = () => {
         }}
       />
       <div className="flex gap-10 p-6 items-start">
-        {/* Left column: Subscriptions */}
         <div className="w-2/3 flex flex-col gap-6">
           <SubscriptionCard onPayment={handlePayment} tier="Free" products={dummyProducts} />
         </div>
-        {/* Right column: Credit Tracker and Apply Discount */}
         <div className="w-1/3 flex flex-col gap-6 h-full justify-center">
           <CreditTracker
             interviews={{ used: 0, max: 1 }}

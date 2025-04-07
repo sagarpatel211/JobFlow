@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { TableRow, TableCell } from "@/components/ui/table";
-import { parse, format, isValid } from "date-fns";
+import { format } from "date-fns";
 import { JobRowProps } from "@/types/job";
 import { StatusBadge } from "./statusbadge";
 import { Archive, MoreVertical, Star } from "lucide-react";
@@ -20,10 +20,31 @@ import { JobActions } from "./jobactions";
 import ApplicationPopover from "./apppopover";
 
 function formatPostedDate(dateStr: string): string {
-  const parsed = dateStr.includes(".")
-    ? parse(dateStr, "dd.MM.yyyy", new Date())
-    : parse(dateStr, "yyyy-MM-dd", new Date());
-  return isValid(parsed) ? format(parsed, "MMM d, yyyy") : dateStr;
+  let date: Date;
+
+  if (dateStr.includes(".")) {
+    const parts = dateStr.split(".");
+    if (parts.length !== 3) return dateStr;
+    const [dayStr, monthStr, yearStr] = parts;
+    const day = Number(dayStr);
+    const month = Number(monthStr) - 1; // JS months are 0-based
+    const year = Number(yearStr);
+    date = new Date(year, month, day);
+  } else if (dateStr.includes("-")) {
+    const parts = dateStr.split("-");
+    if (parts.length < 3) return dateStr;
+    const [yearStr, monthStr, dayStr] = parts;
+    const year = Number(yearStr);
+    const month = Number(monthStr) - 1;
+    const day = Number(dayStr);
+    date = new Date(year, month, day);
+  } else {
+    date = new Date(dateStr);
+  }
+  if (isNaN(date.getTime())) {
+    return dateStr;
+  }
+  return format(date, "MMM d, yyyy");
 }
 
 export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchiveJob, onDeleteJob }: JobRowProps) {
@@ -188,7 +209,7 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
               >
                 Generate Cover Letter
               </Button>
-              <Button onClick={handleSubmitAI}>Submit</Button>
+              <Button onClick={() => void handleSubmitAI}>Submit</Button>
             </div>
           </PopoverContent>
         </Popover>
@@ -213,7 +234,7 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
         <JobActions
           priority={job.priority}
           onTogglePriority={() => togglePriority(job.id)}
-          onModify={() => onModifyJob(job.id)}
+          onModify={() => onModifyJob && onModifyJob(job.id)}
           onArchive={() => {
             toast(
               (t) => (

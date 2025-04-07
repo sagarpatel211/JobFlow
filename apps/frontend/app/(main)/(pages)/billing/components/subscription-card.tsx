@@ -67,7 +67,7 @@ export const SubscriptionCard = ({ onPayment, products, tier }: Props) => {
                   }
                   features={["3 Free automations", "100 tasks per month", "Two-step Actions"]}
                   primaryAction={{ label: "Get Started Now", path: "/signup" }}
-                  active={isActive} // Pass the active flag
+                  active={isActive}
                 />
               </CardContainer>
             )}

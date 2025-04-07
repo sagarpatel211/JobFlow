@@ -102,7 +102,8 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
           </button>
         </div>
       </TableCell>
-
+      <TableCell>
+      </TableCell>
       <TableCell>
         <div className="flex gap-2">
           <button

@@ -2,9 +2,10 @@
 import React, { useState, KeyboardEvent, ChangeEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { PopoverContent } from "@/components/ui/popover";
+import { Job } from "@/types/job";
 
 interface ApplicationPopoverProps {
-  job: { atsScore?: number };
+  job: Job;
   resumeFile: File | null;
   coverLetterFile: File | null;
   handleResumeUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -20,20 +21,8 @@ const ApplicationPopover: React.FC<ApplicationPopoverProps> = ({
   handleCoverLetterUpload,
   downloadFile,
 }) => {
-  const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState("");
-
-  const addTag = () => {
-    const trimmed = tagInput.trim();
-    if (trimmed && !tags.includes(trimmed)) {
-      setTags([...tags, trimmed]);
-    }
-    setTagInput("");
-  };
-
-  const removeTag = (tagToRemove: string) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove));
-  };
+  const [tags, setTags] = useState<string[]>(job.tags || []);
 
   const handleTagInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -44,6 +33,17 @@ const ApplicationPopover: React.FC<ApplicationPopoverProps> = ({
 
   const handleTagInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setTagInput(e.target.value);
+  };
+
+  const addTag = () => {
+    const trimmed = tagInput.trim();
+    if (!trimmed || tags.includes(trimmed)) return;
+    setTags((prev) => [...prev, trimmed]);
+    setTagInput("");
+  };
+
+  const removeTag = (tagToRemove: string) => {
+    setTags((prev) => prev.filter((tag) => tag !== tagToRemove));
   };
 
   return (
@@ -97,6 +97,7 @@ const ApplicationPopover: React.FC<ApplicationPopoverProps> = ({
             </Button>
           </div>
         </div>
+
         <div>
           <div className="flex items-center justify-between mb-1">
             <h4 className="font-bold">ATS Score</h4>
@@ -105,10 +106,11 @@ const ApplicationPopover: React.FC<ApplicationPopoverProps> = ({
           <div className="relative h-4 w-full bg-gray-300 rounded-full">
             <div
               className="h-full rounded-full bg-gradient-to-r from-red-500 to-green-500"
-              style={{ width: `${job.atsScore || 0}%` }}
+              style={{ width: `${String(job.atsScore || 0)}%` }}
             />
           </div>
         </div>
+
         <div>
           <h4 className="font-bold mb-1">Custom Tags</h4>
           <div className="overflow-x-auto flex gap-2 pb-2">
