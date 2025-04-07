@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import { MoreHorizontal, Edit, Archive, Trash, Star } from "lucide-react";
 import {

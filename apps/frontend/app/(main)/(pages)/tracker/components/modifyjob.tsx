@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import { parse, format, isValid } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";

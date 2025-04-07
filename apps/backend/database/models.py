@@ -1,41 +1,62 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Table, Boolean, DateTime
+from sqlalchemy import (
+    Table,
+    Column,
+    Integer,
+    String,
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Enum,
+    func,
+)
 from sqlalchemy.orm import relationship, declarative_base
+from sqlalchemy.dialects.postgresql import ENUM
+import enum
 
 Base = declarative_base()
 
-job_tags = Table('job_tags', Base.metadata,
-    Column('job_id', Integer, ForeignKey('jobs.id'), primary_key=True),
-    Column('tag_id', Integer, ForeignKey('tags.id'), primary_key=True)
+class RoleType(enum.Enum):
+    intern = "intern"
+    newgrad = "newgrad"
+
+class Status(enum.Enum):
+    nothing_done = "nothing_done"
+    applying = "applying"
+    applied = "applied"
+    oa = "oa"
+    interview = "interview"
+    offer = "offer"
+    rejected = "rejected"
+
+job_tags_table = Table(
+    "job_tags",
+    Base.metadata,
+    Column("job_id", ForeignKey("jobs.id"), primary_key=True),
+    Column("tag_id", ForeignKey("tags.id"), primary_key=True),
 )
 
 class Company(Base):
-    __tablename__ = 'companies'
+    __tablename__ = "companies"
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True, nullable=False)
-    jobs = relationship('Job', back_populates='company')
-
-class Status(Base):
-    __tablename__ = 'statuses'
-    id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True, nullable=False)
-    jobs = relationship('Job', back_populates='status')
+    blacklisted = Column(Boolean, default=False)
 
 class Tag(Base):
-    __tablename__ = 'tags'
+    __tablename__ = "tags"
     id = Column(Integer, primary_key=True)
-    name = Column(String, unique=True, nullable=False)
-    jobs = relationship('Job', secondary=job_tags, back_populates='tags')
+    name = Column(String, unique=True)
 
 class Job(Base):
-    __tablename__ = 'jobs'
+    __tablename__ = "jobs"
     id = Column(Integer, primary_key=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    company = relationship("Company", backref="jobs")
     title = Column(String, nullable=False)
-    posted_date = Column(DateTime, nullable=False)
-    link = Column(String, nullable=False)
+    role_type = Column(Enum(RoleType), nullable=False)
+    posted_date = Column(DateTime, server_default=func.now())
+    link = Column(String)
+    status = Column(Enum(Status), nullable=False, default=Status.nothing_done)
     priority = Column(Boolean, default=False)
     archived = Column(Boolean, default=False)
-    company_id = Column(Integer, ForeignKey('companies.id'))
-    status_id = Column(Integer, ForeignKey('statuses.id'))
-    company = relationship('Company', back_populates='jobs')
-    status = relationship('Status', back_populates='jobs')
-    tags = relationship('Tag', secondary=job_tags, back_populates='jobs')
+    deleted = Column(Boolean, default=False)
+    tags = relationship("Tag", secondary=job_tags_table, backref="jobs")

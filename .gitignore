@@ -8,3 +8,6 @@
 # Build directory
 **/build
 **/static
+
+# Python cache
+**/__pycache__

@@ -1,8 +1,5 @@
-from dotenv import load_dotenv
 import os
 
-load_dotenv()
-
-class Config:
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
-    JOB_SCRAPE_INTERVAL_HOURS = 8
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///./jobs.db")
+ELASTICSEARCH_URL = os.environ.get("ELASTICSEARCH_URL", "http://elasticsearch:9200")
+SECRET_KEY = "CHANGE_THIS"

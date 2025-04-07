@@ -1,8 +1,13 @@
-from apscheduler.schedulers.background import BackgroundScheduler
-from jobscraper import scrape_jobs
-from config import Config
+import schedule
+import time
 
-def start_cron():
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(scrape_jobs, "interval", hours=Config.JOB_SCRAPE_INTERVAL_HOURS)
-    scheduler.start()
+def run_scheduled_tasks():
+    pass
+
+def main():
+    schedule.every(10).minutes.do(run_scheduled_tasks)
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+if __name__ == "__main__":
+    main()

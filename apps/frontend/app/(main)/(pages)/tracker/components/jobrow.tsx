@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { TableRow, TableCell } from "@/components/ui/table";

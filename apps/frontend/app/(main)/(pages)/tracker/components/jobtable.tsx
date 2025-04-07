@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect } from "react";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { JobTableProps } from "@/types/job";
