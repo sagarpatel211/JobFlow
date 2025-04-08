@@ -1,11 +1,20 @@
 "use client";
 import React from "react";
-import { parse, format, isValid } from "date-fns";
+import { format, isValid } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { ModifyJobRowProps } from "@/types/job";
 import { statuses, statusColors } from "@/lib/constants";
+
+function toInputDateFormat(dateStr: string): string {
+  if (!dateStr) return "";
+  const parts = dateStr.split(".");
+  if (parts.length !== 3) return "";
+  const [day, month, year] = parts.map(Number);
+  const parsed = new Date(year, month - 1, day);
+  return isValid(parsed) ? format(parsed, "yyyy-MM-dd") : "";
+}
 
 export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, updateStatus }: ModifyJobRowProps) {
   const isSaveDisabled = !job.company || !job.title || !job.postedDate || !job.link;
@@ -40,19 +49,7 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
           type="date"
           name="postedDate"
           className="w-40 -mr-14"
-          value={
-            job.postedDate && typeof job.postedDate === "string"
-              ? (() => {
-                  try {
-                    const parsedDate = parse(job.postedDate);
-                    return isValid(parsedDate) ? format(parsedDate, "MMM d, yyyy") : "";
-                  } catch {
-                    console.error("Invalid date format:", job.postedDate);
-                    return "";
-                  }
-                })()
-              : ""
-          }
+          value={toInputDateFormat(job.postedDate)}
           onChange={(e) => {
             const newDate = new Date(e.target.value);
             onUpdateJob(job.id, {
@@ -103,8 +100,7 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
           </button>
         </div>
       </TableCell>
-      <TableCell>
-      </TableCell>
+      <TableCell></TableCell>
       <TableCell>
         <div className="flex gap-2">
           <button

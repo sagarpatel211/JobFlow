@@ -1,0 +1,4 @@
+- add indexes to the database to speed up queries
+- set up elasticsearch for full text search
+- fix the date input not working for jobrow
+- modularize api endpoints by writing functions to reuse code

@@ -1,6 +1,7 @@
 # Environment variables
 .env.local
 .env
+!.env.template
 
 # Node modules
 **/node_modules

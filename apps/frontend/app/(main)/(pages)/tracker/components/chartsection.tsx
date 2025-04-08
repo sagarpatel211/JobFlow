@@ -1,15 +1,6 @@
 "use client";
 import React from "react";
-import {
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Cell,
-} from "recharts";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from "recharts";
 import { statuses, statusFillColors } from "@/lib/constants";
 
 interface ChartsSectionProps {
@@ -34,9 +25,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label })
       <div className="bg-gray-900 text-white text-sm p-2 rounded shadow-md">
         <p className="font-semibold">{label}</p>
         {payload.map((entry, index) => (
-          <p key={index}>
-            {`${entry.name ?? entry.dataKey ?? ""}: ${String(entry.value)}`}
-          </p>
+          <p key={index}>{`${entry.name ?? entry.dataKey ?? ""}: ${String(entry.value)}`}</p>
         ))}
       </div>
     );
@@ -46,13 +35,13 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label })
 
 export const ChartsSection: React.FC<ChartsSectionProps> = ({ statusCounts }) => {
   const statusKeyMap: Record<string, string> = {
-    "Nothing Done": "nothingDone",
-    "Applying": "applying",
-    "Applied": "applied",
-    "OA": "OA",
-    "Interview": "interview",
-    "Offer": "offer",
-    "Rejected": "rejected",
+    "Nothing Done": "nothing_done",
+    Applying: "applying",
+    Applied: "applied",
+    OA: "OA",
+    Interview: "interview",
+    Offer: "offer",
+    Rejected: "rejected",
   };
 
   const statusData = statuses.map((status) => ({
@@ -85,24 +74,9 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ statusCounts }) =>
           <BarChart data={statusData}>
             <defs>
               {statusData.map((_, index) => (
-                <linearGradient
-                  key={String(index)}
-                  id={`gradient-${index}`}
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop
-                    offset="0%"
-                    stopColor={statusFillColors[index] ?? "#000"}
-                    stopOpacity={0.9}
-                  />
-                  <stop
-                    offset="100%"
-                    stopColor={statusFillColors[index] ?? "#000"}
-                    stopOpacity={0.6}
-                  />
+                <linearGradient key={String(index)} id={`gradient-${String(index)}`} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={statusFillColors[index] ?? "#000"} stopOpacity={0.9} />
+                  <stop offset="100%" stopColor={statusFillColors[index] ?? "#000"} stopOpacity={0.6} />
                 </linearGradient>
               ))}
             </defs>
@@ -121,7 +95,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ statusCounts }) =>
             />
             <Bar dataKey="count" radius={[6, 6, 0, 0]}>
               {statusData.map((_, index) => (
-                <Cell key={`cell-${index}`} fill={`url(#gradient-${index})`} />
+                <Cell key={`cell-${String(index)}`} fill={`url(#gradient-${String(index)})`} />
               ))}
             </Bar>
           </BarChart>

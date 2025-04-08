@@ -1,16 +1,5 @@
-from sqlalchemy import (
-    Table,
-    Column,
-    Integer,
-    String,
-    Boolean,
-    DateTime,
-    ForeignKey,
-    Enum,
-    func,
-)
+from sqlalchemy import Table, Column, Integer, String, Boolean, DateTime, ForeignKey, Enum, func
 from sqlalchemy.orm import relationship, declarative_base
-from sqlalchemy.dialects.postgresql import ENUM
 import enum
 
 Base = declarative_base()
@@ -32,7 +21,7 @@ job_tags_table = Table(
     "job_tags",
     Base.metadata,
     Column("job_id", ForeignKey("jobs.id"), primary_key=True),
-    Column("tag_id", ForeignKey("tags.id"), primary_key=True),
+    Column("tag_id", ForeignKey("tags.id"), primary_key=True)
 )
 
 class Company(Base):
@@ -40,6 +29,7 @@ class Company(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True, nullable=False)
     blacklisted = Column(Boolean, default=False)
+    follower_count = Column(Integer, default=0)
 
 class Tag(Base):
     __tablename__ = "tags"
