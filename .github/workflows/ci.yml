@@ -29,3 +29,6 @@ jobs:
       - name: Run build
         working-directory: apps/frontend
         run: npm run build
+        env:
+          GITHUB_ID: "fake-id"
+          GITHUB_SECRET: "fake-secret"

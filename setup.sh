@@ -5,7 +5,10 @@ set -e
 FRONTEND_DIR="apps/frontend"
 BACKEND_DIR="apps/backend"
 
-# Start frontend setup
+# Set COMPOSE_BAKE for the session
+export COMPOSE_BAKE=true
+
+# Frontend setup
 echo "🔧 Checking frontend setup..."
 cd "$FRONTEND_DIR"
 
@@ -24,13 +27,12 @@ npm run start &
 
 cd - > /dev/null
 
-# Start backend setup
+# Backend setup
 echo "🔧 Checking backend Docker image..."
 cd "$BACKEND_DIR"
 
-# If image doesn't exist, build it
-if ! docker compose images | grep -q "backend"; then
-  echo "🐳 Backend image not found, building..."
+if ! docker compose images | grep -q "web"; then
+  echo "🐳 Backend image not found, building with Bake..."
   docker compose build
 fi
 
