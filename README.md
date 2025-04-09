@@ -7,20 +7,16 @@
 
 A scalable job scraping and tracking platform with advanced autofill tools, resume intelligence, and real-time analytics to empower your job hunt.
 
----
 
 ## Table of Contents
 
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
 - [Installation](#installation)
-- [Project Structure](#project-structure)
-- [Features](#features)
 - [TODO](#todo)
 - [Contributors](#contributors)
 - [Contact](#contact)
 
----
 
 ## Tech Stack
 
@@ -34,13 +30,12 @@ A scalable job scraping and tracking platform with advanced autofill tools, resu
 - **Monitoring**: Prometheus + Grafana
 - **Infrastructure**: Docker, Kubernetes, Terraform
 
----
 
 ## Architecture
 
 ```mermaid
 graph TD
-    A[User (Browser)] --> B[Next.js SSR Frontend]
+    A[User Browser] --> B[Next.js SSR Frontend]
     B --> C[API Routes / Auth]
     C --> D[Flask REST API]
     D --> E[PostgreSQL]
@@ -54,7 +49,6 @@ graph TD
 
 Also see `diagram.py` for a rendered system diagram using the Python diagrams library.
 
----
 
 ## Installation
 
@@ -72,7 +66,6 @@ setup.sh
 
 Make sure `.env.local` is configured in `apps/frontend` and `apps/backend` and no ports (5432, 5000, 9200) are occupied.
 
----
 
 ## TODO
 
@@ -95,7 +88,6 @@ Make sure `.env.local` is configured in `apps/frontend` and `apps/backend` and n
 - [ ] Auto-archive stale listings intelligently
 - [ ] Sync resume info with backend for autofill
 
----
 
 ## Contributors
 
@@ -104,7 +96,6 @@ Make sure `.env.local` is configured in `apps/frontend` and `apps/backend` and n
 | [![Sagar Patel](https://avatars1.githubusercontent.com/u/34544263?s=200)](https://github.com/sagarpatel211) |
 | <a href="https://github.com/sagarpatel211" target="_blank">`github.com/sagarpatel211`</a> |
 
----
 
 ## Contact
 
