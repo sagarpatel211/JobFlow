@@ -1,40 +1,34 @@
-# Requires PowerShell 5 or higher
-# Run via: .\setup.ps1
-param (
-    [switch] $Production
-)
+$frontendDir = "apps/frontend"
+$backendDir = "apps/backend"
 
-Write-Host "=== Installing Dependencies and Setting Up Project ==="
+# Frontend setup
+Write-Host "🔧 Checking frontend setup..."
+Set-Location $frontendDir
 
-# 1. Install & Build Frontend
-Write-Host "=== Setting up Next.js frontend ==="
-Push-Location "apps/frontend"
-
-Write-Host "Installing npm dependencies..."
-npm install
-
-if ($Production) {
-    Write-Host "Building frontend in production mode..."
-    npm run build
-} else {
-    Write-Host "Skipping production build for dev environment..."
+if (-not (Test-Path "node_modules")) {
+  Write-Host "📦 Installing frontend dependencies..."
+  npm install
 }
 
-Pop-Location
+if (-not (Test-Path ".next")) {
+  Write-Host "🛠️ Building frontend..."
+  npm run build
+}
 
-# 2. Set up Go GraphQL API
-Write-Host "=== Setting up Go GraphQL API ==="
-Push-Location "apps/backend"
+Write-Host "🚀 Starting frontend..."
+Start-Process -NoNewWindow -FilePath "npm" -ArgumentList "run", "start"
 
-Write-Host "Tidying Go modules..."
-go mod tidy
+Set-Location "../.."
 
-Write-Host "Building Go GraphQL server..."
-go build -o backend ./src
+# Backend setup
+Write-Host "🔧 Checking backend Docker image..."
+Set-Location $backendDir
 
-Pop-Location
+$dockerImages = docker compose images
+if ($dockerImages -notmatch "backend") {
+  Write-Host "🐳 Backend image not found, building..."
+  docker compose build
+}
 
-Write-Host "=== Setup Complete! ==="
-Write-Host "You can now run the GraphQL API server with: apps/backend/graphql-api"
-Write-Host "And start Next.js dev server via: cd apps/frontend && npm run dev"
-Write-Host "Or start Next.js in production: npm run start"
+Write-Host "🚀 Starting backend..."
+docker compose up

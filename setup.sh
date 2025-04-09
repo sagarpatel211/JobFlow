@@ -1,45 +1,38 @@
-#!/usr/bin/env bash
+#!/bin/bash
+
 set -e
 
-# Usage: ./setup.sh [--production]
+FRONTEND_DIR="apps/frontend"
+BACKEND_DIR="apps/backend"
 
-PRODUCTION=false
+# Start frontend setup
+echo "🔧 Checking frontend setup..."
+cd "$FRONTEND_DIR"
 
-if [ "$1" == "--production" ]; then
-  PRODUCTION=true
+if [ ! -d "node_modules" ]; then
+  echo "📦 Installing frontend dependencies..."
+  npm install
 fi
 
-echo "=== Installing Dependencies and Setting Up Project ==="
-
-# 1. Install & Build Frontend
-echo "=== Setting up Next.js frontend ==="
-cd apps/frontend
-
-echo "Installing npm dependencies..."
-npm install
-
-if [ "$PRODUCTION" = true ]; then
-  echo "Building frontend in production mode..."
+if [ ! -d ".next" ]; then
+  echo "🛠️ Building frontend..."
   npm run build
-else
-  echo "Skipping production build for dev environment..."
 fi
 
-cd ../..
+echo "🚀 Starting frontend..."
+npm run start &
 
-# 2. Set up Go GraphQL API
-echo "=== Setting up Go GraphQL API ==="
-cd apps/backend
+cd - > /dev/null
 
-echo "Tidying Go modules..."
-go mod tidy
+# Start backend setup
+echo "🔧 Checking backend Docker image..."
+cd "$BACKEND_DIR"
 
-echo "Building Go GraphQL server..."
-go build -o backend ./src
+# If image doesn't exist, build it
+if ! docker compose images | grep -q "backend"; then
+  echo "🐳 Backend image not found, building..."
+  docker compose build
+fi
 
-cd ../..
-
-echo "=== Setup Complete! ==="
-echo "You can now run the GraphQL API server with: apps/backend/graphql-api"
-echo "And start Next.js dev server via: cd apps/frontend && npm run dev"
-echo "Or start Next.js in production: npm run start"
+echo "🚀 Starting backend..."
+docker compose up

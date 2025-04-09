@@ -21,31 +21,21 @@ import { JobActions } from "./jobactions";
 import ApplicationPopover from "./apppopover";
 
 function formatPostedDate(dateStr: string): string {
-  let date: Date;
+  if (!dateStr) return "";
 
-  if (dateStr.includes(".")) {
-    const parts = dateStr.split(".");
-    if (parts.length !== 3) return dateStr;
-    const [dayStr, monthStr, yearStr] = parts;
-    const day = Number(dayStr);
-    const month = Number(monthStr) - 1; // JS months are 0-based
-    const year = Number(yearStr);
-    date = new Date(year, month, day);
-  } else if (dateStr.includes("-")) {
-    const parts = dateStr.split("-");
-    if (parts.length < 3) return dateStr;
-    const [yearStr, monthStr, dayStr] = parts;
-    const year = Number(yearStr);
-    const month = Number(monthStr) - 1;
-    const day = Number(dayStr);
-    date = new Date(year, month, day);
-  } else {
-    date = new Date(dateStr);
-  }
-  if (isNaN(date.getTime())) {
+  try {
+    let date: Date;
+    if (dateStr.includes(".")) {
+      const [day, month, year] = dateStr.split(".").map(Number);
+      date = new Date(year, month - 1, day);
+    } else {
+      date = new Date(dateStr);
+    }
+
+    return isNaN(date.getTime()) ? dateStr : format(date, "MMM d, yyyy");
+  } catch {
     return dateStr;
   }
-  return format(date, "MMM d, yyyy");
 }
 
 export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchiveJob, onDeleteJob }: JobRowProps) {
@@ -64,6 +54,32 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
     updateStatus(job.id, 1);
   };
 
+  const handleTogglePriority = () => {
+    togglePriority(job.id);
+  };
+
+  const handleModify = () => {
+    if (onModifyJob) {
+      onModifyJob(job.id);
+    }
+  };
+
+  const handleArchive = () => {
+    if (onArchiveJob) {
+      onArchiveJob(job.id);
+    } else {
+      toast.success(`Archived ${job.title} @ ${job.company}`);
+    }
+  };
+
+  const handleDelete = () => {
+    if (onDeleteJob) {
+      onDeleteJob(job.id);
+    } else {
+      toast.success(`Deleted ${job.title} @ ${job.company}`);
+    }
+  };
+
   const onBlacklistCompany = (company: string) => {
     toast(
       (t) => (
@@ -80,32 +96,36 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
     );
   };
 
-  const handleSubmitAI = async () => {
-    try {
-      await navigator.clipboard.writeText(job.link);
-      if (typeof chrome !== "undefined" && "runtime" in chrome && typeof chrome.runtime?.sendMessage === "function") {
-        await new Promise<void>((resolve, reject) => {
-          chrome.runtime.sendMessage(
-            {
-              message: "EXTRACT_JOB_INFO",
-              link: job.link,
-              options: { generateResume, generateCoverLetter },
-            },
-            (response) => {
-              if (chrome.runtime.lastError !== undefined && typeof chrome.runtime.lastError.message === "string") {
-                reject(new Error(chrome.runtime.lastError.message));
-              } else {
-                resolve();
-              }
-            },
-          );
-        });
-      }
-    } catch (error) {
-      console.error("Error in handleSubmitAI:", error);
-    } finally {
-      setIsPopoverOpen(false);
-    }
+  const handleSubmitAI = () => {
+    navigator.clipboard
+      .writeText(job.link)
+      .then(() => {
+        if (typeof chrome !== "undefined" && "runtime" in chrome && typeof chrome.runtime?.sendMessage === "function") {
+          return new Promise<void>((resolve, reject) => {
+            chrome.runtime.sendMessage(
+              {
+                message: "EXTRACT_JOB_INFO",
+                link: job.link,
+                options: { generateResume, generateCoverLetter },
+              },
+              (response) => {
+                if (chrome.runtime.lastError !== undefined && typeof chrome.runtime.lastError.message === "string") {
+                  reject(new Error(chrome.runtime.lastError.message));
+                } else {
+                  resolve();
+                }
+              },
+            );
+          });
+        }
+        return Promise.resolve();
+      })
+      .catch((error: unknown) => {
+        console.error("Error in handleSubmitAI:", error);
+      })
+      .finally(() => {
+        setIsPopoverOpen(false);
+      });
   };
 
   const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -210,7 +230,7 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
               >
                 Generate Cover Letter
               </Button>
-              <Button onClick={() => void handleSubmitAI}>Submit</Button>
+              <Button onClick={handleSubmitAI}>Submit</Button>
             </div>
           </PopoverContent>
         </Popover>
@@ -230,56 +250,13 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
           />
         </Popover>
       </TableCell>
-
       <TableCell className="pr-2">
         <JobActions
           priority={job.priority}
-          onTogglePriority={() => togglePriority(job.id)}
-          onModify={() => onModifyJob && onModifyJob(job.id)}
-          onArchive={() => {
-            toast(
-              (t) => (
-                <div className="w-[400px] flex items-center">
-                  <div className="flex-1 truncate whitespace-nowrap">
-                    Archived{" "}
-                    <b>
-                      {job.title} @ {job.company}
-                    </b>
-                  </div>
-                  <Button
-                    variant="link"
-                    className="ml-2 text-blue-500 underline shrink-0"
-                    onClick={() => toast.dismiss(t.id)}
-                  >
-                    Undo
-                  </Button>
-                </div>
-              ),
-              { duration: 7000 },
-            );
-          }}
-          onDelete={() => {
-            toast(
-              (t) => (
-                <div className="w-[400px] flex items-center">
-                  <div className="flex-1 truncate whitespace-nowrap">
-                    Deleted{" "}
-                    <b>
-                      {job.title} @ {job.company}
-                    </b>
-                  </div>
-                  <Button
-                    variant="link"
-                    className="ml-2 text-blue-500 underline shrink-0"
-                    onClick={() => toast.dismiss(t.id)}
-                  >
-                    Undo
-                  </Button>
-                </div>
-              ),
-              { duration: 7000 },
-            );
-          }}
+          onTogglePriority={handleTogglePriority}
+          onModify={handleModify}
+          onArchive={handleArchive}
+          onDelete={handleDelete}
         />
       </TableCell>
     </TableRow>

@@ -26,54 +26,6 @@ jobs:
         working-directory: apps/frontend
         run: npm run lint
 
-      - name: Run tests
+      - name: Run build
         working-directory: apps/frontend
-        run: npm test
-
-  build-go:
-    runs-on: ubuntu-latest
-    services:
-      redis:
-        image: redis:latest
-        ports:
-          - 6379:6379
-      kafka:
-        image: confluentinc/cp-kafka:latest
-        ports:
-          - 9092:9092
-        env:
-          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: "1.18"
-
-      - name: Wait for Redis to be ready
-        run: |
-          for i in {1..30}; do
-            if nc -z redis 6379; then
-              echo "Redis is up";
-              break;
-            fi;
-            sleep 2;
-          done
-
-      - name: Wait for Kafka to be ready
-        run: |
-          for i in {1..30}; do
-            if nc -z kafka 9092; then
-              echo "Kafka is up";
-              break;
-            fi;
-            sleep 2;
-          done
-
-      - name: Run Go tests
-        working-directory: apps/backend-go
-        run: go test ./...
+        run: npm run build

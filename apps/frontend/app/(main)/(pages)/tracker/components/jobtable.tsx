@@ -14,6 +14,9 @@ export function JobTable({
   onUpdateJob,
   onSaveJob,
   onCancelModifyJob,
+  onArchiveJob,
+  onDeleteJob,
+  onTogglePriorityJob,
 }: JobTableProps) {
   useEffect(() => {
     setTotalJobs(jobs.length);
@@ -25,20 +28,38 @@ export function JobTable({
     let newIndex = job.statusIndex + direction;
     newIndex = Math.max(0, Math.min(statuses.length - 1, newIndex));
     onUpdateJob(jobId, { statusIndex: newIndex });
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
+    fetch(`${API_URL}/api/jobs/${String(jobId)}/status-arrow`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ direction }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to update status");
+        }
+      })
+      .catch((error: unknown) => {
+        console.error("Error updating job status:", error);
+        onUpdateJob(jobId, { statusIndex: job.statusIndex });
+      });
   };
 
   const togglePriority = (jobId: number) => {
     const job = jobs.find((j) => j.id === jobId);
     if (!job) return;
-    onUpdateJob(jobId, { priority: !job.priority });
+
+    if (onTogglePriorityJob) {
+      onTogglePriorityJob(jobId);
+    } else {
+      onUpdateJob(jobId, { priority: !job.priority });
+    }
   };
 
   const handleModifyJob = (jobId: number) => {
     onUpdateJob(jobId, { isModifying: true });
   };
-
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedJobs = jobs.slice(startIndex, startIndex + itemsPerPage);
 
   return (
     <Table>
@@ -54,7 +75,7 @@ export function JobTable({
       </TableHeader>
 
       <TableBody>
-        {paginatedJobs.map((job) => {
+        {jobs.map((job) => {
           if (job.isModifying) {
             return (
               <ModifyJobRow
@@ -74,6 +95,8 @@ export function JobTable({
               updateStatus={updateStatus}
               togglePriority={togglePriority}
               onModifyJob={handleModifyJob}
+              onArchiveJob={onArchiveJob}
+              onDeleteJob={onDeleteJob}
             />
           );
         })}

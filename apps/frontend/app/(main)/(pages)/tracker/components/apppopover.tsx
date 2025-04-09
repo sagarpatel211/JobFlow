@@ -117,7 +117,7 @@ const ApplicationPopover: React.FC<ApplicationPopoverProps> = ({
             {tags.map((tag) => (
               <div
                 key={tag}
-                className="flex items-center rounded-full bg-blue-900 px-3 py-1 whitespace-nowrap text-white"
+                className="flex items-center rounded-full px-3 py-1 whitespace-nowrap text-white bg-gradient-to-r from-blue-600 to-indigo-800"
               >
                 <span className="text-sm font-medium">{tag}</span>
                 <button

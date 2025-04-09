@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -9,11 +9,10 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Filter, List, Star, Plus, Archive, Check } from "lucide-react";
+import { Filter, List, Star, Plus, Archive, Check, Search, X } from "lucide-react";
 import { JobToolbarProps } from "@/types/job";
-import { Search, X } from "lucide-react";
-import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
+
 const filterOptions = [
   { label: "Only Not Applied Jobs", color: "bg-blue-500 text-white" },
   { label: "Posted <1 week", color: "bg-green-500 text-white" },

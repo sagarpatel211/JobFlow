@@ -3,77 +3,17 @@
 import React, { useEffect, useState, useCallback, JSX } from "react";
 import { format } from "date-fns";
 import { useTheme } from "next-themes";
-import { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
 
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
 import JobToolbar from "./components/jobtoolbar";
 import { JobTable } from "./components/jobtable";
 import PaginationControls from "./components/pagination";
 import { ChartsSection } from "./components/chartsection";
-import { HeartPulse } from "lucide-react";
-import { Job } from "@/types/job";
-
-interface StatusCounts {
-  nothing_done: number;
-  applying: number;
-  applied: number;
-  OA: number;
-  interview: number;
-  offer: number;
-  rejected: number;
-  [key: string]: number;
-}
-
-interface PaginationData {
-  totalJobs: number;
-  currentPage: number;
-  itemsPerPage: number;
-  totalPages: number;
-}
-
-interface ScrapeInfo {
-  scraping: boolean;
-  scrapeProgress: number;
-  estimatedSeconds: number;
-}
-
-interface Health {
-  isHealthy: boolean;
-}
-
-interface TrackerData {
-  jobs: Job[];
-  statusCounts: StatusCounts;
-  pagination: PaginationData;
-  scrapeInfo: ScrapeInfo;
-  health: Health;
-}
-
-interface TrackerAPIResponse {
-  trackerData: TrackerData;
-}
-
-interface AddJobResponse {
-  success: boolean;
-  job: Job;
-}
-
-interface UpdateJobResponse {
-  success: boolean;
-  job: Job;
-}
-
-interface ScrapeResponse {
-  success: boolean;
-  scraping: boolean;
-  data?: unknown;
-}
-
-interface CancelScrapeResponse {
-  success: boolean;
-  scraping: boolean;
-}
+import TrackerHeader from "./components/trackheader";
+import { Job, RoleType, JobStatus } from "@/types/job";
+import { TrackerData } from "@/types/tracker";
+import { APIResponse, BackendJob, TrackerAPIResponse, AddJobResponse, UpdateJobResponse } from "@/types/api";
+import ConfirmationDialog from "./components/confirmationdialog";
 
 const ITEMS_PER_PAGE = 4;
 
@@ -112,19 +52,65 @@ export default function TrackerPage(): JSX.Element {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Add states for toolbar filters
+  const [sortBy, setSortBy] = useState<string>("date");
+  const [sortDirection, setSortDirection] = useState<string>("desc");
+  const [groupByCompany, setGroupByCompany] = useState<boolean>(false);
+  const [showArchived, setShowArchived] = useState<boolean>(false);
+  const [showPriorityOnly, setShowPriorityOnly] = useState<boolean>(false);
+  const [filterNotApplied, setFilterNotApplied] = useState<boolean>(false);
+  const [filterWithinWeek, setFilterWithinWeek] = useState<boolean>(false);
+  const [filterIntern, setFilterIntern] = useState<boolean>(false);
+  const [filterNewgrad, setFilterNewgrad] = useState<boolean>(false);
+
+  // Add state for managing the confirmation dialog
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletionMonths, setDeletionMonths] = useState(0);
+
   const fetchTrackerData = useCallback(
     async (page: number): Promise<void> => {
       setLoading(true);
       try {
-        const response: Response = await fetch(`${BASE_URL}/api/tracker?page=${String(page)}`);
+        // Build query parameters with all filters
+        const params = new URLSearchParams({
+          page: String(page),
+          per_page: String(ITEMS_PER_PAGE),
+          sort_by: sortBy,
+          sort_direction: sortDirection,
+          show_archived: showArchived ? "1" : "0",
+          show_priority: showPriorityOnly ? "1" : "0",
+          filter_not_applied: filterNotApplied ? "1" : "0",
+          filter_within_week: filterWithinWeek ? "1" : "0",
+          filter_intern: filterIntern ? "1" : "0",
+          filter_newgrad: filterNewgrad ? "1" : "0",
+          group_by_company: groupByCompany ? "1" : "0",
+        });
+
+        const response: Response = await fetch(`${BASE_URL}/api/tracker?${params.toString()}`);
         if (!response.ok) {
           throw new Error("Failed to fetch tracker data");
         }
-        const data = await response.json() as TrackerAPIResponse;
+        const data = (await response.json()) as TrackerAPIResponse;
+
+        if (!data.success) {
+          throw new Error(data.error || "Failed to fetch tracker data");
+        }
+
+        // Add isModifying flag to each job for the UI state
+        const jobsWithUIState = data.trackerData.jobs.map((job) => ({
+          ...job,
+          isModifying: false,
+        }));
+
         setTrackerData({
           ...data.trackerData,
-          pagination: { ...data.trackerData.pagination, currentPage: page },
+          jobs: jobsWithUIState,
+          pagination: {
+            ...data.trackerData.pagination,
+            currentPage: page,
+          },
         });
+
         setError(null);
       } catch (err) {
         console.error(err);
@@ -133,12 +119,38 @@ export default function TrackerPage(): JSX.Element {
         setLoading(false);
       }
     },
-    [BASE_URL],
+    [
+      BASE_URL,
+      sortBy,
+      sortDirection,
+      showArchived,
+      showPriorityOnly,
+      filterNotApplied,
+      filterWithinWeek,
+      filterIntern,
+      filterNewgrad,
+      groupByCompany,
+    ],
   );
 
   useEffect(() => {
     void fetchTrackerData(currentPage);
   }, [currentPage, fetchTrackerData]);
+
+  useEffect(() => {
+    // Reset to page 1 when filter changes to avoid empty pages
+    setCurrentPage(1);
+  }, [
+    sortBy,
+    sortDirection,
+    showArchived,
+    showPriorityOnly,
+    filterNotApplied,
+    filterWithinWeek,
+    filterIntern,
+    filterNewgrad,
+    groupByCompany,
+  ]);
 
   const goToNextPage = (): void => {
     if (currentPage < trackerData.pagination.totalPages) {
@@ -152,36 +164,174 @@ export default function TrackerPage(): JSX.Element {
     }
   };
 
-  const addJob = async (job: Job): Promise<AddJobResponse> => {
-    const response: Response = await fetch(`${BASE_URL}/api/jobs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ job }),
-    });
-    if (!response.ok) {
-      throw new Error("Failed to add job");
+  const goToPage = (page: number): void => {
+    if (page >= 1 && page <= trackerData.pagination.totalPages) {
+      setCurrentPage(page);
     }
-    return (await response.json()) as AddJobResponse;
   };
 
-  const updateJob = async (id: number, job: Job): Promise<UpdateJobResponse> => {
-    const response: Response = await fetch(`${BASE_URL}/api/jobs/${String(id)}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ job }),
-    });
-    if (!response.ok) {
-      throw new Error("Failed to update job");
+  const addJob = async (job: Job): Promise<AddJobResponse> => {
+    try {
+      // Convert frontend job format to backend format
+      const backendJob: BackendJob = {
+        company: { name: job.company },
+        title: job.title,
+        role_type: job.role_type ?? "newgrad",
+        status: getStatusFromIndex(job.statusIndex),
+        posted_date: job.postedDate,
+        link: job.link,
+        priority: job.priority,
+        archived: job.archived,
+        ats_score: job.atsScore || 0,
+        tags: job.tags || [],
+      };
+
+      const response: Response = await fetch(`${BASE_URL}/api/jobs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ job: backendJob }),
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json()) as APIResponse;
+        throw new Error(errorData.error || "Failed to add job");
+      }
+
+      const result = (await response.json()) as AddJobResponse;
+
+      // Refresh data after adding a job
+      toast.success("Job added successfully!");
+      await fetchTrackerData(1); // Go to first page to see the new job
+      return result;
+    } catch (error) {
+      console.error("Error adding job:", error);
+      toast.error("Failed to add job: " + (error instanceof Error ? error.message : "Unknown error"));
+      throw error;
     }
-    return (await response.json()) as UpdateJobResponse;
+  };
+
+  const updateJob = async (id: number, job: Partial<Job>): Promise<UpdateJobResponse> => {
+    try {
+      // Convert frontend job format to backend format
+      const backendJob: BackendJob = {};
+
+      if (job.company !== undefined) backendJob.company = { name: job.company };
+      if (job.title !== undefined) backendJob.title = job.title;
+      if (job.role_type !== undefined) {
+        backendJob.role_type = job.role_type;
+      }
+      if (job.statusIndex !== undefined) backendJob.status = getStatusFromIndex(job.statusIndex);
+      if (job.postedDate !== undefined) backendJob.posted_date = job.postedDate;
+      if (job.link !== undefined) backendJob.link = job.link;
+      if (job.priority !== undefined) backendJob.priority = job.priority;
+      if (job.archived !== undefined) backendJob.archived = job.archived;
+      if (job.atsScore !== undefined) backendJob.ats_score = job.atsScore;
+      if (job.tags !== undefined) backendJob.tags = job.tags;
+
+      const response: Response = await fetch(`${BASE_URL}/api/jobs/${String(id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ job: backendJob }),
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json()) as APIResponse;
+        throw new Error(errorData.error || "Failed to update job");
+      }
+
+      const result = (await response.json()) as UpdateJobResponse;
+
+      // Refresh data after updating
+      toast.success("Job updated successfully!");
+      await fetchTrackerData(currentPage);
+      return result;
+    } catch (error) {
+      console.error("Error updating job:", error);
+      toast.error("Failed to update job: " + (error instanceof Error ? error.message : "Unknown error"));
+      throw error;
+    }
+  };
+
+  const archiveJob = async (id: number): Promise<void> => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/jobs/${String(id)}/archive`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json()) as APIResponse;
+        throw new Error(errorData.error || "Failed to archive job");
+      }
+
+      toast.success("Job archived successfully!");
+      await fetchTrackerData(currentPage);
+    } catch (error) {
+      console.error("Error archiving job:", error);
+      toast.error("Failed to archive job: " + (error instanceof Error ? error.message : "Unknown error"));
+    }
+  };
+
+  const togglePriorityJob = async (id: number): Promise<void> => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/jobs/${String(id)}/priority`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json()) as APIResponse;
+        throw new Error(errorData.error || "Failed to toggle priority");
+      }
+
+      toast.success("Priority updated!");
+      await fetchTrackerData(currentPage);
+    } catch (error) {
+      console.error("Error toggling priority:", error);
+      toast.error("Failed to update priority: " + (error instanceof Error ? error.message : "Unknown error"));
+    }
+  };
+
+  const deleteJob = async (id: number): Promise<void> => {
+    try {
+      const response = await fetch(`${BASE_URL}/api/jobs/${String(id)}/soft-delete`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json()) as APIResponse;
+        throw new Error(errorData.error || "Failed to delete job");
+      }
+
+      toast.success("Job deleted successfully!");
+      await fetchTrackerData(currentPage);
+    } catch (error) {
+      console.error("Error deleting job:", error);
+      toast.error("Failed to delete job: " + (error instanceof Error ? error.message : "Unknown error"));
+    }
+  };
+
+  // Convert status index to status string for backend
+  const getStatusFromIndex = (statusIndex: number): JobStatus => {
+    const statuses: JobStatus[] = ["nothing_done", "applying", "applied", "OA", "interview", "offer", "rejected"];
+    return statusIndex >= 0 && statusIndex < statuses.length ? statuses[statusIndex] : "nothing_done";
+  };
+
+  // Convert role_type to backend format
+  const getRoleTypeFromString = (roleType: string): RoleType => {
+    return roleType === "intern" ? "intern" : "newgrad";
   };
 
   const handleAddNewJob = (): void => {
+    const today = new Date();
+    const formattedDate = format(today, "dd.MM.yyyy");
+
     const newJob: Job = {
       id: -Date.now(),
       company: "",
       title: "",
-      postedDate: "",
+      postedDate: formattedDate,
       link: "",
       statusIndex: 0,
       priority: false,
@@ -190,28 +340,17 @@ export default function TrackerPage(): JSX.Element {
       deleted: false,
       atsScore: 0,
       tags: [],
+      role_type: "newgrad",
+      status: "nothing_done",
     };
 
-    if (currentPage === 1) {
-      setTrackerData((prev) => {
-        const newTotal = prev.pagination.totalJobs + 1;
-        const newJobs = [newJob, ...prev.jobs];
-        const newTotalPages = Math.ceil(newTotal / ITEMS_PER_PAGE);
-
-        return {
-          ...prev,
-          jobs: newJobs.slice(0, ITEMS_PER_PAGE),
-          pagination: {
-            totalJobs: newTotal,
-            currentPage: 1,
-            itemsPerPage: ITEMS_PER_PAGE,
-            totalPages: newTotalPages,
-          },
-        };
-      });
-    } else {
-      void fetchTrackerData(currentPage);
-    }
+    setTrackerData((prev) => {
+      const updatedJobs = [newJob, ...prev.jobs.slice(0, prev.pagination.itemsPerPage - 1)];
+      return {
+        ...prev,
+        jobs: updatedJobs,
+      };
+    });
   };
 
   const handleUpdateJob = (id: number, updatedFields: Partial<Job>): void => {
@@ -225,41 +364,17 @@ export default function TrackerPage(): JSX.Element {
     const jobToSave = trackerData.jobs.find((job) => job.id === id);
     if (!jobToSave) return;
 
-    const updatedJob: Job = {
-      ...jobToSave,
-      postedDate: format(new Date(), "dd.MM.yyyy"),
-      isModifying: false,
-    };
+    const { isModifying, ...jobData } = jobToSave;
 
     try {
-      if (jobToSave.id < 0) {
-        const response = await addJob(updatedJob);
-        if (currentPage === 1) {
-          setTrackerData((prev) => {
-            const newTotal = prev.pagination.totalJobs + 1;
-            const newJobs = [response.job, ...prev.jobs];
-            const newTotalPages = Math.ceil(newTotal / ITEMS_PER_PAGE);
-
-            return {
-              ...prev,
-              jobs: newJobs.slice(0, ITEMS_PER_PAGE),
-              pagination: {
-                totalJobs: newTotal,
-                currentPage: 1,
-                itemsPerPage: ITEMS_PER_PAGE,
-                totalPages: newTotalPages,
-              },
-            };
-          });
-        } else {
-          void fetchTrackerData(currentPage);
-        }
+      if (id < 0) {
+        const jobWithStatus = {
+          ...jobData,
+          status: getStatusFromIndex(jobData.statusIndex),
+        };
+        await addJob(jobWithStatus as Job);
       } else {
-        const response = await updateJob(id, updatedJob);
-        setTrackerData((prev) => ({
-          ...prev,
-          jobs: prev.jobs.map((job) => (job.id === id ? response.job : job)),
-        }));
+        await updateJob(id, jobData);
       }
     } catch (err) {
       console.error(err);
@@ -267,66 +382,222 @@ export default function TrackerPage(): JSX.Element {
   };
 
   const handleCancelModifyJob = (id: number): void => {
-    setTrackerData((prev) => {
-      const isNewUnsavedJob = prev.jobs.find((job) => job.id === id && job.isModifying && !job.company && !job.title);
-
-      if (!isNewUnsavedJob) {
-        return {
-          ...prev,
-          jobs: prev.jobs.map((job) => (job.id === id ? { ...job, isModifying: false } : job)),
-        };
-      }
-
-      const updatedJobs = prev.jobs.filter((job) => job.id !== id);
-      const newTotalJobs = prev.pagination.totalJobs - 1;
-      const newTotalPages = Math.max(1, Math.ceil(newTotalJobs / ITEMS_PER_PAGE));
-
-      return {
+    if (id < 0) {
+      setTrackerData((prev) => ({
         ...prev,
-        jobs: updatedJobs,
-        pagination: {
-          ...prev.pagination,
-          totalJobs: newTotalJobs,
-          totalPages: newTotalPages,
-        },
-      };
-    });
-  };
-
-  const startScrape = async (): Promise<ScrapeResponse> => {
-    const response: Response = await fetch(`${BASE_URL}/api/scrape`, { method: "POST" });
-    if (!response.ok) {
-      throw new Error("Failed to start scrape");
+        jobs: prev.jobs.filter((job) => job.id !== id),
+      }));
+    } else {
+      setTrackerData((prev) => ({
+        ...prev,
+        jobs: prev.jobs.map((job) => (job.id === id ? { ...job, isModifying: false } : job)),
+      }));
     }
-    return (await response.json()) as ScrapeResponse;
-  };
-
-  const cancelScrape = async (): Promise<CancelScrapeResponse> => {
-    const response: Response = await fetch(`${BASE_URL}/api/scrape/cancel`, { method: "POST" });
-    if (!response.ok) {
-      throw new Error("Failed to cancel scrape");
-    }
-    return (await response.json()) as CancelScrapeResponse;
   };
 
   const handleScrape = (): void => {
     if (trackerData.scrapeInfo.scraping) {
       void (async () => {
         try {
-          await cancelScrape();
+          const response = await fetch(`${BASE_URL}/api/scrape/cancel`, { method: "POST" });
+          if (!response.ok) throw new Error("Failed to cancel scrape");
+
+          const data = (await response.json()) as APIResponse;
+          if (data.success) {
+            toast.success("Scrape cancelled");
+            await fetchTrackerData(currentPage);
+          }
         } catch (err) {
           console.error(err);
+          toast.error("Failed to cancel scrape");
         }
       })();
     } else {
       void (async () => {
         try {
-          await startScrape();
+          const response = await fetch(`${BASE_URL}/api/scrape`, { method: "POST" });
+          if (!response.ok) throw new Error("Failed to start scrape");
+
+          const data = (await response.json()) as APIResponse;
+          if (data.success) {
+            toast.success("Scrape started");
+
+            const interval = setInterval(() => {
+              void (async () => {
+                try {
+                  const statusResponse = await fetch(`${BASE_URL}/api/scrape/status`);
+                  const statusData = (await statusResponse.json()) as APIResponse;
+
+                  if (!statusData.scraping) {
+                    clearInterval(interval);
+                    await fetchTrackerData(1);
+                    toast.success("Scrape completed!");
+                  }
+                } catch (error) {
+                  console.error("Error checking scrape status:", error);
+                }
+              })();
+            }, 2000);
+          }
         } catch (err) {
           console.error(err);
+          toast.error("Failed to start scrape");
         }
       })();
     }
+  };
+
+  const handleDeleteOlderThan = (months: number): void => {
+    setDeletionMonths(months);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteOlderThan = (): void => {
+    const months = deletionMonths;
+    const monthsStr = String(months);
+
+    void (async () => {
+      try {
+        toast.loading("Deleting old data...");
+        const response = await fetch(`${BASE_URL}/api/jobs/delete-older-than/${monthsStr}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (!response.ok) {
+          const errorData = (await response.json()) as { error?: string };
+          throw new Error(errorData.error || "Failed to delete old data");
+        }
+
+        const result = (await response.json()) as { deleted_count: number };
+        toast.dismiss();
+        toast.success(`Successfully deleted ${String(result.deleted_count)} jobs older than ${monthsStr} months`);
+
+        // Refresh the data
+        await fetchTrackerData(1);
+      } catch (error) {
+        toast.dismiss();
+        toast.error("Failed to delete data: " + (error instanceof Error ? error.message : "Unknown error"));
+        console.error("Error deleting old data:", error);
+      }
+    })();
+  };
+
+  // Add new handlers for the additional actions
+  const handleRemoveDeadLinks = (): void => {
+    void (async () => {
+      try {
+        toast.loading("Checking for dead links...");
+        const response = await fetch(`${BASE_URL}/api/jobs/remove-dead-links`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (!response.ok) {
+          const errorData = (await response.json()) as { error?: string };
+          throw new Error(errorData.error || "Failed to remove dead links");
+        }
+
+        const result = (await response.json()) as { removed_count: number };
+        toast.dismiss();
+        toast.success(`Successfully removed ${String(result.removed_count)} dead links`);
+
+        // Refresh the data
+        await fetchTrackerData(currentPage);
+      } catch (error) {
+        toast.dismiss();
+        toast.error("Failed to remove dead links: " + (error instanceof Error ? error.message : "Unknown error"));
+        console.error("Error removing dead links:", error);
+      }
+    })();
+  };
+
+  const handleArchiveRejected = (): void => {
+    void (async () => {
+      try {
+        toast.loading("Archiving rejected applications...");
+        const response = await fetch(`${BASE_URL}/api/jobs/archive-rejected`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (!response.ok) {
+          const errorData = (await response.json()) as { error?: string };
+          throw new Error(errorData.error || "Failed to archive rejected applications");
+        }
+
+        const result = (await response.json()) as { archived_count: number };
+        toast.dismiss();
+        toast.success(`Successfully archived ${String(result.archived_count)} rejected applications`);
+
+        // Refresh the data
+        await fetchTrackerData(currentPage);
+      } catch (error) {
+        toast.dismiss();
+        toast.error("Failed to archive applications: " + (error instanceof Error ? error.message : "Unknown error"));
+        console.error("Error archiving applications:", error);
+      }
+    })();
+  };
+
+  const handleArchiveAppliedOlderThan = (months: number): void => {
+    const monthsStr = String(months);
+
+    void (async () => {
+      try {
+        toast.loading(`Archiving applied jobs older than ${monthsStr} months...`);
+        const response = await fetch(`${BASE_URL}/api/jobs/archive-applied-older-than/${monthsStr}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (!response.ok) {
+          const errorData = (await response.json()) as { error?: string };
+          throw new Error(errorData.error || "Failed to archive applied jobs");
+        }
+
+        const result = (await response.json()) as { archived_count: number };
+        toast.dismiss();
+        toast.success(
+          `Successfully archived ${String(result.archived_count)} applied jobs older than ${monthsStr} months`,
+        );
+
+        // Refresh the data
+        await fetchTrackerData(currentPage);
+      } catch (error) {
+        toast.dismiss();
+        toast.error("Failed to archive jobs: " + (error instanceof Error ? error.message : "Unknown error"));
+        console.error("Error archiving jobs:", error);
+      }
+    })();
+  };
+
+  const handleMarkOldestAsPriority = (): void => {
+    void (async () => {
+      try {
+        toast.loading("Marking oldest 50 jobs as priority...");
+        const response = await fetch(`${BASE_URL}/api/jobs/mark-oldest-as-priority`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        if (!response.ok) {
+          const errorData = (await response.json()) as { error?: string };
+          throw new Error(errorData.error || "Failed to mark jobs as priority");
+        }
+
+        const result = (await response.json()) as { marked_count: number };
+        toast.dismiss();
+        toast.success(`Successfully marked ${String(result.marked_count)} oldest jobs as priority`);
+
+        // Refresh the data
+        await fetchTrackerData(currentPage);
+      } catch (error) {
+        toast.dismiss();
+        toast.error("Failed to mark jobs: " + (error instanceof Error ? error.message : "Unknown error"));
+        console.error("Error marking jobs:", error);
+      }
+    })();
   };
 
   if (loading) {
@@ -359,43 +630,28 @@ export default function TrackerPage(): JSX.Element {
       />
 
       <div className="flex flex-col gap-4">
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/50 p-6 text-4xl backdrop-blur-lg">
-          <span>Tracker</span>
-          <div className="flex items-center gap-4 text-base">
-            <div className="flex items-center gap-2">
-              <HeartPulse
-                className={`w-6 h-6 ${trackerData.health.isHealthy ? "text-green-500 animate-pulse" : "text-red-500"}`}
-              />
-              <span className={`${trackerData.health.isHealthy ? "text-green-600" : "text-red-600"} font-medium`}>
-                {trackerData.health.isHealthy ? "Healthy" : "Unhealthy"}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <Button variant={trackerData.scrapeInfo.scraping ? "destructive" : "default"} onClick={handleScrape}>
-                {trackerData.scrapeInfo.scraping ? "Cancel Scrape" : "Scrape"}
-              </Button>
-              {trackerData.scrapeInfo.scraping && (
-                <div className="flex items-center gap-3 w-[220px]">
-                  <Progress className="w-full" value={trackerData.scrapeInfo.scrapeProgress} />
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">
-                    {trackerData.scrapeInfo.estimatedSeconds}s
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
+        <TrackerHeader
+          isHealthy={trackerData.health.isHealthy}
+          scraping={trackerData.scrapeInfo.scraping}
+          scrapeProgress={trackerData.scrapeInfo.scrapeProgress}
+          estimatedSeconds={trackerData.scrapeInfo.estimatedSeconds}
+          onScrape={handleScrape}
+          onDeleteOlderThan={handleDeleteOlderThan}
+          onRemoveDeadLinks={handleRemoveDeadLinks}
+          onArchiveRejected={handleArchiveRejected}
+          onArchiveAppliedOlderThan={handleArchiveAppliedOlderThan}
+          onMarkOldestAsPriority={handleMarkOldestAsPriority}
+        />
 
         <JobToolbar
-          sortBy="date"
-          setSortBy={() => {}}
-          groupByCompany={false}
-          setGroupByCompany={() => {}}
-          showArchived={false}
-          setShowArchived={() => {}}
-          showPriorityOnly={false}
-          setShowPriorityOnly={() => {}}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          groupByCompany={groupByCompany}
+          setGroupByCompany={setGroupByCompany}
+          showArchived={showArchived}
+          setShowArchived={setShowArchived}
+          showPriorityOnly={showPriorityOnly}
+          setShowPriorityOnly={setShowPriorityOnly}
           onAddNewJob={handleAddNewJob}
         />
 
@@ -403,10 +659,21 @@ export default function TrackerPage(): JSX.Element {
           jobs={trackerData.jobs}
           currentPage={trackerData.pagination.currentPage}
           itemsPerPage={trackerData.pagination.itemsPerPage}
-          setTotalJobs={() => {}}
+          setTotalJobs={(total) => {}}
           onUpdateJob={handleUpdateJob}
-          onSaveJob={(id) => { void handleSaveJob(id); }}
+          onSaveJob={(id) => {
+            void handleSaveJob(id);
+          }}
           onCancelModifyJob={handleCancelModifyJob}
+          onArchiveJob={(id) => {
+            void archiveJob(id);
+          }}
+          onDeleteJob={(id) => {
+            void deleteJob(id);
+          }}
+          onTogglePriorityJob={(id) => {
+            void togglePriorityJob(id);
+          }}
         />
 
         <PaginationControls
@@ -414,10 +681,22 @@ export default function TrackerPage(): JSX.Element {
           totalPages={trackerData.pagination.totalPages}
           onPrev={goToPrevPage}
           onNext={goToNextPage}
+          onGoToPage={goToPage}
         />
 
         <ChartsSection statusCounts={trackerData.statusCounts} />
       </div>
+
+      <ConfirmationDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={confirmDeleteOlderThan}
+        title="Delete Old Job Data"
+        description={`Are you sure you want to delete all job data older than ${String(deletionMonths)} months? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="destructive"
+      />
     </div>
   );
 }

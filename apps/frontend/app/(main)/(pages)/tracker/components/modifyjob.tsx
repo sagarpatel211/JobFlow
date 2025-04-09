@@ -75,7 +75,8 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              updateStatus(job.id, -1);
+              const newIndex = Math.max(0, job.statusIndex - 1);
+              onUpdateJob(job.id, { statusIndex: newIndex });
             }}
             disabled={job.statusIndex === 0}
             className="disabled:opacity-50"
@@ -90,7 +91,8 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
           </span>
           <button
             onClick={() => {
-              updateStatus(job.id, 1);
+              const newIndex = Math.min(statuses.length - 1, job.statusIndex + 1);
+              onUpdateJob(job.id, { statusIndex: newIndex });
             }}
             disabled={job.statusIndex === statuses.length - 1}
             className="disabled:opacity-50"

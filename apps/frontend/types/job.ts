@@ -1,3 +1,7 @@
+// Define string literal types for role and status
+export type RoleType = "intern" | "newgrad";
+export type JobStatus = "nothing_done" | "applying" | "applied" | "OA" | "interview" | "offer" | "rejected";
+
 export interface Job {
   id: number;
   company: string;
@@ -5,12 +9,15 @@ export interface Job {
   postedDate: string;
   link: string;
   statusIndex: number;
+  status?: JobStatus; // Backend status value
+  role_type?: RoleType; // "intern" or "newgrad"
   priority: boolean;
   isModifying: boolean;
   archived: boolean;
   deleted: boolean;
   atsScore?: number;
   tags?: string[];
+  notes?: string;
 }
 
 export interface JobTableProps {
@@ -21,6 +28,9 @@ export interface JobTableProps {
   onUpdateJob: (jobId: number, updates: Partial<Job>) => void;
   onSaveJob: (jobId: number) => void;
   onCancelModifyJob: (jobId: number) => void;
+  onArchiveJob?: (jobId: number) => void;
+  onDeleteJob?: (jobId: number) => void;
+  onTogglePriorityJob?: (jobId: number) => void;
 }
 
 export interface JobToolbarProps {
