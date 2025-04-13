@@ -1,15 +1,6 @@
 "use client";
 import { FileUpload } from "@/components/ui/file-upload";
-
-interface DocumentsFormProps {
-  formData: {
-    resume: File | null;
-    coverLetter: File | null;
-    transcript: File | null;
-    latex: File | null;
-  };
-  handleFileChange: (field: "resume" | "coverLetter" | "transcript" | "latex", file: File) => void;
-}
+import { DocumentsFormProps } from "@/types/onboarding";
 
 export default function DocumentsForm({ handleFileChange }: DocumentsFormProps) {
   return (

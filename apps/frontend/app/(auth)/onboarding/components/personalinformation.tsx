@@ -2,19 +2,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import React from "react";
-
-interface PersonalInformation {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  address: string;
-}
-
-interface PersonalInformationFormProps {
-  formData: PersonalInformation;
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}
+import { PersonalInformationFormProps } from "@/types/onboarding";
 
 export default function PersonalInformationForm({ formData, handleInputChange }: PersonalInformationFormProps) {
   return (

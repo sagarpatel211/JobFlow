@@ -2,13 +2,7 @@
 import { useState, useRef } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-
-interface FinalStepFormProps {
-  formData: {
-    termsAccepted: boolean;
-  };
-  handleCheckboxChange: (field: keyof FinalStepFormProps["formData"], value: boolean) => void;
-}
+import { FinalStepFormProps } from "@/types/onboarding";
 
 export default function FinalStepForm({ formData, handleCheckboxChange }: FinalStepFormProps) {
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);

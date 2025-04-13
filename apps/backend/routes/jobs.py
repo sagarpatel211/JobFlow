@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, abort, send_file
 from database.session import SessionLocal
-from database.models import Job, RoleType, Status, Tag, Company, JobAttachment
+from database.models import Job, RoleType, Status, Tag, Company, JobAttachment, Folder
 from sqlalchemy.orm import joinedload
 from routes.job_helpers import (
     serialize_job,
@@ -257,7 +257,7 @@ def soft_delete_job(job_id):
 def archive_job(job_id):
     """
     PUT /api/jobs/<job_id>/archive
-    Mark the job as archived (but not deleted).
+    Toggle a job's archive status.
     """
     session = SessionLocal()
     try:
@@ -266,16 +266,20 @@ def archive_job(job_id):
             session.close()
             return jsonify({"error": "Job not found", "success": False}), 404
 
-        # Toggle the archive status
+        # Toggle archived status
         job.archived = not job.archived
+        
+        # Store the new archive value before committing and closing the session
+        new_archived_value = job.archived
+        
         session.commit()
-
+        
         # update index
         index_job_to_es(job, session)
         session.close()
         
-        logger.info(f"Successfully toggled archive status for job {job_id} to {job.archived}")
-        return jsonify({"success": True, "archived": job.archived})
+        logger.info(f"Successfully toggled archive for job {job_id} to {new_archived_value}")
+        return jsonify({"success": True, "archived": new_archived_value})
     except Exception as e:
         logger.error(f"Error toggling archive for job {job_id}: {str(e)}")
         session.rollback()
@@ -297,14 +301,23 @@ def priority_job(job_id):
 
         # Toggle priority
         job.priority = not job.priority
+        
+        # Store the new priority value before committing
+        new_priority_value = job.priority
+        
+        # Must refresh job before committing to ensure it's bound to the session
+        session.flush()
+        session.refresh(job)
         session.commit()
 
-        # update index
+        # update index - use the job object from session after commit
         index_job_to_es(job, session)
+        
+        # Close the session after all operations are complete
         session.close()
         
-        logger.info(f"Successfully toggled priority for job {job_id} to {job.priority}")
-        return jsonify({"success": True, "priority": job.priority})
+        logger.info(f"Successfully toggled priority for job {job_id} to {new_priority_value}")
+        return jsonify({"success": True, "priority": new_priority_value})
     except Exception as e:
         logger.error(f"Error toggling priority for job {job_id}: {str(e)}")
         session.rollback()
@@ -392,10 +405,11 @@ def update_job_status_arrow(job_id):
             # update index
             index_job_to_es(job, session)
         
+        # Serialize job data before closing the session
         job_data = serialize_job(job)
         session.close()
         
-        logger.info(f"Updated status for job {job_id} to {job.status.value}")
+        logger.info(f"Updated status for job {job_id} to {job_data['status']}")
         return jsonify({"success": True, "job": job_data})
     except Exception as e:
         logger.error(f"Error updating status arrow for job {job_id}: {str(e)}")
@@ -544,8 +558,8 @@ def get_job_stats():
     """
     session = SessionLocal()
     try:
-        # Get status counts
-        status_counts = get_status_counts(session)
+        # Get status counts - exclude archived jobs for charts
+        status_counts = get_status_counts(session, include_archived=False)
         
         # Get role type counts
         role_type_counts = {}
@@ -611,6 +625,26 @@ def get_tags():
         })
     except Exception as e:
         logger.error(f"Error getting tags: {str(e)}")
+        session.close()
+        return jsonify({"error": str(e), "success": False}), 500
+    finally:
+        session.close()
+
+@jobs_bp.route("/folders", methods=["GET"])
+def get_folders():
+    """
+    GET /api/jobs/folders
+    Get all available folders.
+    """
+    session = SessionLocal()
+    try:
+        folders = session.query(Folder).all()
+        return jsonify({
+            "success": True,
+            "folders": [{"id": folder.id, "name": folder.name, "color": folder.color} for folder in folders]
+        })
+    except Exception as e:
+        logger.error(f"Error getting folders: {str(e)}")
         session.close()
         return jsonify({"error": str(e), "success": False}), 500
     finally:
@@ -933,3 +967,79 @@ def mark_oldest_as_priority():
     except Exception as e:
         logger.error(f"Error marking oldest jobs as priority: {str(e)}")
         return jsonify({"error": str(e), "success": False}), 500
+
+@jobs_bp.route("/<int:job_id>/follow", methods=["PUT"])
+def follow_job(job_id):
+    """
+    PUT /api/jobs/<job_id>/follow
+    Toggle a job's follow status.
+    """
+    session = SessionLocal()
+    try:
+        job = get_job_by_id(session, job_id)
+        if not job:
+            session.close()
+            return jsonify({"error": "Job not found", "success": False}), 404
+
+        # Toggle follow status
+        job.following = not job.following
+        
+        # Store the new follow value before committing and closing the session
+        new_following_value = job.following
+        
+        session.commit()
+        
+        # update index
+        index_job_to_es(job, session)
+        session.close()
+        
+        logger.info(f"Successfully toggled follow for job {job_id} to {new_following_value}")
+        return jsonify({"success": True, "following": new_following_value})
+    except Exception as e:
+        logger.error(f"Error toggling follow for job {job_id}: {str(e)}")
+        session.rollback()
+        session.close()
+        return jsonify({"error": str(e), "success": False}), 500
+
+@jobs_bp.route("/reset", methods=["POST"])
+def reset_database():
+    """
+    POST /api/jobs/reset
+    Resets the database by dropping all tables and recreating them.
+    This endpoint is for testing purposes only and should not be used in production.
+    """
+    try:
+        # First check if we're in development/testing mode
+        # This is a safety check to prevent accidental resets in production
+        env = os.environ.get("FLASK_ENV", "development")
+        if env == "production":
+            return jsonify({
+                "success": False,
+                "error": "This endpoint is disabled in production mode"
+            }), 403
+            
+        from database.models import Base
+        from database.session import engine, SessionLocal
+        
+        # Drop all tables
+        logger.info("Dropping all tables")
+        Base.metadata.drop_all(bind=engine)
+        
+        # Recreate all tables
+        logger.info("Recreating all tables")
+        Base.metadata.create_all(bind=engine)
+        
+        # Run migrations to ensure indexes and any other schema changes
+        from database.schema_migrator import run_migration
+        run_migration()
+        
+        return jsonify({
+            "success": True,
+            "message": "Database has been reset successfully"
+        })
+    except Exception as e:
+        logger.error(f"Error resetting database: {str(e)}")
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500

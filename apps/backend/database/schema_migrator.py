@@ -3,7 +3,7 @@ from sqlalchemy import inspect, text
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
 from database.session import engine
-from database.models import JobAttachment
+from database.models import JobAttachment, Folder
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,9 @@ def create_indexes(connection):
         ("CREATE INDEX IF NOT EXISTS idx_company_name ON companies (name)", "company name"),
         ("CREATE INDEX IF NOT EXISTS idx_company_blacklisted ON companies (blacklisted)", "company blacklisted"),
         ("CREATE INDEX IF NOT EXISTS idx_tag_name ON tags (name)", "tag name"),
+        ("CREATE INDEX IF NOT EXISTS idx_folder_name ON folders (name)", "folder name"),
+        ("CREATE INDEX IF NOT EXISTS idx_job_folders_job_id ON job_folders (job_id)", "job_folders job_id"),
+        ("CREATE INDEX IF NOT EXISTS idx_job_folders_folder_id ON job_folders (folder_id)", "job_folders folder_id"),
     ]
 
     for sql, description in indexes:
@@ -52,6 +55,43 @@ def create_attachment_table_if_missing():
             return False
     return True
 
+def create_folder_table_if_missing():
+    """Create the folders table and job_folders junction table if they don't exist."""
+    inspector = inspect(engine)
+    folder_created = True
+    
+    # Create folders table if it doesn't exist
+    if "folders" not in inspector.get_table_names():
+        logger.info("Creating folders table")
+        try:
+            # Create table directly using SQLAlchemy metadata
+            Folder.__table__.create(engine)
+        except Exception as e:
+            logger.warning(f"Could not create folders table: {str(e)}")
+            folder_created = False
+    
+    # Create job_folders table if it doesn't exist
+    if "job_folders" not in inspector.get_table_names():
+        logger.info("Creating job_folders junction table")
+        try:
+            # Use raw SQL since the junction table doesn't have a model class
+            connection = engine.connect()
+            connection.execute(text("""
+                CREATE TABLE IF NOT EXISTS job_folders (
+                    job_id INTEGER NOT NULL, 
+                    folder_id INTEGER NOT NULL,
+                    PRIMARY KEY (job_id, folder_id),
+                    FOREIGN KEY(job_id) REFERENCES jobs(id) ON DELETE CASCADE,
+                    FOREIGN KEY(folder_id) REFERENCES folders(id) ON DELETE CASCADE
+                )
+            """))
+            connection.close()
+        except Exception as e:
+            logger.warning(f"Could not create job_folders table: {str(e)}")
+            folder_created = False
+    
+    return folder_created
+
 def run_migration():
     try:
         inspector = inspect(engine)
@@ -68,6 +108,9 @@ def run_migration():
 
             # Create job_attachments table if needed
             create_attachment_table_if_missing()
+            
+            # Create folders and job_folders tables if needed
+            create_folder_table_if_missing()
 
             # Add indexes for better query performance
             create_indexes(connection)

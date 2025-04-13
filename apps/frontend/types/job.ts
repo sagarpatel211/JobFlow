@@ -18,6 +18,13 @@ export interface Job {
   atsScore?: number;
   tags?: string[];
   notes?: string;
+  folders?: Folder[];
+}
+
+export interface Folder {
+  id: number;
+  name: string;
+  color: string;
 }
 
 export interface JobTableProps {
@@ -31,11 +38,16 @@ export interface JobTableProps {
   onArchiveJob?: (jobId: number) => void;
   onDeleteJob?: (jobId: number) => void;
   onTogglePriorityJob?: (jobId: number) => void;
+  onUpdateJobStatusArrow?: (jobId: number, direction: number) => void;
+  statusCounts: Record<string, number>;
+  groupByCompany?: boolean;
 }
 
 export interface JobToolbarProps {
   sortBy: string;
   setSortBy: React.Dispatch<React.SetStateAction<string>>;
+  sortDirection: string;
+  setSortDirection: React.Dispatch<React.SetStateAction<string>>;
   groupByCompany: boolean;
   setGroupByCompany: React.Dispatch<React.SetStateAction<boolean>>;
   showArchived: boolean;
@@ -56,6 +68,7 @@ export interface JobRowProps {
 
 export interface JobActionsProps {
   priority: boolean;
+  archived: boolean;
   onTogglePriority: () => void;
   onModify: () => void;
   onArchive: () => void;

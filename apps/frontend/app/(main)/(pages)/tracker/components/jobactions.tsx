@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { JobActionsProps } from "@/types/job";
 
-export function JobActions({ priority, onTogglePriority, onModify, onArchive, onDelete }: JobActionsProps) {
+export function JobActions({ priority, archived, onTogglePriority, onModify, onArchive, onDelete }: JobActionsProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -34,7 +34,7 @@ export function JobActions({ priority, onTogglePriority, onModify, onArchive, on
         </DropdownMenuItem>
 
         <DropdownMenuItem onSelect={onArchive}>
-          <Archive className="mr-2 h-4 w-4 text-gray-500" /> Archive
+          <Archive className="mr-2 h-4 w-4 text-gray-500" /> {archived ? "Unarchive" : "Archive"}
         </DropdownMenuItem>
 
         <DropdownMenuItem onSelect={onDelete}>

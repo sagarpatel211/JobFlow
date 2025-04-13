@@ -1,0 +1,90 @@
+import { ReactNode } from "react";
+import { StatusCounts } from "./tracker";
+import { Job, Folder } from "./job";
+
+// Chart Section Types
+export interface ChartsSectionProps {
+  statusCounts: Record<string, number>;
+}
+
+export interface CustomTooltipPayload {
+  name?: string;
+  dataKey?: string;
+  value?: number;
+}
+
+export interface CustomTooltipProps {
+  active?: boolean;
+  payload?: CustomTooltipPayload[];
+  label?: string;
+}
+
+// Input Dialog Types
+export interface InputDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (value: number) => void;
+  title: string;
+  description: string;
+  label: string;
+  placeholder?: string;
+  defaultValue?: number;
+  confirmText?: string;
+  cancelText?: string;
+  variant?: "default" | "destructive";
+  min?: number;
+  max?: number;
+}
+
+// Confirmation Dialog Types
+export interface ConfirmationDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  title: string;
+  description: string;
+  confirmText: string;
+  cancelText: string;
+  variant?: "default" | "destructive";
+}
+
+// Tracker Header Types
+export interface TrackerHeaderProps {
+  isHealthy: boolean;
+  scraping: boolean;
+  scrapeProgress: number;
+  estimatedSeconds: number;
+  onScrape: () => void;
+  onDeleteOlderThan: (months: number) => void;
+  onRemoveDeadLinks: () => void;
+  onArchiveRejected: () => void;
+  onArchiveAppliedOlderThan: (months: number) => void;
+  onMarkOldestAsPriority: () => void;
+}
+
+// Application Popover Types
+export interface ApplicationPopoverProps {
+  job: Job;
+  resumeFile: File | null;
+  coverLetterFile: File | null;
+  handleResumeUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleCoverLetterUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  downloadFile: (file: File) => void;
+  updateTags?: (jobId: number, tags: string[]) => void;
+  updateNotes?: (jobId: number, notes: string) => void;
+  updateFolders?: (jobId: number, folders: Folder[]) => void;
+}
+
+export interface StatusBadgeProps {
+  statusIndex: number;
+  onDecreaseStatus: () => void;
+  onIncreaseStatus: () => void;
+}
+
+export interface PaginationControlsProps {
+  currentPage: number;
+  totalPages: number;
+  onPrev: () => void;
+  onNext: () => void;
+  onGoToPage: (page: number) => void;
+}

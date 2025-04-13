@@ -15,8 +15,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import InputDialog from "./inputdialog";
 import ConfirmationDialog from "./confirmationdialog";
+import { TrackerHeaderProps } from "@/types/trackerComponents";
 
-// Types for action confirmation dialogs
+// Type for action confirmation dialogs
 type ActionType =
   | "none"
   | "removeDeadLinks"
@@ -25,19 +26,6 @@ type ActionType =
   | "deleteOlderThan3"
   | "deleteOlderThan6"
   | "deleteOlderThan12";
-
-interface TrackerHeaderProps {
-  isHealthy: boolean;
-  scraping: boolean;
-  scrapeProgress: number;
-  estimatedSeconds: number;
-  onScrape: () => void;
-  onDeleteOlderThan: (months: number) => void;
-  onRemoveDeadLinks: () => void;
-  onArchiveRejected: () => void;
-  onArchiveAppliedOlderThan: (months: number) => void;
-  onMarkOldestAsPriority: () => void;
-}
 
 export const TrackerHeader: React.FC<TrackerHeaderProps> = ({
   isHealthy,

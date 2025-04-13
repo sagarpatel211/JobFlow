@@ -4,18 +4,7 @@ import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, X } from "lucide-react";
-
-interface ConfirmationDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  title: string;
-  description: string;
-  confirmText?: string;
-  cancelText?: string;
-  variant?: "default" | "destructive";
-  icon?: React.ReactNode;
-}
+import { ConfirmationDialogProps } from "@/types/trackerComponents";
 
 const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   isOpen,

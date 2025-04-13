@@ -1,21 +1,7 @@
 "use client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-
-interface TrackingPreferencesFormProps {
-  formData: {
-    leetcodeEnabled: boolean;
-    behaviouralEnabled: boolean;
-    jobsEnabled: boolean;
-    systemDesignEnabled: boolean;
-  };
-  handleCheckboxChange: (field: keyof TrackingPreferencesFormProps["formData"], value: boolean) => void;
-}
-
-interface Option {
-  name: keyof TrackingPreferencesFormProps["formData"];
-  label: string;
-}
+import { TrackingPreferencesFormProps, Option } from "@/types/onboarding";
 
 export default function TrackingPreferencesForm({ formData, handleCheckboxChange }: TrackingPreferencesFormProps) {
   const options: Option[] = [

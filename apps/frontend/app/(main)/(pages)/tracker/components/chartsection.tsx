@@ -1,23 +1,8 @@
 "use client";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from "recharts";
 import { statuses, statusFillColors } from "@/lib/constants";
-
-interface ChartsSectionProps {
-  statusCounts: Record<string, number>;
-}
-
-interface CustomTooltipPayload {
-  name?: string;
-  dataKey?: string;
-  value?: number;
-}
-
-interface CustomTooltipProps {
-  active?: boolean;
-  payload?: CustomTooltipPayload[];
-  label?: string;
-}
+import { ChartsSectionProps, CustomTooltipProps } from "@/types/trackerComponents";
 
 const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -33,7 +18,27 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label })
   return null;
 };
 
-export const ChartsSection: React.FC<ChartsSectionProps> = ({ statusCounts }) => {
+export const ChartsSection: React.FC<ChartsSectionProps> = ({ statusCounts: initialStatusCounts }) => {
+  // Track status counts in local state to allow for real-time updates
+  const [statusCounts, setStatusCounts] = useState(initialStatusCounts);
+
+  // Listen for status count updates
+  useEffect(() => {
+    // Update state when prop changes
+    setStatusCounts(initialStatusCounts);
+
+    // Listen for custom events when status counts are updated
+    const handleStatusCountsUpdated = (event: CustomEvent<Record<string, number>>) => {
+      if (event.detail) {
+        setStatusCounts(event.detail);
+      }
+    };
+    window.addEventListener("statusCountsUpdated", handleStatusCountsUpdated as EventListener);
+    return () => {
+      window.removeEventListener("statusCountsUpdated", handleStatusCountsUpdated as EventListener);
+    };
+  }, [initialStatusCounts]);
+
   const statusKeyMap: Record<string, string> = {
     "Nothing Done": "nothing_done",
     Applying: "applying",

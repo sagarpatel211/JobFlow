@@ -19,6 +19,8 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import toast from "react-hot-toast";
 import { JobActions } from "./jobactions";
 import ApplicationPopover from "./apppopover";
+import { updateJob } from "../services/api";
+import { Folder } from "@/types/job";
 
 function formatPostedDate(dateStr: string): string {
   if (!dateStr) return "";
@@ -36,6 +38,12 @@ function formatPostedDate(dateStr: string): string {
   } catch {
     return dateStr;
   }
+}
+
+// Add this function to ensure all URLs have a protocol
+function ensureProtocol(url: string): string {
+  if (!url) return "";
+  return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
 }
 
 export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchiveJob, onDeleteJob }: JobRowProps) {
@@ -77,6 +85,38 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
       onDeleteJob(job.id);
     } else {
       toast.success(`Deleted ${job.title} @ ${job.company}`);
+    }
+  };
+
+  const handleUpdateTags = (jobId: number, tags: string[]) => {
+    try {
+      // We'll use the API directly here since there's no prop for it
+      void updateJob(jobId, { tags });
+      // Remove toast for better UX
+    } catch (error) {
+      console.error("Error updating tags:", error);
+      toast.error("Failed to update tags");
+    }
+  };
+
+  const handleUpdateNotes = (jobId: number, notes: string) => {
+    try {
+      // Only update if needed
+      if (notes !== job.notes) {
+        void updateJob(jobId, { notes });
+      }
+    } catch (error) {
+      console.error("Error updating notes:", error);
+      toast.error("Failed to update notes");
+    }
+  };
+
+  const handleUpdateFolders = (jobId: number, folders: Folder[]) => {
+    try {
+      void updateJob(jobId, { folders });
+    } catch (error) {
+      console.error("Error updating folders:", error);
+      toast.error("Failed to update folders");
     }
   };
 
@@ -187,7 +227,7 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
       </TableCell>
       <TableCell>
         <div className="max-w-[300px] truncate -mr-[48px]">
-          <a href={job.link} target="_blank" rel="noopener noreferrer" className="hover:underline">
+          <a href={ensureProtocol(job.link)} target="_blank" rel="noopener noreferrer" className="hover:underline">
             {job.link}
           </a>
         </div>
@@ -201,7 +241,7 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
         <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger asChild>
             <Link
-              href={job.link}
+              href={ensureProtocol(job.link)}
               target="_blank"
               rel="noopener noreferrer"
               className="group relative inline-flex h-8 overflow-hidden rounded-md p-[2px] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-50"
@@ -247,12 +287,16 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
             handleResumeUpload={handleResumeUpload}
             handleCoverLetterUpload={handleCoverLetterUpload}
             downloadFile={downloadFile}
+            updateTags={handleUpdateTags}
+            updateNotes={handleUpdateNotes}
+            updateFolders={handleUpdateFolders}
           />
         </Popover>
       </TableCell>
       <TableCell className="pr-2">
         <JobActions
           priority={job.priority}
+          archived={job.archived}
           onTogglePriority={handleTogglePriority}
           onModify={handleModify}
           onArchive={handleArchive}

@@ -19,6 +19,17 @@ body {
 *::-webkit-scrollbar {
   display: none !important;
 }
+
+/* Hide scrollbars but maintain scrolling functionality */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
 .bg-radial-gradient {
   background-image: radial-gradient(circle at 10% 20%, rgba(4, 159, 108, 1) 0%, rgba(194, 254, 113, 1) 90.1%);
 }

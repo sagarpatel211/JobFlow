@@ -1,6 +1,9 @@
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import and_, or_, func, select, case
+import os
 
 # Import Elasticsearch conditionally
 try:
@@ -24,11 +27,9 @@ except ImportError:
 
 # If you need Elasticsearch
 # from routes.common import es
-from database.models import Company, Job, RoleType, Status, Tag, JobAttachment
+from database.models import Company, Job, RoleType, Status, Tag, JobAttachment, Folder
 from database.session import SessionLocal
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func, select
-import os
 from config import ELASTICSEARCH_URL, UPLOAD_FOLDER
 import werkzeug
 import uuid
@@ -114,6 +115,26 @@ def create_or_get_tag(session: Session, tag_name: str) -> Tag:
     
     return tag
 
+def create_or_get_folder(session: Session, folder_data: dict) -> Folder:
+    """Find or create a folder by name."""
+    if not folder_data.get("name"):
+        raise ValueError("Folder name is required")
+        
+    folder = session.query(Folder).filter(
+        func.lower(Folder.name) == func.lower(folder_data["name"])
+    ).first()
+    
+    if not folder:
+        folder = Folder(name=folder_data["name"])
+        if "color" in folder_data:
+            folder.color = folder_data["color"]
+        session.add(folder)
+        session.flush()
+    elif "color" in folder_data and folder.color != folder_data["color"]:
+        folder.color = folder_data["color"]
+        
+    return folder
+
 def apply_job_data_to_model(job: Job, data: dict, session: SessionLocal):
     # Company
     if "company" in data and data["company"]:
@@ -180,6 +201,19 @@ def apply_job_data_to_model(job: Job, data: dict, session: SessionLocal):
         for tag_name in data["tags"]:
             t = create_or_get_tag(session, tag_name)
             job.tags.append(t)
+            
+    # Folders
+    if "folders" in data and isinstance(data["folders"], list):
+        job.folders.clear()
+        for folder_data in data["folders"]:
+            if isinstance(folder_data, str):
+                folder_data = {"name": folder_data}
+            f = create_or_get_folder(session, folder_data)
+            job.folders.append(f)
+            
+    # Notes
+    if "notes" in data:
+        job.notes = data["notes"]
 
 def serialize_job(job: Job) -> dict:
     try:
@@ -206,6 +240,8 @@ def serialize_job(job: Job) -> dict:
         "deleted": job.deleted,
         "atsScore": ats_score,
         "tags": [t.name for t in job.tags],
+        "folders": [{"id": f.id, "name": f.name, "color": f.color} for f in job.folders],
+        "notes": job.notes or "",
     }
 
     if getattr(job, 'created_at', None):
@@ -319,64 +355,94 @@ def build_job_query(
     filter_newgrad: bool = False,
     search_query: str = None
 ) -> Any:
-    """Build a SQLAlchemy query with filters applied."""
-    filters = [Job.deleted == False]
+    """
+    Builds the base SQLAlchemy query for jobs with common filters.
+    Returns the query object.
+    """
     
+    # Start with base query, joining Company
+    query = session.query(Job).options(joinedload(Job.company))
+    
+    # Always exclude deleted jobs unless specifically requested
+    query = query.filter(Job.deleted == False)
+    
+    # Filter by archived status
     if not show_archived:
-        filters.append(Job.archived == False)
+        query = query.filter(Job.archived == False)
     
+    # Filter by priority status
     if show_priority:
-        filters.append(Job.priority == True)
+        query = query.filter(Job.priority == True)
     
+    # Filter: Only show jobs that are "Nothing Done"
     if filter_not_applied:
-        # Only show jobs that are in 'nothing_done' or 'applying' status
-        filters.append(
-            or_(
-                Job.status == Status.nothing_done,
-                Job.status == Status.applying
-            )
-        )
-    
+        query = query.filter(Job.status == Status.nothing_done)
+        
+    # Filter: Only show jobs posted within the last week
     if filter_within_week:
-        one_week_ago = datetime.now() - timedelta(days=7)
-        filters.append(Job.posted_date >= one_week_ago)
-    
-    # Initialize base query
-    query = session.query(Job).filter(and_(*filters))
-    
-    # Handle role filters (intern/newgrad)
-    # We check both the role_type and tags
-    role_filters = []
-    
+        one_week_ago = datetime.utcnow() - timedelta(days=7)
+        # Ensure posted_date is not null before comparing
+        query = query.filter(and_(Job.posted_date != None, Job.posted_date >= one_week_ago))
+        
+    # Filter: Only show Internships (case-insensitive check on role_type)
     if filter_intern:
-        intern_jobs = query.join(Job.tags).filter(
-            or_(
-                Job.role_type == RoleType.intern,
-                Tag.name.ilike('intern%')
-            )
-        ).subquery()
-        role_filters.append(Job.id.in_(select([intern_jobs.c.id])))
-    
+        query = query.filter(Job.role_type == RoleType.intern)
+        
+    # Filter: Only show New Grad (case-insensitive check on role_type)
     if filter_newgrad:
-        newgrad_jobs = query.join(Job.tags).filter(
-            or_(
-                Job.role_type == RoleType.newgrad,
-                Tag.name.ilike('newgrad%'),
-                Tag.name.ilike('new grad%')
-            )
-        ).subquery()
-        role_filters.append(Job.id.in_(select([newgrad_jobs.c.id])))
-    
-    if role_filters:
-        query = query.filter(or_(*role_filters))
-    
+        query = query.filter(Job.role_type == RoleType.newgrad)
+        
+    # Handle search query using Elasticsearch if available, otherwise basic title/company search
     if search_query:
-        # Simple database search (fallback when Elasticsearch is not available)
-        search_term = f"%{search_query}%"
-        query = query.join(Job.company).filter(
-            or_(
-                Job.title.ilike(search_term),
-                Company.name.ilike(search_term)
+        if es_client:
+            try:
+                es_query = {
+                    "bool": {
+                        "should": [
+                            {"match": {"title": {"query": search_query, "boost": 2}}},
+                            {"match": {"company_name": {"query": search_query, "boost": 1}}},
+                            {"term": {"tags": {"value": search_query, "boost": 0.5}}}
+                        ],
+                        "filter": [
+                            # Add existing boolean filters to ES query as well
+                            {"term": {"deleted": False}},
+                            {"term": {"archived": False}} if not show_archived else None,
+                            {"term": {"priority": True}} if show_priority else None,
+                            {"term": {"status": "nothing_done"}} if filter_not_applied else None,
+                            {"range": {"posted_date": {"gte": (datetime.utcnow() - timedelta(days=7)).isoformat()}}} if filter_within_week else None,
+                            {"term": {"role_type": "intern"}} if filter_intern else None,
+                            {"term": {"role_type": "newgrad"}} if filter_newgrad else None,
+                        ]
+                    }
+                }
+                # Remove None filters
+                es_query["bool"]["filter"] = [f for f in es_query["bool"]["filter"] if f is not None]
+                
+                results = es_client.search(index="jobs", query=es_query, size=500) # Limit ES results
+                job_ids = [hit['_source']['id'] for hit in results['hits']['hits']]
+                
+                if not job_ids:
+                    # No ES results, return a query that yields nothing
+                    query = query.filter(False)
+                else:
+                    # Filter the SQLAlchemy query by the job IDs found in ES
+                    query = query.filter(Job.id.in_(job_ids))
+                    
+            except Exception as e:
+                logger.error(f"Elasticsearch search failed: {e}")
+                # Fallback to basic search on error
+                query = query.filter(
+                    or_(
+                        Job.title.ilike(f"%{search_query}%"),
+                        Company.name.ilike(f"%{search_query}%")
+                    )
+                )
+        else:
+            # Basic search if Elasticsearch is not available
+            query = query.filter(
+                or_(
+                    Job.title.ilike(f"%{search_query}%"),
+                    Company.name.ilike(f"%{search_query}%")
             )
         )
     
@@ -388,31 +454,74 @@ def sort_job_query(
     sort_direction: str = "desc"
 ) -> Any:
     """Apply sorting to a job query."""
-    if sort_by == "date":
-        order_field = Job.posted_date
-    elif sort_by == "company":
-        query = query.join(Job.company)
-        order_field = Company.name
-    elif sort_by == "status":
-        # Custom status ordering
-        # This is a simple approach - for more complex ordering, consider a case statement
-        order_field = Job.status
-    else:
-        # Default to date
-        order_field = Job.posted_date
+    logger.info(f"Sorting jobs by {sort_by} in {sort_direction} order")
     
-    if sort_direction == "asc":
-        query = query.order_by(order_field.asc())
-    else:
-        query = query.order_by(order_field.desc())
-    
-    return query
+    try:
+        if sort_by == "date":
+            order_field = Job.posted_date
+        elif sort_by == "company":
+            query = query.join(Job.company)
+            order_field = Company.name
+        elif sort_by == "status":
+            # For debugging purposes, log the status enum values
+            logger.info(f"Status enum values: {[status.value for status in Status]}")
+            
+            # Create a simpler case statement that directly maps enum values to integers
+            whens = []
+            whens.append((Job.status == Status.nothing_done, 1))
+            whens.append((Job.status == Status.applying, 2))
+            whens.append((Job.status == Status.applied, 3))
+            whens.append((Job.status == Status.oa, 4))
+            whens.append((Job.status == Status.interview, 5))
+            whens.append((Job.status == Status.offer, 6))
+            whens.append((Job.status == Status.rejected, 7))
+            
+            status_order = case(whens, else_=99)
+            
+            logger.info("Created status ordering expression")
+            
+            if sort_direction == "asc":
+                query = query.order_by(status_order.asc())
+            else:
+                query = query.order_by(status_order.desc())
+            
+            # Return early as we've already applied ordering
+            return query
+        else:
+            # Default to date
+            logger.info(f"Unknown sort_by value: {sort_by}, using date as default")
+            order_field = Job.posted_date
+        
+        if sort_direction == "asc":
+            query = query.order_by(order_field.asc())
+        else:
+            query = query.order_by(order_field.desc())
+        
+        return query
+    except Exception as e:
+        # If there's an error, log it and fall back to sorting by ID
+        logger.error(f"Error in sort_job_query: {str(e)}")
+        # Return a simple sort by ID as a fallback
+        return query.order_by(Job.id.desc() if sort_direction == "desc" else Job.id.asc())
 
-def get_status_counts(session: Session, filter_deleted: bool = True) -> Dict[str, int]:
-    """Get counts of jobs by status."""
+def get_status_counts(session: Session, filter_deleted: bool = True, include_archived: bool = False) -> Dict[str, int]:
+    """Get counts of jobs by status.
+    
+    Args:
+        session: Database session
+        filter_deleted: Whether to exclude deleted jobs
+        include_archived: Whether to include archived jobs in the counts
+    
+    Returns:
+        Dictionary with status counts
+    """
     filters = []
     if filter_deleted:
         filters.append(Job.deleted == False)
+    
+    # Exclude archived jobs unless specifically requested
+    if not include_archived:
+        filters.append(Job.archived == False)
     
     # Use SQLAlchemy's func.count and group by
     results = session.query(

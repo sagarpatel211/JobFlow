@@ -1,23 +1,95 @@
 "use client";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { format, isValid } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { TableRow, TableCell } from "@/components/ui/table";
-import { ModifyJobRowProps } from "@/types/job";
+import { ModifyJobRowProps, JobStatus } from "@/types/job";
 import { statuses, statusColors } from "@/lib/constants";
 
+// Map UI status strings to backend JobStatus values
+const statusMapping: Record<number, JobStatus> = {
+  0: "nothing_done",
+  1: "applying",
+  2: "applied",
+  3: "OA",
+  4: "interview",
+  5: "offer",
+  6: "rejected",
+};
+
+/**
+ * Converts from dd.MM.yyyy to yyyy-MM-dd (HTML date input format)
+ */
 function toInputDateFormat(dateStr: string): string {
+  if (!dateStr || typeof dateStr !== "string") return "";
+
+  try {
+    // Handle dd.MM.yyyy format
+    if (dateStr.includes(".")) {
+      const [day, month, year] = dateStr.split(".").map(Number);
+      const parsed = new Date(year, month - 1, day);
+      if (isValid(parsed)) {
+        return format(parsed, "yyyy-MM-dd");
+      }
+    }
+
+    // Try to parse as ISO date
+    const parsed = new Date(dateStr);
+    if (isValid(parsed)) {
+      return format(parsed, "yyyy-MM-dd");
+    }
+  } catch (e) {
+    console.error("Date parsing error:", e);
+  }
+
+  return "";
+}
+
+/**
+ * Converts from yyyy-MM-dd (HTML date input) to dd.MM.yyyy (backend format)
+ */
+function toBackendDateFormat(dateStr: string): string {
   if (!dateStr) return "";
-  const parts = dateStr.split(".");
-  if (parts.length !== 3) return "";
-  const [day, month, year] = parts.map(Number);
-  const parsed = new Date(year, month - 1, day);
-  return isValid(parsed) ? format(parsed, "yyyy-MM-dd") : "";
+
+  try {
+    // Parse the yyyy-MM-dd format
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const parsed = new Date(year, month - 1, day);
+    if (isValid(parsed)) {
+      return format(parsed, "dd.MM.yyyy");
+    }
+  } catch (e) {
+    console.error("Date formatting error:", e);
+  }
+
+  return "";
 }
 
 export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, updateStatus }: ModifyJobRowProps) {
   const isSaveDisabled = !job.company || !job.title || !job.postedDate || !job.link;
+
+  // Keep track of the date input value separately
+  const [dateInputValue, setDateInputValue] = useState(toInputDateFormat(job.postedDate));
+
+  // Update the date input when job.postedDate changes externally
+  useEffect(() => {
+    setDateInputValue(toInputDateFormat(job.postedDate));
+  }, [job.postedDate]);
+
+  // Handle date input changes
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const htmlDateValue = e.target.value; // yyyy-MM-dd
+    setDateInputValue(htmlDateValue);
+
+    if (htmlDateValue) {
+      const backendDateValue = toBackendDateFormat(htmlDateValue); // dd.MM.yyyy
+
+      if (backendDateValue) {
+        onUpdateJob(job.id, { postedDate: backendDateValue });
+      }
+    }
+  };
 
   return (
     <TableRow>
@@ -49,13 +121,8 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
           type="date"
           name="postedDate"
           className="w-40 -mr-14"
-          value={toInputDateFormat(job.postedDate)}
-          onChange={(e) => {
-            const newDate = new Date(e.target.value);
-            onUpdateJob(job.id, {
-              postedDate: format(newDate, "dd.MM.yyyy"),
-            });
-          }}
+          value={dateInputValue}
+          onChange={handleDateChange}
         />
       </TableCell>
 
@@ -76,7 +143,10 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
           <button
             onClick={() => {
               const newIndex = Math.max(0, job.statusIndex - 1);
-              onUpdateJob(job.id, { statusIndex: newIndex });
+              onUpdateJob(job.id, {
+                statusIndex: newIndex,
+                status: statusMapping[newIndex],
+              });
             }}
             disabled={job.statusIndex === 0}
             className="disabled:opacity-50"
@@ -92,7 +162,10 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
           <button
             onClick={() => {
               const newIndex = Math.min(statuses.length - 1, job.statusIndex + 1);
-              onUpdateJob(job.id, { statusIndex: newIndex });
+              onUpdateJob(job.id, {
+                statusIndex: newIndex,
+                status: statusMapping[newIndex],
+              });
             }}
             disabled={job.statusIndex === statuses.length - 1}
             className="disabled:opacity-50"

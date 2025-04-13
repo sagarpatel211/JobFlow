@@ -3,17 +3,24 @@ from database.session import engine, SessionLocal
 from database.models import Base
 from config import SECRET_KEY
 from routes import register_blueprints
+# Import jobs_ext to ensure its endpoints are registered
+import routes.jobs_ext
 from flask_cors import CORS
 import os
 import logging
 from elasticsearch import Elasticsearch
 from config import ELASTICSEARCH_URL
 from database.schema_migrator import run_migration
+from logger_config import setup_logging, get_logger
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, 
-                   format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+log_level = setup_logging()
+logger = get_logger(__name__)
+
+# Log startup information based on log level
+logger.info(f"Starting JobFlow API with log level: {logging.getLevelName(log_level)}")
+if log_level == logging.DEBUG:
+    logger.debug("Debug logging is enabled - verbose logging will be shown")
 
 # Initialize database
 logger.info("Initializing database")
@@ -94,4 +101,5 @@ def test_api():
     })
 
 if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+    debug_mode = os.environ.get("FLASK_DEBUG", "0") == "1"
+    app.run(debug=debug_mode, host="0.0.0.0", port=5000)

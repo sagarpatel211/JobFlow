@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -9,9 +9,10 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Filter, List, Star, Plus, Archive, Check, Search, X } from "lucide-react";
-import { JobToolbarProps } from "@/types/job";
+import { Filter, List, Star, Plus, Archive, Check, Search, X, ArrowUp, ArrowDown } from "lucide-react";
+import type { JobToolbarProps } from "@/types/job";
 import { Badge } from "@/components/ui/badge";
+import { TrackerFilters } from "@/types/trackerHooks";
 
 const filterOptions = [
   { label: "Only Not Applied Jobs", color: "bg-blue-500 text-white" },
@@ -19,6 +20,14 @@ const filterOptions = [
   { label: "Internships", color: "bg-purple-500 text-white" },
   { label: "New Grad", color: "bg-orange-500 text-white" },
 ];
+
+// Map display labels to filter state keys
+const filterMap: Record<string, keyof TrackerFilters> = {
+  "Only Not Applied Jobs": "filterNotApplied",
+  "Posted <1 week": "filterWithinWeek",
+  Internships: "filterIntern",
+  "New Grad": "filterNewgrad",
+};
 
 const JobToolbar = ({
   sortBy,
@@ -30,12 +39,21 @@ const JobToolbar = ({
   showPriorityOnly,
   setShowPriorityOnly,
   onAddNewJob,
-}: JobToolbarProps) => {
-  const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
-
-  const toggleFilter = (filter: string) => {
-    setSelectedFilters((prev) => (prev.includes(filter) ? prev.filter((f) => f !== filter) : [...prev, filter]));
+  sortDirection,
+  setSortDirection,
+  updateFilters,
+  filters,
+}: JobToolbarProps & {
+  updateFilters: (filters: Partial<TrackerFilters>) => void;
+  filters: TrackerFilters;
+}) => {
+  const toggleFilter = (label: string) => {
+    const filterKey = filterMap[label];
+    if (filterKey) {
+      updateFilters({ [filterKey]: !filters[filterKey] });
+    }
   };
+
   return (
     <div className="flex items-center justify-between px-4">
       <span className="flex items-center w-full max-w-md rounded-full bg-muted px-4 border-2 border-transparent focus-within:border-primary focus-within:shadow-lg transition-all">
@@ -46,26 +64,31 @@ const JobToolbar = ({
         />
       </span>
       <div className="flex items-center gap-2 px-4 flex-wrap">
-        {filterOptions.map(({ label, color }) => (
-          <Badge
-            key={label}
-            onClick={() => {
-              toggleFilter(label);
-            }}
-            className={`cursor-pointer px-3 py-1 rounded-full transition-all ${
-              selectedFilters.includes(label) ? `${color} shadow-lg` : "bg-gray-200 text-gray-700"
-            }`}
-          >
-            {label}
-            {selectedFilters.includes(label) && <X className="w-4 h-4 ml-2 inline" />}
-          </Badge>
-        ))}
+        {filterOptions.map(({ label, color }) => {
+          const filterKey = filterMap[label];
+          const isActive = filterKey && filters[filterKey];
+          return (
+            <Badge
+              key={label}
+              onClick={() => toggleFilter(label)}
+              className={`cursor-pointer px-3 py-1 rounded-full transition-all ${isActive ? `${color} shadow-lg` : "bg-gray-200 text-gray-700"}`}
+            >
+              {label}
+              {isActive && <X className="w-4 h-4 ml-2 inline" />}
+            </Badge>
+          );
+        })}
       </div>
       <div className="flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Filter className="h-4 w-4" /> Sort By
+            <Button
+              variant="outline"
+              className="flex items-center gap-2"
+              disabled={groupByCompany}
+              title={groupByCompany ? "Sorting is disabled when grouping by company" : ""}
+            >
+              <Filter className="h-4 w-4" /> Sort By: {sortBy.charAt(0).toUpperCase() + sortBy.slice(1)}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" sideOffset={-5} alignOffset={0}>
@@ -100,8 +123,32 @@ const JobToolbar = ({
         </DropdownMenu>
 
         <Button
+          variant="outline"
+          onClick={() => {
+            setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+          }}
+          className="flex items-center gap-2"
+          disabled={groupByCompany}
+          title={groupByCompany ? "Sorting is disabled when grouping by company" : ""}
+        >
+          {sortDirection === "asc" ? (
+            <>
+              <ArrowUp className="h-4 w-4" />
+            </>
+          ) : (
+            <>
+              <ArrowDown className="h-4 w-4" />
+            </>
+          )}
+        </Button>
+
+        <Button
           variant={groupByCompany ? "default" : "outline"}
           onClick={() => {
+            // If turning on groupByCompany, set sort to "company" as default
+            if (!groupByCompany) {
+              setSortBy("company");
+            }
             setGroupByCompany((prev) => !prev);
           }}
           className="flex items-center gap-2"

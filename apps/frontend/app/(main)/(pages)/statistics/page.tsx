@@ -4,22 +4,13 @@ import { XAxis, YAxis, Line, LineChart, ResponsiveContainer, Tooltip } from "rec
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-
-interface LeetCodeStats {
-  submissionCalendar: Record<string, number>;
-}
+import { LeetCodeStats, ChartData, CustomTooltipPayload, StatsChartProps } from "@/types/statistics";
 
 const fetchLeetCodeStats = async (): Promise<Record<string, number>> => {
   const response = await fetch(`https://leetcode-stats-api.herokuapp.com/funy7rjCsA`);
   const data = (await response.json()) as LeetCodeStats;
   return data.submissionCalendar ?? {};
 };
-
-interface ChartData {
-  date: string;
-  actual: number;
-  goal: number;
-}
 
 const generateData = (days: number, actual: number[], goal: number[]): ChartData[] => {
   return Array.from({ length: days }, (_, i) => {
@@ -45,14 +36,7 @@ const generateFakeData = (days: number): ChartData[] => {
   });
 };
 
-interface CustomTooltipPayload {
-  value: number;
-  payload: {
-    date: string;
-  };
-}
-
-function StatsChart({ data, color }: { data: ChartData[]; color: string }) {
+function StatsChart({ data, color }: StatsChartProps) {
   return (
     <div className="h-[300px] w-full">
       <ResponsiveContainer width="100%" height="100%">

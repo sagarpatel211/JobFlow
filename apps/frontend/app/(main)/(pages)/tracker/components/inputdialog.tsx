@@ -6,20 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
-
-interface InputDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: (value: number) => void;
-  title: string;
-  description: string;
-  label: string;
-  placeholder?: string;
-  defaultValue?: number;
-  confirmText?: string;
-  cancelText?: string;
-  variant?: "default" | "destructive";
-}
+import { InputDialogProps } from "@/types/trackerComponents";
 
 const InputDialog: React.FC<InputDialogProps> = ({
   isOpen,

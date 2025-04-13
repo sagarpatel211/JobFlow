@@ -4,19 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-
-interface JobAutomationFormData {
-  preferredJobTitles?: string;
-  preferredCompanies?: string;
-  autoApply?: boolean;
-  additionalNotes?: string;
-}
-
-interface JobAutomationFormProps {
-  formData: JobAutomationFormData;
-  handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-  handleCheckboxChange: (field: keyof JobAutomationFormData, checked: boolean) => void;
-}
+import { JobAutomationFormProps } from "@/types/onboarding";
 
 export default function JobAutomationForm({
   formData,

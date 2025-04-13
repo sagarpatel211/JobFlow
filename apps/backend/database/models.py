@@ -28,6 +28,15 @@ job_tags_table = Table(
     Index("idx_job_tags_tag_id", "tag_id")
 )
 
+job_folders_table = Table(
+    "job_folders",
+    Base.metadata,
+    Column("job_id", ForeignKey("jobs.id", ondelete="CASCADE"), primary_key=True),
+    Column("folder_id", ForeignKey("folders.id", ondelete="CASCADE"), primary_key=True),
+    Index("idx_job_folders_job_id", "job_id"),
+    Index("idx_job_folders_folder_id", "folder_id")
+)
+
 class Company(Base):
     __tablename__ = "companies"
     id = Column(Integer, primary_key=True)
@@ -52,6 +61,17 @@ class Tag(Base):
         Index('idx_tag_name', name),
     )
 
+class Folder(Base):
+    __tablename__ = "folders"
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True)
+    color = Column(String, default="#3B82F6")  # Default blue color
+    created_at = Column(DateTime, server_default=func.now())
+    
+    __table_args__ = (
+        Index('idx_folder_name', name),
+    )
+
 class Job(Base):
     __tablename__ = "jobs"
     id = Column(Integer, primary_key=True)
@@ -70,6 +90,7 @@ class Job(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     tags = relationship("Tag", secondary=job_tags_table, backref="jobs")
+    folders = relationship("Folder", secondary=job_folders_table, backref="jobs")
     attachments = relationship("JobAttachment", back_populates="job", cascade="all, delete-orphan")
     
     __table_args__ = (
