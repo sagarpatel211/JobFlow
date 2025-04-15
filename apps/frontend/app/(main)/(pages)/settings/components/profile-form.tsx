@@ -85,12 +85,7 @@ const ProfileForm = () => {
         {/* Inline Email and Phone Number */}
         <div className="grid grid-cols-2 gap-4">
           <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" type="email" />
-          <Input
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-            placeholder="Phone Number"
-            type="tel"
-          />
+          <Input value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="Phone Number" type="tel" />
         </div>
 
         <Textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Address" />
@@ -175,11 +170,7 @@ const ProfileForm = () => {
           </div>
           <div className="p-2">
             <div className="flex items-center space-x-2">
-              <Checkbox
-                id="jobs"
-                checked={jobsEnabled}
-                onCheckedChange={(checked) => setJobsEnabled(Boolean(checked))}
-              />
+              <Checkbox id="jobs" checked={jobsEnabled} onCheckedChange={(checked) => setJobsEnabled(Boolean(checked))} />
               <label htmlFor="jobs">Track Jobs Applied</label>
             </div>
             {jobsEnabled && (
@@ -213,11 +204,7 @@ const ProfileForm = () => {
           </div>
         </div>
 
-        <Button
-          type="submit"
-          className="self-start hover:bg-[#2F006B] hover:text-white"
-          disabled={!isFormValid || isLoading}
-        >
+        <Button type="submit" className="self-start hover:bg-[#2F006B] hover:text-white" disabled={!isFormValid || isLoading}>
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

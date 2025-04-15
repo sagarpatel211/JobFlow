@@ -1,10 +1,10 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { JobTableProps } from "@/types/job";
 import { JobRow } from "./jobrow";
 import { ModifyJobRow } from "./modifyjob";
-import { statuses } from "@/lib/constants";
+import { useUpdateJobStatus } from "../hooks/useUpdateJobStatus";
 
 export function JobTable({
   jobs,
@@ -20,104 +20,42 @@ export function JobTable({
   onUpdateJobStatusArrow,
   statusCounts,
   groupByCompany = false,
+  onFocusJob,
 }: JobTableProps) {
   useEffect(() => {
     setTotalJobs(jobs.length);
   }, [jobs, setTotalJobs]);
 
-  // Helper function to update status counts locally
-  const updateStatusCountsLocally = (oldStatus: string, newStatus: string) => {
-    // Create a copy of the current status counts
-    const updatedCounts = { ...statusCounts };
+  const updateStatus = useUpdateJobStatus(jobs, onUpdateJob, onUpdateJobStatusArrow);
 
-    // Decrement the old status count
-    if (oldStatus && updatedCounts[oldStatus] > 0) {
-      updatedCounts[oldStatus] -= 1;
-    }
+  const togglePriority = useCallback(
+    (jobId: number) => {
+      const job = jobs.find((j) => j.id === jobId);
+      if (!job) return;
+      if (onTogglePriorityJob) {
+        onTogglePriorityJob(jobId);
+      } else {
+        onUpdateJob(jobId, { priority: !job.priority });
+      }
+    },
+    [jobs, onTogglePriorityJob, onUpdateJob],
+  );
 
-    // Increment the new status count
-    if (newStatus) {
-      updatedCounts[newStatus] = (updatedCounts[newStatus] || 0) + 1;
-    }
+  const handleModifyJob = useCallback(
+    (jobId: number) => {
+      onUpdateJob(jobId, { isModifying: true });
+    },
+    [onUpdateJob],
+  );
 
-    // Dispatch event with updated counts
-    window.dispatchEvent(
-      new CustomEvent("statusCountsUpdated", {
-        detail: updatedCounts,
-      }),
-    );
-  };
-
-  const updateStatus = (jobId: number, direction: number) => {
-    // If we have the parent handler, use it
-    if (onUpdateJobStatusArrow) {
-      onUpdateJobStatusArrow(jobId, direction);
-      return;
-    }
-
-    // Otherwise, fall back to the old approach
-    const job = jobs.find((j) => j.id === jobId);
-    if (!job) return;
-
-    // Store the old status before updating
-    const oldStatusIndex = job.statusIndex;
-    const oldStatus = getStatusFromIndex(oldStatusIndex);
-
-    // Calculate the new status index
-    let newIndex = job.statusIndex + direction;
-    newIndex = Math.max(0, Math.min(statuses.length - 1, newIndex));
-    const newStatus = getStatusFromIndex(newIndex);
-
-    // Update the UI immediately
-    onUpdateJob(jobId, { statusIndex: newIndex });
-
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
-    fetch(`${API_URL}/api/jobs/${String(jobId)}/status-arrow`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ direction }),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to update status");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        // Instead of fetching status counts from the server,
-        // calculate and update them locally
-        updateStatusCountsLocally(oldStatus, newStatus);
-      })
-      .catch((error: unknown) => {
-        console.error("Error updating job status:", error);
-        // Revert the UI change on error
-        onUpdateJob(jobId, { statusIndex: oldStatusIndex });
-      });
-  };
-
-  // Helper function to convert status index to status string
-  const getStatusFromIndex = (statusIndex: number): string => {
-    const statusValues = ["nothing_done", "applying", "applied", "OA", "interview", "offer", "rejected"];
-    return statusIndex >= 0 && statusIndex < statusValues.length ? statusValues[statusIndex] : "nothing_done";
-  };
-
-  const togglePriority = (jobId: number) => {
-    const job = jobs.find((j) => j.id === jobId);
-    if (!job) return;
-
-    if (onTogglePriorityJob) {
-      onTogglePriorityJob(jobId);
-    } else {
-      onUpdateJob(jobId, { priority: !job.priority });
-    }
-  };
-
-  const handleModifyJob = (jobId: number) => {
-    onUpdateJob(jobId, { isModifying: true });
-  };
-
-  // Get company name for the current view (when groupByCompany is true)
   const currentCompanyName = groupByCompany && jobs.length > 0 ? jobs[0].company : null;
+
+  // Add event handlers to focus jobs
+  const handleFocusJob = (id: number) => {
+    if (onFocusJob) {
+      onFocusJob(id);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-2">
@@ -131,7 +69,6 @@ export function JobTable({
           </div>
         </div>
       )}
-
       <Table>
         <TableHeader>
           <TableRow className="text-left">
@@ -143,22 +80,18 @@ export function JobTable({
             <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
-
         <TableBody>
-          {jobs.map((job) => {
-            if (job.isModifying) {
-              return (
-                <ModifyJobRow
-                  key={job.id}
-                  job={job}
-                  onUpdateJob={onUpdateJob}
-                  onSaveJob={onSaveJob}
-                  onCancelModifyJob={onCancelModifyJob}
-                  updateStatus={updateStatus}
-                />
-              );
-            }
-            return (
+          {jobs.map((job) =>
+            job.isModifying ? (
+              <ModifyJobRow
+                key={job.id}
+                job={job}
+                onUpdateJob={onUpdateJob}
+                onSaveJob={onSaveJob}
+                onCancelModifyJob={onCancelModifyJob}
+                updateStatus={updateStatus}
+              />
+            ) : (
               <JobRow
                 key={job.id}
                 job={job}
@@ -167,9 +100,10 @@ export function JobTable({
                 onModifyJob={handleModifyJob}
                 onArchiveJob={onArchiveJob}
                 onDeleteJob={onDeleteJob}
+                onFocus={handleFocusJob}
               />
-            );
-          })}
+            ),
+          )}
         </TableBody>
       </Table>
     </div>

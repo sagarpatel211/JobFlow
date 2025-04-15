@@ -74,8 +74,8 @@ export const Header = () => {
         <br /> for job hunting
       </h1>
       <p className="max-w-2xl text-base md:text-xl mt-8 dark:text-neutral-200">
-        We make it easy to find the perfect job for you! Our platform is designed to help you find, apply, and track
-        your job applications.
+        We make it easy to find the perfect job for you! Our platform is designed to help you find, apply, and track your job
+        applications.
       </p>
     </div>
   );

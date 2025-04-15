@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useState } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { HeartPulse, MoreVertical, Trash2, Link2Off, Archive, Star } from "lucide-react";
@@ -16,8 +15,8 @@ import {
 import InputDialog from "./inputdialog";
 import ConfirmationDialog from "./confirmationdialog";
 import { TrackerHeaderProps } from "@/types/trackerComponents";
+import { HotkeysDialog } from "./hotkeysdialog";
 
-// Type for action confirmation dialogs
 type ActionType =
   | "none"
   | "removeDeadLinks"
@@ -39,29 +38,39 @@ export const TrackerHeader: React.FC<TrackerHeaderProps> = ({
   onArchiveAppliedOlderThan,
   onMarkOldestAsPriority,
 }) => {
-  // State for the input dialog (months)
   const [isMonthsDialogOpen, setIsMonthsDialogOpen] = useState(false);
-
-  // State for confirmation dialogs
   const [confirmActionType, setConfirmActionType] = useState<ActionType>("none");
   const isConfirmDialogOpen = confirmActionType !== "none";
 
-  // Helper to close confirmation dialog
-  const closeConfirmDialog = () => {
+  const closeConfirmDialog = useCallback(() => {
     setConfirmActionType("none");
-  };
-
-  // Dialog state handlers
-  const handleOpenMonthsDialog = () => {
+  }, []);
+  const handleOpenMonthsDialog = useCallback(() => {
     setIsMonthsDialogOpen(true);
-  };
-
-  const handleCloseMonthsDialog = () => {
+  }, []);
+  const handleCloseMonthsDialog = useCallback(() => {
     setIsMonthsDialogOpen(false);
-  };
+  }, []);
+  const handleRemoveDeadLinks = useCallback(() => {
+    setConfirmActionType("removeDeadLinks");
+  }, []);
+  const handleArchiveRejected = useCallback(() => {
+    setConfirmActionType("archiveRejected");
+  }, []);
+  const handleMarkOldestAsPriority = useCallback(() => {
+    setConfirmActionType("markOldestAsPriority");
+  }, []);
+  const handleDeleteOlderThan3 = useCallback(() => {
+    setConfirmActionType("deleteOlderThan3");
+  }, []);
+  const handleDeleteOlderThan6 = useCallback(() => {
+    setConfirmActionType("deleteOlderThan6");
+  }, []);
+  const handleDeleteOlderThan12 = useCallback(() => {
+    setConfirmActionType("deleteOlderThan12");
+  }, []);
 
-  // Get confirmation dialog properties based on action type
-  const getConfirmationProps = () => {
+  const confirmationProps = useMemo(() => {
     switch (confirmActionType) {
       case "removeDeadLinks":
         return {
@@ -126,18 +135,14 @@ export const TrackerHeader: React.FC<TrackerHeaderProps> = ({
           variant: "default" as const,
         };
     }
-  };
-
-  const confirmationProps = getConfirmationProps();
+  }, [confirmActionType, onRemoveDeadLinks, onArchiveRejected, onMarkOldestAsPriority, onDeleteOlderThan]);
 
   return (
     <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/50 p-4 md:p-6 text-3xl md:text-4xl backdrop-blur-lg">
       <span>Tracker</span>
       <div className="flex items-center gap-2 md:gap-4 text-sm md:text-base">
         <div className="hidden sm:flex items-center gap-2">
-          <HeartPulse
-            className={`w-5 h-5 md:w-6 md:h-6 ${isHealthy ? "text-green-500 animate-pulse" : "text-red-500"}`}
-          />
+          <HeartPulse className={`w-5 h-5 md:w-6 md:h-6 ${isHealthy ? "text-green-500 animate-pulse" : "text-red-500"}`} />
           <span className={`${isHealthy ? "text-green-600" : "text-red-600"} font-medium`}>
             {isHealthy ? "Healthy" : "Unhealthy"}
           </span>
@@ -155,6 +160,8 @@ export const TrackerHeader: React.FC<TrackerHeaderProps> = ({
             </div>
           )}
 
+          <HotkeysDialog />
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="flex items-center gap-2" size="sm">
@@ -165,21 +172,14 @@ export const TrackerHeader: React.FC<TrackerHeaderProps> = ({
             <DropdownMenuContent align="end" className="w-[280px] md:w-[320px] lg:w-[350px]" sideOffset={4}>
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
-
               <div className="max-h-[60vh] overflow-y-auto">
                 <DropdownMenuGroup>
-                  <DropdownMenuItem
-                    onClick={() => setConfirmActionType("removeDeadLinks")}
-                    className="flex items-center py-2"
-                  >
+                  <DropdownMenuItem onClick={handleRemoveDeadLinks} className="flex items-center py-2">
                     <Link2Off className="mr-2 h-4 w-4 text-blue-500 flex-shrink-0" />
                     <span className="flex-grow truncate">Attempt dead link removals (404s)</span>
                   </DropdownMenuItem>
 
-                  <DropdownMenuItem
-                    onClick={() => setConfirmActionType("archiveRejected")}
-                    className="flex items-center py-2"
-                  >
+                  <DropdownMenuItem onClick={handleArchiveRejected} className="flex items-center py-2">
                     <Archive className="mr-2 h-4 w-4 text-orange-500 flex-shrink-0" />
                     <span className="flex-grow truncate">Archive all rejected applications</span>
                   </DropdownMenuItem>
@@ -189,38 +189,24 @@ export const TrackerHeader: React.FC<TrackerHeaderProps> = ({
                     <span className="flex-grow truncate">Archive applied jobs older than X months</span>
                   </DropdownMenuItem>
 
-                  <DropdownMenuItem
-                    onClick={() => setConfirmActionType("markOldestAsPriority")}
-                    className="flex items-center py-2"
-                  >
+                  <DropdownMenuItem onClick={handleMarkOldestAsPriority} className="flex items-center py-2">
                     <Star className="mr-2 h-4 w-4 text-amber-500 flex-shrink-0" />
                     <span className="flex-grow truncate">Mark oldest 50 jobs as priority</span>
                   </DropdownMenuItem>
                 </DropdownMenuGroup>
-
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Cleanup</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-
                 <DropdownMenuGroup>
-                  <DropdownMenuItem
-                    onClick={() => setConfirmActionType("deleteOlderThan3")}
-                    className="flex items-center py-2"
-                  >
+                  <DropdownMenuItem onClick={handleDeleteOlderThan3} className="flex items-center py-2">
                     <Trash2 className="mr-2 h-4 w-4 text-red-500 flex-shrink-0" />
                     <span className="flex-grow truncate">Delete data older than 3 months</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setConfirmActionType("deleteOlderThan6")}
-                    className="flex items-center py-2"
-                  >
+                  <DropdownMenuItem onClick={handleDeleteOlderThan6} className="flex items-center py-2">
                     <Trash2 className="mr-2 h-4 w-4 text-red-500 flex-shrink-0" />
                     <span className="flex-grow truncate">Delete data older than 6 months</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => setConfirmActionType("deleteOlderThan12")}
-                    className="flex items-center py-2"
-                  >
+                  <DropdownMenuItem onClick={handleDeleteOlderThan12} className="flex items-center py-2">
                     <Trash2 className="mr-2 h-4 w-4 text-red-500 flex-shrink-0" />
                     <span className="flex-grow truncate">Delete data older than 1 year</span>
                   </DropdownMenuItem>
@@ -231,7 +217,6 @@ export const TrackerHeader: React.FC<TrackerHeaderProps> = ({
         </div>
       </div>
 
-      {/* Input dialog for archiving applied jobs */}
       <InputDialog
         isOpen={isMonthsDialogOpen}
         onClose={handleCloseMonthsDialog}
@@ -245,7 +230,6 @@ export const TrackerHeader: React.FC<TrackerHeaderProps> = ({
         variant="default"
       />
 
-      {/* Confirmation dialog for other actions */}
       {isConfirmDialogOpen && (
         <ConfirmationDialog
           isOpen={isConfirmDialogOpen}

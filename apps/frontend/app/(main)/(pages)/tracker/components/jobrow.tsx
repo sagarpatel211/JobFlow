@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { format } from "date-fns";
@@ -8,23 +8,21 @@ import { StatusBadge } from "./statusbadge";
 import { Archive, MoreVertical, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import toast from "react-hot-toast";
 import { JobActions } from "./jobactions";
 import ApplicationPopover from "./apppopover";
-import { updateJob } from "../services/api";
-import { Folder } from "@/types/job";
+import { updateJob, whitelistCompany, updateCompanyFollowers } from "../services/api";
+
+function ensureProtocol(url: string): string {
+  if (!url) return "";
+  return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
+}
 
 function formatPostedDate(dateStr: string): string {
   if (!dateStr) return "";
-
   try {
     let date: Date;
     if (dateStr.includes(".")) {
@@ -33,26 +31,25 @@ function formatPostedDate(dateStr: string): string {
     } else {
       date = new Date(dateStr);
     }
-
     return isNaN(date.getTime()) ? dateStr : format(date, "MMM d, yyyy");
   } catch {
     return dateStr;
   }
 }
 
-// Add this function to ensure all URLs have a protocol
-function ensureProtocol(url: string): string {
-  if (!url) return "";
-  return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
-}
-
-export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchiveJob, onDeleteJob }: JobRowProps) {
+export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchiveJob, onDeleteJob, onFocus }: JobRowProps) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [generateResume, setGenerateResume] = useState(false);
   const [generateCoverLetter, setGenerateCoverLetter] = useState(false);
   const [isAppPopoverOpen, setIsAppPopoverOpen] = useState(false);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
+  const [isFollowersPopoverOpen, setIsFollowersPopoverOpen] = useState(false);
+  const [followers, setFollowers] = useState<number>(job.followerCount || 0);
+
+  useEffect(() => {
+    setFollowers(job.followerCount || 0);
+  }, [job.followerCount]);
 
   const decreaseStatus = () => {
     updateStatus(job.id, -1);
@@ -67,9 +64,7 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
   };
 
   const handleModify = () => {
-    if (onModifyJob) {
-      onModifyJob(job.id);
-    }
+    if (onModifyJob) onModifyJob(job.id);
   };
 
   const handleArchive = () => {
@@ -90,9 +85,7 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
 
   const handleUpdateTags = (jobId: number, tags: string[]) => {
     try {
-      // We'll use the API directly here since there's no prop for it
       void updateJob(jobId, { tags });
-      // Remove toast for better UX
     } catch (error) {
       console.error("Error updating tags:", error);
       toast.error("Failed to update tags");
@@ -101,22 +94,12 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
 
   const handleUpdateNotes = (jobId: number, notes: string) => {
     try {
-      // Only update if needed
       if (notes !== job.notes) {
         void updateJob(jobId, { notes });
       }
     } catch (error) {
       console.error("Error updating notes:", error);
       toast.error("Failed to update notes");
-    }
-  };
-
-  const handleUpdateFolders = (jobId: number, folders: Folder[]) => {
-    try {
-      void updateJob(jobId, { folders });
-    } catch (error) {
-      console.error("Error updating folders:", error);
-      toast.error("Failed to update folders");
     }
   };
 
@@ -134,7 +117,30 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
       ),
       { duration: 5000 },
     );
+    window.location.reload();
   };
+
+  const handleWhitelistCompany = useCallback(async () => {
+    try {
+      await whitelistCompany(job.company);
+      toast.success(`Whitelisted ${job.company}`);
+      window.location.reload();
+    } catch (error) {
+      console.error("Error whitelisting company:", error);
+      toast.error("Failed to whitelist company");
+    }
+  }, [job.company]);
+
+  const handleSetFollowers = useCallback(async () => {
+    try {
+      await updateCompanyFollowers(job.company, followers);
+      toast.success(`Updated followers for ${job.company}`);
+      window.location.reload();
+    } catch (error) {
+      console.error("Error updating followers:", error);
+      toast.error("Failed to update follower count");
+    }
+  }, [job.company, followers]);
 
   const handleSubmitAI = () => {
     navigator.clipboard
@@ -191,8 +197,14 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
     URL.revokeObjectURL(url);
   };
 
+  const handleClick = useCallback(() => {
+    if (onFocus) {
+      onFocus(job.id);
+    }
+  }, [job.id, onFocus]);
+
   return (
-    <TableRow>
+    <TableRow className={`hover:bg-muted/50 ${job.priority ? "bg-amber-50 dark:bg-amber-900/20" : ""}`} onClick={handleClick}>
       <TableCell className="font-medium">
         <div className="flex items-center gap-2 -mr-[90px]">
           <Avatar className="h-6 w-6">
@@ -216,6 +228,29 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start" sideOffset={-14}>
                   <DropdownMenuItem onClick={() => onBlacklistCompany(job.company)}>Blacklist Company</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => void handleWhitelistCompany()}>Whitelist Company</DropdownMenuItem>
+                  <Popover open={isFollowersPopoverOpen} onOpenChange={setIsFollowersPopoverOpen}>
+                    <PopoverTrigger asChild>
+                      <DropdownMenuItem onClick={() => setIsFollowersPopoverOpen(true)}>
+                        Set Followers {job.followerCount ? `(${String(job.followerCount)})` : ""}
+                      </DropdownMenuItem>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-4 w-64">
+                      <div className="flex flex-col gap-2">
+                        <input
+                          type="number"
+                          value={followers}
+                          onChange={(e) => setFollowers(Number(e.target.value))}
+                          placeholder="Enter follower count"
+                          min="0"
+                          className="border rounded px-2 py-1"
+                        />
+                        <Button variant="default" onClick={() => void handleSetFollowers()}>
+                          Confirm
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
@@ -233,11 +268,7 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
         </div>
       </TableCell>
       <TableCell className="flex items-center gap-40 -mr-[80px]">
-        <StatusBadge
-          statusIndex={job.statusIndex}
-          onDecreaseStatus={decreaseStatus}
-          onIncreaseStatus={increaseStatus}
-        />
+        <StatusBadge statusIndex={job.statusIndex} onDecreaseStatus={decreaseStatus} onIncreaseStatus={increaseStatus} />
         <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger asChild>
             <Link
@@ -258,10 +289,7 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
           </PopoverTrigger>
           <PopoverContent className="p-4 w-72 bg-white bg-opacity-80 backdrop-blur-sm">
             <div className="flex flex-col gap-3">
-              <Button
-                variant={generateResume ? "secondary" : "outline"}
-                onClick={() => setGenerateResume((prev) => !prev)}
-              >
+              <Button variant={generateResume ? "secondary" : "outline"} onClick={() => setGenerateResume((prev) => !prev)}>
                 Generate Resume
               </Button>
               <Button
@@ -289,7 +317,6 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
             downloadFile={downloadFile}
             updateTags={handleUpdateTags}
             updateNotes={handleUpdateNotes}
-            updateFolders={handleUpdateFolders}
           />
         </Popover>
       </TableCell>

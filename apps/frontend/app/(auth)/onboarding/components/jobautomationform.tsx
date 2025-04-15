@@ -6,11 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { JobAutomationFormProps } from "@/types/onboarding";
 
-export default function JobAutomationForm({
-  formData,
-  handleInputChange,
-  handleCheckboxChange,
-}: JobAutomationFormProps) {
+export default function JobAutomationForm({ formData, handleInputChange, handleCheckboxChange }: JobAutomationFormProps) {
   return (
     <div>
       <h1 className="text-2xl font-bold mb-3">Job Automation Settings</h1>

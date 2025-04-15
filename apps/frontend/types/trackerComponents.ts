@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { StatusCounts } from "./tracker";
-import { Job, Folder } from "./job";
+import { Job } from "./job";
 
 // Chart Section Types
 export interface ChartsSectionProps {
@@ -15,7 +15,12 @@ export interface CustomTooltipPayload {
 
 export interface CustomTooltipProps {
   active?: boolean;
-  payload?: CustomTooltipPayload[];
+  payload?: Array<{
+    name?: string;
+    dataKey?: string;
+    value?: number;
+    [key: string]: any;
+  }>;
   label?: string;
 }
 
@@ -43,9 +48,10 @@ export interface ConfirmationDialogProps {
   onConfirm: () => void;
   title: string;
   description: string;
-  confirmText: string;
-  cancelText: string;
+  confirmText?: string;
+  cancelText?: string;
   variant?: "default" | "destructive";
+  icon?: ReactNode;
 }
 
 // Tracker Header Types
@@ -72,19 +78,4 @@ export interface ApplicationPopoverProps {
   downloadFile: (file: File) => void;
   updateTags?: (jobId: number, tags: string[]) => void;
   updateNotes?: (jobId: number, notes: string) => void;
-  updateFolders?: (jobId: number, folders: Folder[]) => void;
-}
-
-export interface StatusBadgeProps {
-  statusIndex: number;
-  onDecreaseStatus: () => void;
-  onIncreaseStatus: () => void;
-}
-
-export interface PaginationControlsProps {
-  currentPage: number;
-  totalPages: number;
-  onPrev: () => void;
-  onNext: () => void;
-  onGoToPage: (page: number) => void;
 }

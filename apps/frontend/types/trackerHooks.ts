@@ -17,7 +17,10 @@ export interface TrackerFilters {
   recentOnly: boolean;
   roleFilter: string;
   selectedTag: string | null;
-  selectedFolder: number | null;
+  filterNotApplied: boolean;
+  filterWithinWeek: boolean;
+  filterIntern: boolean;
+  filterNewgrad: boolean;
 }
 
 export interface UseJobManagerProps {

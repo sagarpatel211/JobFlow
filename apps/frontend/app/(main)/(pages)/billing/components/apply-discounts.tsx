@@ -38,11 +38,7 @@ const ApplyDiscount = () => {
             disabled={!discountCode || loading}
             className="bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700 text-white flex items-center gap-2"
           >
-            {loading ? (
-              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-            ) : (
-              "Apply"
-            )}
+            {loading ? <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div> : "Apply"}
           </Button>
         </div>
       </CardContent>

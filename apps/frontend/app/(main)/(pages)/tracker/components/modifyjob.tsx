@@ -1,13 +1,12 @@
 "use client";
-import React, { useEffect, useState } from "react";
-import { format, isValid } from "date-fns";
+import React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { TableRow, TableCell } from "@/components/ui/table";
 import { ModifyJobRowProps, JobStatus } from "@/types/job";
 import { statuses, statusColors } from "@/lib/constants";
+import { useDateInput } from "../hooks/useDateInput";
 
-// Map UI status strings to backend JobStatus values
 const statusMapping: Record<number, JobStatus> = {
   0: "nothing_done",
   1: "applying",
@@ -18,78 +17,12 @@ const statusMapping: Record<number, JobStatus> = {
   6: "rejected",
 };
 
-/**
- * Converts from dd.MM.yyyy to yyyy-MM-dd (HTML date input format)
- */
-function toInputDateFormat(dateStr: string): string {
-  if (!dateStr || typeof dateStr !== "string") return "";
-
-  try {
-    // Handle dd.MM.yyyy format
-    if (dateStr.includes(".")) {
-      const [day, month, year] = dateStr.split(".").map(Number);
-      const parsed = new Date(year, month - 1, day);
-      if (isValid(parsed)) {
-        return format(parsed, "yyyy-MM-dd");
-      }
-    }
-
-    // Try to parse as ISO date
-    const parsed = new Date(dateStr);
-    if (isValid(parsed)) {
-      return format(parsed, "yyyy-MM-dd");
-    }
-  } catch (e) {
-    console.error("Date parsing error:", e);
-  }
-
-  return "";
-}
-
-/**
- * Converts from yyyy-MM-dd (HTML date input) to dd.MM.yyyy (backend format)
- */
-function toBackendDateFormat(dateStr: string): string {
-  if (!dateStr) return "";
-
-  try {
-    // Parse the yyyy-MM-dd format
-    const [year, month, day] = dateStr.split("-").map(Number);
-    const parsed = new Date(year, month - 1, day);
-    if (isValid(parsed)) {
-      return format(parsed, "dd.MM.yyyy");
-    }
-  } catch (e) {
-    console.error("Date formatting error:", e);
-  }
-
-  return "";
-}
-
 export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, updateStatus }: ModifyJobRowProps) {
   const isSaveDisabled = !job.company || !job.title || !job.postedDate || !job.link;
 
-  // Keep track of the date input value separately
-  const [dateInputValue, setDateInputValue] = useState(toInputDateFormat(job.postedDate));
-
-  // Update the date input when job.postedDate changes externally
-  useEffect(() => {
-    setDateInputValue(toInputDateFormat(job.postedDate));
-  }, [job.postedDate]);
-
-  // Handle date input changes
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const htmlDateValue = e.target.value; // yyyy-MM-dd
-    setDateInputValue(htmlDateValue);
-
-    if (htmlDateValue) {
-      const backendDateValue = toBackendDateFormat(htmlDateValue); // dd.MM.yyyy
-
-      if (backendDateValue) {
-        onUpdateJob(job.id, { postedDate: backendDateValue });
-      }
-    }
-  };
+  const [dateInputValue, handleDateChange] = useDateInput(job.postedDate, (newDate) => {
+    onUpdateJob(job.id, { postedDate: newDate });
+  });
 
   return (
     <TableRow>
@@ -99,31 +32,21 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
             name="company"
             placeholder="Company"
             value={job.company}
-            onChange={(e) => {
-              onUpdateJob(job.id, { company: e.target.value });
-            }}
+            onChange={(e) => onUpdateJob(job.id, { company: e.target.value })}
             className="w-24"
           />
           <Input
             name="title"
             placeholder="Job Title"
             value={job.title}
-            onChange={(e) => {
-              onUpdateJob(job.id, { title: e.target.value });
-            }}
+            onChange={(e) => onUpdateJob(job.id, { title: e.target.value })}
             className="w-40"
           />
         </div>
       </TableCell>
 
       <TableCell>
-        <Input
-          type="date"
-          name="postedDate"
-          className="w-40 -mr-14"
-          value={dateInputValue}
-          onChange={handleDateChange}
-        />
+        <Input type="date" name="postedDate" className="w-40 -mr-14" value={dateInputValue} onChange={handleDateChange} />
       </TableCell>
 
       <TableCell>
@@ -131,9 +54,7 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
           name="link"
           placeholder="Job Link"
           value={job.link || ""}
-          onChange={(e) => {
-            onUpdateJob(job.id, { link: e.target.value });
-          }}
+          onChange={(e) => onUpdateJob(job.id, { link: e.target.value })}
           className="w-60"
         />
       </TableCell>
@@ -175,22 +96,17 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
           </button>
         </div>
       </TableCell>
+
       <TableCell></TableCell>
+
       <TableCell>
         <div className="flex gap-2">
-          <button
-            className="text-blue-500"
-            onClick={() => {
-              onCancelModifyJob(job.id);
-            }}
-          >
+          <button className="text-blue-500" onClick={() => onCancelModifyJob(job.id)}>
             Cancel
           </button>
           <button
             className={`text-green-500 ${isSaveDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-            onClick={() => {
-              onSaveJob(job.id);
-            }}
+            onClick={() => onSaveJob(job.id)}
             disabled={isSaveDisabled}
           >
             Save

@@ -7,12 +7,7 @@ import { StatusBadgeProps } from "@/types/statusbadge";
 export function StatusBadge({ statusIndex, onDecreaseStatus, onIncreaseStatus }: StatusBadgeProps) {
   return (
     <div className="flex items-center gap-2">
-      <button
-        onClick={onDecreaseStatus}
-        disabled={statusIndex === 0}
-        className="disabled:opacity-50"
-        title="Decrease status"
-      >
+      <button onClick={onDecreaseStatus} disabled={statusIndex === 0} className="disabled:opacity-50" title="Decrease status">
         <ChevronLeft className="h-4 w-4 text-muted-foreground" />
       </button>
 

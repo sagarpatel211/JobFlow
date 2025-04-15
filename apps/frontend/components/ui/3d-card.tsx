@@ -3,9 +3,7 @@
 import { cn } from "@/lib/utils";
 import React, { createContext, useState, useContext, useRef, useEffect, useCallback } from "react";
 
-const MouseEnterContext = createContext<[boolean, React.Dispatch<React.SetStateAction<boolean>>] | undefined>(
-  undefined,
-);
+const MouseEnterContext = createContext<[boolean, React.Dispatch<React.SetStateAction<boolean>>] | undefined>(undefined);
 
 export const CardContainer = ({
   children,

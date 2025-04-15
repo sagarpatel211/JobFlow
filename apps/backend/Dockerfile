@@ -1,24 +1,28 @@
+# Use a slim Python image
 FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
+# Install system dependencies, including supervisor
+RUN apt-get update && apt-get install -y \
     build-essential \
-    && rm -rf /var/lib/apt/lists/*
+    libpq-dev \
+    supervisor \
+    curl && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first for better layer caching
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt .
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
-# Copy the rest of the application
-COPY . /app/
+COPY . .
 
-# Set permissions for the scripts
-RUN chmod +x /app/wait_for_it.sh /app/run_migration.py
+# Copy Supervisor configuration
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
-EXPOSE 5000
+EXPOSE 8000
 
-# Use gunicorn as the WSGI server
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+COPY entrypoint.sh /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh
+
+CMD ["/entrypoint.sh"]

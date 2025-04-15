@@ -1,8 +1,18 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from "recharts";
 import { statuses, statusFillColors } from "@/lib/constants";
 import { ChartsSectionProps, CustomTooltipProps } from "@/types/trackerComponents";
+
+const STATUS_KEY_MAP: Record<string, string> = {
+  "Nothing Done": "nothing_done",
+  Applying: "applying",
+  Applied: "applied",
+  OA: "OA",
+  Interview: "interview",
+  Offer: "offer",
+  Rejected: "rejected",
+};
 
 const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -10,7 +20,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label })
       <div className="bg-gray-900 text-white text-sm p-2 rounded shadow-md">
         <p className="font-semibold">{label}</p>
         {payload.map((entry, index) => (
-          <p key={index}>{`${entry.name ?? entry.dataKey ?? ""}: ${String(entry.value)}`}</p>
+          <p key={index}>{(entry.name ?? entry.dataKey ?? "") + ": " + String(entry.value)}</p>
         ))}
       </div>
     );
@@ -18,41 +28,45 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label })
   return null;
 };
 
-export const ChartsSection: React.FC<ChartsSectionProps> = ({ statusCounts: initialStatusCounts }) => {
-  // Track status counts in local state to allow for real-time updates
-  const [statusCounts, setStatusCounts] = useState(initialStatusCounts);
+export const ChartsSection: React.FC<ChartsSectionProps> = ({ statusCounts }) => {
+  const statusData = useMemo(
+    () =>
+      statuses.map((status) => ({
+        status,
+        count: statusCounts[STATUS_KEY_MAP[status] || ""] || 0,
+      })),
+    [statusCounts],
+  );
 
-  // Listen for status count updates
-  useEffect(() => {
-    // Update state when prop changes
-    setStatusCounts(initialStatusCounts);
-
-    // Listen for custom events when status counts are updated
-    const handleStatusCountsUpdated = (event: CustomEvent<Record<string, number>>) => {
-      if (event.detail) {
-        setStatusCounts(event.detail);
-      }
-    };
-    window.addEventListener("statusCountsUpdated", handleStatusCountsUpdated as EventListener);
-    return () => {
-      window.removeEventListener("statusCountsUpdated", handleStatusCountsUpdated as EventListener);
-    };
-  }, [initialStatusCounts]);
-
-  const statusKeyMap: Record<string, string> = {
-    "Nothing Done": "nothing_done",
-    Applying: "applying",
-    Applied: "applied",
-    OA: "OA",
-    Interview: "interview",
-    Offer: "offer",
-    Rejected: "rejected",
-  };
-
-  const statusData = statuses.map((status) => ({
-    status,
-    count: statusCounts[statusKeyMap[status]] || 0,
-  }));
+  const gradients = useMemo(() => {
+    return (
+      <>
+        {statusData.map((_, index) => (
+          <linearGradient key={`gradient-${String(index)}`} id={`gradient-${String(index)}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={statusFillColors[index] ?? "#000"} stopOpacity={0.9} />
+            <stop offset="100%" stopColor={statusFillColors[index] ?? "#000"} stopOpacity={0.6} />
+          </linearGradient>
+        ))}
+        {statusData.map((_, index) => (
+          <linearGradient
+            key={`shimmer-${String(index)}`}
+            id={`shimmer-gradient-${String(index)}`}
+            x1="0"
+            y1="0"
+            x2="1"
+            y2="0"
+            gradientTransform="rotate(45)"
+          >
+            <stop offset="0%" stopColor={statusFillColors[index] ?? "#000"} stopOpacity={0.6} />
+            <stop offset="25%" stopColor={statusFillColors[index] ?? "#000"} stopOpacity={0.8} />
+            <stop offset="50%" stopColor={statusFillColors[index] ?? "#000"} stopOpacity={1} />
+            <stop offset="75%" stopColor={statusFillColors[index] ?? "#000"} stopOpacity={0.8} />
+            <stop offset="100%" stopColor={statusFillColors[index] ?? "#000"} stopOpacity={0.6} />
+          </linearGradient>
+        ))}
+      </>
+    );
+  }, [statusData]);
 
   return (
     <div className="flex gap-4 mt-8 px-4">
@@ -69,29 +83,32 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ statusCounts: init
               }}
             >
               <span>{status}</span>
-              <span>{statusCounts[statusKeyMap[status]] || 0}</span>
+              <span>{statusCounts[STATUS_KEY_MAP[status] || ""] || 0}</span>
             </div>
           ))}
         </div>
       </div>
       <div className="w-1/2 h-64 border p-2">
+        <style jsx global>{`
+          @keyframes shimmer {
+            0% {
+              background-position: -200% 0;
+            }
+            100% {
+              background-position: 200% 0;
+            }
+          }
+          .shimmer-bar {
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite linear;
+          }
+        `}</style>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={statusData}>
-            <defs>
-              {statusData.map((_, index) => (
-                <linearGradient key={String(index)} id={`gradient-${String(index)}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={statusFillColors[index] ?? "#000"} stopOpacity={0.9} />
-                  <stop offset="100%" stopColor={statusFillColors[index] ?? "#000"} stopOpacity={0.6} />
-                </linearGradient>
-              ))}
-            </defs>
+            <defs>{gradients}</defs>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="status" />
-            <YAxis
-              allowDecimals={false}
-              domain={[0, "auto"]}
-              tickFormatter={(value: number) => String(Math.round(value))}
-            />
+            <YAxis allowDecimals={false} domain={[0, "auto"]} tickFormatter={(value: number) => String(Math.round(value))} />
             <Tooltip
               content={<CustomTooltip />}
               wrapperStyle={{ backgroundColor: "transparent" }}
@@ -100,7 +117,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ statusCounts: init
             />
             <Bar dataKey="count" radius={[6, 6, 0, 0]}>
               {statusData.map((_, index) => (
-                <Cell key={`cell-${String(index)}`} fill={`url(#gradient-${String(index)})`} />
+                <Cell key={`cell-${String(index)}`} fill={`url(#shimmer-gradient-${String(index)})`} className="shimmer-bar" />
               ))}
             </Bar>
           </BarChart>

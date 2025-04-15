@@ -4,12 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Minus, Plus, Settings } from "lucide-react";
 import { signOut } from "next-auth/react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { HealthBarProps, ProgressItem } from "@/types/infobar";
 import { HoverBorderGradient } from "./hover-border-gradient";
 

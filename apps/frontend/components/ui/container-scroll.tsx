@@ -22,10 +22,7 @@ export const ContainerScroll = ({
   return (
     <div className="relative h-[60rem] md:h-[80rem] flex items-center justify-center p-2 md:p-20" ref={containerRef}>
       {containerReady && containerRef.current && (
-        <ContainerContent
-          containerRef={containerRef as React.RefObject<HTMLDivElement>}
-          titleComponent={titleComponent}
-        >
+        <ContainerContent containerRef={containerRef as React.RefObject<HTMLDivElement>} titleComponent={titleComponent}>
           {children}
         </ContainerContent>
       )}
@@ -114,9 +111,7 @@ export const Card = ({
       }}
       className="max-w-5xl -mt-12 mx-auto h-[30rem] md:h-[40rem] w-full border-2 border-gray-950 p-2 md:p-6 rounded-[30px] shadow-2xl bg-gradient-to-b from-[#000000] to-[#030306]"
     >
-      <div className="h-full w-full overflow-hidden rounded-2xl bg-gray-100 dark:bg-zinc-900 md:rounded-2xl">
-        {children}
-      </div>
+      <div className="h-full w-full overflow-hidden rounded-2xl bg-gray-100 dark:bg-zinc-900 md:rounded-2xl">{children}</div>
     </motion.div>
   );
 };

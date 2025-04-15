@@ -1,10 +1,10 @@
 "use client";
-
-import React, { useEffect } from "react";
+import React, { useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, X } from "lucide-react";
 import { ConfirmationDialogProps } from "@/types/trackerComponents";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   isOpen,
@@ -17,48 +17,35 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   variant = "default",
   icon,
 }) => {
-  useEffect(() => {
-    if (isOpen) {
-      // Disable background scrolling when dialog is open
-      document.body.style.overflow = "hidden";
-    }
+  useBodyScrollLock(isOpen);
 
-    return () => {
-      // Re-enable scrolling when dialog closes
-      document.body.style.overflow = "";
-    };
-  }, [isOpen]);
-
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     onClose();
-  };
+  }, [onClose]);
 
-  const handleConfirm = () => {
+  const handleConfirm = useCallback(() => {
     onConfirm();
     onClose();
-  };
+  }, [onConfirm, onClose]);
 
-  const handleEscapeKey = (e: React.KeyboardEvent) => {
-    if (e.key === "Escape") {
-      handleCancel();
-    }
-  };
+  const handleEscapeKey = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Escape") {
+        handleCancel();
+      }
+    },
+    [handleCancel],
+  );
 
-  // Return null if not open
   if (!isOpen) return null;
 
-  // Create a portal to render the dialog outside the normal DOM hierarchy
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center" tabIndex={-1} onKeyDown={handleEscapeKey}>
-      {/* Backdrop/overlay */}
       <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={handleCancel} />
-
-      {/* Dialog content */}
       <div
         className="fixed z-[51] w-full max-w-md p-6 rounded-lg border bg-background shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex flex-col space-y-1.5 text-center sm:text-left">
           <h2 className="text-lg font-semibold leading-none tracking-tight flex items-center gap-2">
             {icon || (variant === "destructive" && <AlertTriangle className="h-5 w-5 text-red-500" />)}
@@ -66,8 +53,6 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
           </h2>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
-
-        {/* Footer */}
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2 mt-4">
           <Button variant="outline" onClick={handleCancel}>
             {cancelText}
@@ -80,8 +65,6 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
             {confirmText}
           </Button>
         </div>
-
-        {/* Close button */}
         <button
           className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 h-4 w-4"
           onClick={handleCancel}

@@ -16,8 +16,16 @@ Fixes to do:
 - ask gpt for more functionality for this entire job tracker page to make me more productive
 
 
+implement cover letter and resume upload on popover
+
+add hotkeys for the tracker so we can be so much more productive
+
+
+when we filter by tags it doesnt show 4 jobs per page it filters per the 4 jobs on each page 
+
+tags should auto delete if they have no associated jobs
+
 Fixes To Do:
-- [ ] The archived jobs should not show up as part of the charts
 
 Also in the apppopover.tsx, we should add a Personal notes section for multi line text. Also in the apppopover.tsx we should be able to add jobs to folders be able to put jobs in folders. Then there should be a section either below the table or a new window where we can see jobs for folders and tags so design this component well so it is useful.
 

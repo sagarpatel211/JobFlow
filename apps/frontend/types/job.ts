@@ -9,8 +9,8 @@ export interface Job {
   postedDate: string;
   link: string;
   statusIndex: number;
-  status?: JobStatus; // Backend status value
-  role_type?: RoleType; // "intern" or "newgrad"
+  status?: JobStatus;
+  role_type?: RoleType;
   priority: boolean;
   isModifying: boolean;
   archived: boolean;
@@ -18,13 +18,7 @@ export interface Job {
   atsScore?: number;
   tags?: string[];
   notes?: string;
-  folders?: Folder[];
-}
-
-export interface Folder {
-  id: number;
-  name: string;
-  color: string;
+  followerCount?: number;
 }
 
 export interface JobTableProps {
@@ -41,6 +35,7 @@ export interface JobTableProps {
   onUpdateJobStatusArrow?: (jobId: number, direction: number) => void;
   statusCounts: Record<string, number>;
   groupByCompany?: boolean;
+  onFocusJob?: React.Dispatch<React.SetStateAction<number | null>>;
 }
 
 export interface JobToolbarProps {
@@ -64,6 +59,7 @@ export interface JobRowProps {
   onModifyJob?: (jobId: number) => void;
   onArchiveJob?: (jobId: number) => void;
   onDeleteJob?: (jobId: number) => void;
+  onFocus?: (jobId: number) => void;
 }
 
 export interface JobActionsProps {

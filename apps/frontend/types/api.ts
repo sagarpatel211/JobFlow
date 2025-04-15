@@ -1,4 +1,4 @@
-import { Job, RoleType, JobStatus, Folder } from "./job";
+import { Job, RoleType, JobStatus } from "./job";
 import { TrackerData } from "./tracker";
 
 export interface APIResponse {
@@ -24,64 +24,52 @@ export interface BackendJob {
   archived?: boolean;
   ats_score?: number;
   tags?: string[];
-  folders?: Folder[];
   notes?: string;
 }
 
-// API response interfaces for specific endpoints
-export interface GetJobsResponse {
-  success: boolean;
-  jobs: BackendJobResponse[];
-  pagination?: {
-    total: number;
-    page: number;
-    pages: number;
-    per_page: number;
+export interface TrackerAPIResponse extends APIResponse {
+  jobs: any[];
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    totalItems: number;
+    itemsPerPage: number;
   };
-}
-
-export interface BackendJobResponse {
-  id: number;
-  company: string;
-  title: string;
-  role_type: string;
-  status: string;
-  posted_date: string;
-  link: string;
-  priority: boolean;
-  archived: boolean;
-  deleted: boolean;
-  ats_score: number;
-  tags: string[];
-  folders: Folder[];
-  notes: string;
-  statusIndex?: number;
-}
-
-export interface TagsResponse {
-  success: boolean;
-  tags: Array<{ id: number; name: string }>;
-}
-
-export interface FoldersResponse {
-  success: boolean;
-  folders: Folder[];
-}
-
-export interface TrackerAPIResponse {
-  success: boolean;
-  trackerData: TrackerData;
-  error?: string;
+  statusCounts: Record<string, number>;
+  health: {
+    isHealthy: boolean;
+  };
+  scrapeInfo: {
+    scraping: boolean;
+    scrapeProgress: number;
+    estimatedSeconds: number;
+  };
 }
 
 export interface AddJobResponse {
   success: boolean;
-  job: Job;
+  job: {
+    id: number;
+    company: string;
+    title: string;
+    link: string;
+    postedDate: string;
+    status: string;
+    statusIndex: number;
+    priority: boolean;
+    archived: boolean;
+    [key: string]: any;
+  };
+  error?: string;
 }
 
 export interface UpdateJobResponse {
   success: boolean;
-  job: Job;
+  job: {
+    id: number;
+    [key: string]: any;
+  };
+  error?: string;
 }
 
 export interface ScrapeResponse {
