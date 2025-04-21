@@ -1,9 +1,10 @@
 "use client";
 import React, { useState, useEffect, useCallback, ChangeEvent, KeyboardEvent } from "react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import { PopoverContent } from "@/components/ui/popover";
 import { ApplicationPopoverProps } from "@/types/trackerComponents";
-import FileSection from "../../../../../components/ui/filesection";
+import FileSection from "@/components/ui/filesection";
 import { updateJob } from "../services/api";
 import { useDebouncedUpdate } from "../hooks/useDebouncedUpdate";
 
@@ -14,40 +15,40 @@ const ApplicationPopover: React.FC<ApplicationPopoverProps> = ({
   handleResumeUpload,
   handleCoverLetterUpload,
   downloadFile,
-  updateTags,
-  updateNotes,
+  onUpdateJob,
 }) => {
   const [tagInput, setTagInput] = useState("");
-  const [tags, setTags] = useState<string[]>(job.tags || []);
-  const [notes, setNotes] = useState<string>(job.notes || "");
+  const [tags, setTags] = useState<string[]>(job.tags ?? []);
+  const [notes, setNotes] = useState<string>(job.notes ?? "");
 
   useEffect(() => {
-    setTags(job.tags || []);
-    setNotes(job.notes || "");
+    setTags(job.tags ?? []);
+    setNotes(job.notes ?? "");
   }, [job.tags, job.notes]);
 
   const debouncedUpdateTags = useDebouncedUpdate((newTags: string[]) => {
-    if (updateTags) {
-      updateTags(job.id, newTags);
-    } else {
-      void updateJob(job.id, { tags: newTags });
-    }
+    onUpdateJob(job.id, { tags: newTags });
+    updateJob(job.id, { tags: newTags }).catch(() => {
+      setTags(job.tags ?? []);
+      toast.error("Failed to save tags");
+    });
   }, 500);
 
   const debouncedUpdateNotes = useDebouncedUpdate((newNotes: string) => {
-    if (updateNotes && newNotes !== job.notes) {
-      updateNotes(job.id, newNotes);
-    } else if (newNotes !== job.notes) {
-      void updateJob(job.id, { notes: newNotes });
-    }
+    onUpdateJob(job.id, { notes: newNotes });
+    updateJob(job.id, { notes: newNotes }).catch(() => {
+      setNotes(job.notes ?? "");
+      toast.error("Failed to save notes");
+    });
   }, 500);
 
-  useEffect(() => {
-    return () => {
+  useEffect(
+    () => () => {
       debouncedUpdateTags.flush();
       debouncedUpdateNotes.flush();
-    };
-  }, [debouncedUpdateTags, debouncedUpdateNotes]);
+    },
+    [debouncedUpdateTags, debouncedUpdateNotes],
+  );
 
   const handleTagInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     setTagInput(e.target.value);
@@ -63,7 +64,6 @@ const ApplicationPopover: React.FC<ApplicationPopoverProps> = ({
   const addTag = useCallback(() => {
     const trimmed = tagInput.trim();
     if (!trimmed || tags.includes(trimmed)) return;
-
     const newTags = [...tags, trimmed];
     setTags(newTags);
     setTagInput("");
@@ -72,11 +72,10 @@ const ApplicationPopover: React.FC<ApplicationPopoverProps> = ({
 
   const removeTag = useCallback(
     (tagToRemove: string) => {
-      const newTags = tags.filter((tag) => tag !== tagToRemove);
-      if (newTags.length !== tags.length) {
-        setTags(newTags);
-        debouncedUpdateTags(newTags);
-      }
+      const newTags = tags.filter((t) => t !== tagToRemove);
+      if (newTags.length === tags.length) return;
+      setTags(newTags);
+      debouncedUpdateTags(newTags);
     },
     [tags, debouncedUpdateTags],
   );
@@ -105,12 +104,12 @@ const ApplicationPopover: React.FC<ApplicationPopoverProps> = ({
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <h4 className="font-bold">ATS Score</h4>
-            <span className="text-sm font-medium">{job.atsScore || 0}</span>
+            <span className="text-sm font-medium">{job.atsScore ?? 0}</span>
           </div>
           <div className="relative h-2.5 w-full bg-gray-300 dark:bg-zinc-700 rounded-full">
             <div
               className="h-full rounded-full bg-gradient-to-r from-red-500 to-green-500"
-              style={{ width: `${String(job.atsScore || 0)}%` }}
+              style={{ width: `${String(job.atsScore ?? 0)}%` }}
             />
           </div>
         </div>

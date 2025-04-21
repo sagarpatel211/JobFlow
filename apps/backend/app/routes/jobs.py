@@ -1,6 +1,9 @@
 from flask import Blueprint, request, jsonify
 from app.extensions import db
 from app.models import Job, Company, Status, RoleType  # Adjust the import paths accordingly
+from sqlalchemy import select, update, delete, and_
+from datetime import datetime, timedelta  # Add missing imports
+import requests  # Add missing import for remove_dead_links
 
 jobs_bp = Blueprint("jobs", __name__)
 
@@ -112,3 +115,100 @@ def update_status_arrow(job_id):
     job.status = Status(statuses[new_index])
     db.session.commit()
     return jsonify({"success": True})
+
+@jobs_bp.route("/delete-older-than/<int:months>", methods=["DELETE"])
+def delete_older_than(months: int):
+    cutoff = datetime.utcnow() - timedelta(days=30 * months)
+    stmt = delete(Job).where(Job.posted_date < cutoff)
+    deleted = db.session.execute(stmt).rowcount
+    db.session.commit()
+    return jsonify({"deleted_count": deleted})
+
+
+@jobs_bp.route("/remove-dead-links", methods=["POST"])
+def remove_dead_links():
+    jobs = (
+        db.session.execute(select(Job.id, Job.link).where(Job.deleted.is_(False)))
+        .all()
+    )
+    dead_ids: list[int] = []
+    for jid, link in jobs:
+        try:
+            r = requests.head(link, timeout=4)
+            if r.status_code >= 400:
+                dead_ids.append(jid)
+        except Exception:
+            dead_ids.append(jid)
+
+    if dead_ids:
+        db.session.execute(
+            update(Job).where(Job.id.in_(dead_ids)).values(deleted=True)
+        )
+        db.session.commit()
+    return jsonify({"removed_count": len(dead_ids)})
+
+
+@jobs_bp.route("/archive-rejected", methods=["POST"])
+def archive_rejected():
+    stmt = (
+        update(Job)
+        .where(and_(Job.status == Status.rejected, Job.archived.is_(False)))
+        .values(archived=True)
+    )
+    count = db.session.execute(stmt).rowcount
+    db.session.commit()
+    return jsonify({"archived_count": count})
+
+
+@jobs_bp.route("/archive-applied-older-than/<int:months>", methods=["POST"])
+def archive_applied_older(months: int):
+    cutoff = datetime.utcnow() - timedelta(days=30 * months)
+    stmt = (
+        update(Job)
+        .where(
+            and_(
+                Job.status == Status.applied,
+                Job.posted_date < cutoff,
+                Job.archived.is_(False),
+            )
+        )
+        .values(archived=True)
+    )
+    count = db.session.execute(stmt).rowcount
+    db.session.commit()
+    return jsonify({"archived_count": count})
+
+
+@jobs_bp.route("/mark-oldest-as-priority", methods=["POST"])
+def mark_oldest_as_priority():
+    sub = (
+        select(Job.id)
+        .where(and_(Job.priority.is_(False), Job.deleted.is_(False)))
+        .order_by(Job.posted_date.asc())
+        .limit(50)
+    )
+    stmt = update(Job).where(Job.id.in_(sub)).values(priority=True)
+    count = db.session.execute(stmt).rowcount
+    db.session.commit()
+    return jsonify({"marked_count": count})
+
+@jobs_bp.route("/<int:job_id>/restore", methods=["PUT"])
+def restore_job(job_id):
+    job = Job.query.get_or_404(job_id)
+    job.deleted = False
+    db.session.commit()
+    return jsonify({"success": True})
+
+@jobs_bp.route("/<int:job_id>/permanent-delete", methods=["DELETE", "OPTIONS"])
+def permanent_delete_job(job_id):
+    # Handle OPTIONS request (preflight)
+    if request.method == "OPTIONS":
+        response = jsonify({"success": True})
+        return response
+
+    # Handle actual DELETE request
+    job = Job.query.get_or_404(job_id)
+    db.session.delete(job)
+    db.session.commit()
+    response = jsonify({"success": True})
+    return response

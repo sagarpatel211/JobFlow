@@ -11,16 +11,33 @@ interface Application {
   status: "pending" | "completed" | "failed";
   atsScore?: number;
   createdAt: string;
+  documents?: {
+    type: string;
+    fileName: string;
+  }[];
 }
 
 interface ApplicationsTableProps {
   applications: Application[];
-  onView: (application: Application) => void;
-  onDownload: (application: Application) => void;
-  onRegenerate: (application: Application) => void;
+  expandedRowId?: string | null;
+  onToggleRow?: (id: string) => void;
+  onViewApplication: (application: Application) => void;
+  onDownloadApplication: (application: Application) => void;
+  onRegenerateApplication: (application: Application) => void;
+  isLoading?: boolean;
+  showAtsScore?: boolean;
 }
 
-export function ApplicationsTable({ applications, onView, onDownload, onRegenerate }: ApplicationsTableProps) {
+export function ApplicationsTable({
+  applications,
+  expandedRowId,
+  onToggleRow,
+  onViewApplication,
+  onDownloadApplication,
+  onRegenerateApplication,
+  isLoading = false,
+  showAtsScore = true,
+}: ApplicationsTableProps) {
   const getStatusBadge = (status: Application["status"]) => {
     switch (status) {
       case "pending":
@@ -35,7 +52,7 @@ export function ApplicationsTable({ applications, onView, onDownload, onRegenera
   };
 
   const getATSScoreBadge = (score?: number) => {
-    if (!score) return null;
+    if (!score && score !== 0) return null;
 
     let variant: "outline" | "success" | "warning" | "destructive" = "outline";
     if (score >= 80) variant = "success";
@@ -54,6 +71,51 @@ export function ApplicationsTable({ applications, onView, onDownload, onRegenera
     }).format(date);
   };
 
+  if (isLoading) {
+    return (
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Job Title</TableHead>
+              <TableHead>Company</TableHead>
+              <TableHead>Status</TableHead>
+              {showAtsScore && <TableHead>ATS Score</TableHead>}
+              <TableHead>Date</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.from({ length: 3 }).map((_, index) => (
+              <TableRow key={index}>
+                <TableCell>
+                  <div className="h-4 w-32" />
+                </TableCell>
+                <TableCell>
+                  <div className="h-4 w-24" />
+                </TableCell>
+                <TableCell>
+                  <div className="h-4 w-20" />
+                </TableCell>
+                {showAtsScore && (
+                  <TableCell>
+                    <div className="h-4 w-12" />
+                  </TableCell>
+                )}
+                <TableCell>
+                  <div className="h-4 w-24" />
+                </TableCell>
+                <TableCell>
+                  <div className="h-8 w-24" />
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -62,7 +124,7 @@ export function ApplicationsTable({ applications, onView, onDownload, onRegenera
             <TableHead>Job Title</TableHead>
             <TableHead>Company</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>ATS Score</TableHead>
+            {showAtsScore && <TableHead>ATS Score</TableHead>}
             <TableHead>Date</TableHead>
             <TableHead>Actions</TableHead>
           </TableRow>
@@ -70,30 +132,60 @@ export function ApplicationsTable({ applications, onView, onDownload, onRegenera
         <TableBody>
           {applications.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+              <TableCell colSpan={showAtsScore ? 6 : 5} className="text-center py-8 text-muted-foreground">
                 No applications generated yet
               </TableCell>
             </TableRow>
           ) : (
             applications.map((app) => (
-              <TableRow key={app.id}>
-                <TableCell className="font-medium">{app.jobTitle}</TableCell>
-                <TableCell>{app.company}</TableCell>
-                <TableCell>{getStatusBadge(app.status)}</TableCell>
-                <TableCell>{getATSScoreBadge(app.atsScore)}</TableCell>
-                <TableCell>{formatDate(app.createdAt)}</TableCell>
-                <TableCell className="space-x-2">
-                  <Button variant="outline" size="sm" onClick={() => onView(app)} disabled={app.status !== "completed"}>
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => onDownload(app)} disabled={app.status !== "completed"}>
-                    <Download className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => onRegenerate(app)} disabled={app.status === "pending"}>
-                    <RotateCw className="h-4 w-4" />
-                  </Button>
-                </TableCell>
-              </TableRow>
+              <React.Fragment key={app.id}>
+                <TableRow
+                  className={expandedRowId === app.id ? "bg-muted/50" : ""}
+                  onClick={() => onToggleRow && onToggleRow(app.id)}
+                  style={{ cursor: onToggleRow ? "pointer" : "default" }}
+                >
+                  <TableCell className="font-medium">{app.jobTitle}</TableCell>
+                  <TableCell>{app.company}</TableCell>
+                  <TableCell>{getStatusBadge(app.status)}</TableCell>
+                  {showAtsScore && <TableCell>{getATSScoreBadge(app.atsScore)}</TableCell>}
+                  <TableCell>{formatDate(app.createdAt)}</TableCell>
+                  <TableCell className="space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onViewApplication(app);
+                      }}
+                      disabled={app.status !== "completed"}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDownloadApplication(app);
+                      }}
+                      disabled={app.status !== "completed"}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRegenerateApplication(app);
+                      }}
+                      disabled={app.status === "pending"}
+                    >
+                      <RotateCw className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              </React.Fragment>
             ))
           )}
         </TableBody>

@@ -24,11 +24,21 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface JobApplicationFormProps {
   onSubmit: (values: FormValues) => void;
+  isSubmitting?: boolean;
   isLoading?: boolean;
   resumeData?: string;
+  onToggleDocument?: (docType: string) => void;
+  selectedDocuments?: string[];
 }
 
-export function JobApplicationForm({ onSubmit, isLoading = false, resumeData = "" }: JobApplicationFormProps) {
+export function JobApplicationForm({
+  onSubmit,
+  isSubmitting = false,
+  isLoading = false,
+  resumeData = "",
+  onToggleDocument,
+  selectedDocuments = ["resume", "cover_letter"],
+}: JobApplicationFormProps) {
   // Initialize the form with default values
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -48,6 +58,13 @@ export function JobApplicationForm({ onSubmit, isLoading = false, resumeData = "
       ...values,
       resumeData: values.includeResumeData ? resumeData : "",
     });
+  };
+
+  // Handle document selection toggle
+  const handleToggleDocument = (docType: string, checked: boolean) => {
+    if (onToggleDocument) {
+      onToggleDocument(docType);
+    }
   };
 
   return (
@@ -105,23 +122,27 @@ export function JobApplicationForm({ onSubmit, isLoading = false, resumeData = "
               )}
             />
 
-            {resumeData && (
-              <FormField
-                control={form.control}
-                name="includeResumeData"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Use existing resume data</FormLabel>
-                      <FormDescription>Your resume data will be used to tailor the application</FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            )}
+            <FormField
+              control={form.control}
+              name="includeResumeData"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">Generate Resume</FormLabel>
+                    <FormDescription>Create a tailored resume for this job</FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={(checked) => {
+                        field.onChange(checked);
+                        handleToggleDocument("resume", checked);
+                      }}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -133,15 +154,21 @@ export function JobApplicationForm({ onSubmit, isLoading = false, resumeData = "
                     <FormDescription>Create a personalized cover letter for this job</FormDescription>
                   </div>
                   <FormControl>
-                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={(checked) => {
+                        field.onChange(checked);
+                        handleToggleDocument("cover_letter", checked);
+                      }}
+                    />
                   </FormControl>
                 </FormItem>
               )}
             />
           </CardContent>
           <CardFooter>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Generating..." : "Generate Application"}
+            <Button type="submit" className="w-full" disabled={isSubmitting || isLoading}>
+              {isSubmitting ? "Generating..." : "Generate Application"}
             </Button>
           </CardFooter>
         </form>

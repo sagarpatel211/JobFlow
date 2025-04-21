@@ -31,7 +31,22 @@ interface Application {
   status: "pending" | "completed" | "failed";
   atsScore?: number;
   createdAt: string;
+  documents?: {
+    type: string;
+    fileName: string;
+  }[];
 }
+
+interface DocumentContent {
+  type: string;
+  fileName: string;
+  content: string;
+  contentType?: string;
+  rawContent?: string;
+  htmlContent?: string;
+}
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 export default function GeneratePage() {
   const { theme } = useTheme();
@@ -59,50 +74,12 @@ export default function GeneratePage() {
   const [coverLetterFileName, setCoverLetterFileName] = useState("cover_letter.pdf");
   const [isEditingResumeFileName, setIsEditingResumeFileName] = useState(false);
   const [isEditingCoverLetterFileName, setIsEditingCoverLetterFileName] = useState(false);
+  const [currentDocumentContent, setCurrentDocumentContent] = useState<DocumentContent | null>(null);
+  const [activeDocumentType, setActiveDocumentType] = useState<string | null>(null);
 
   // Generated Applications List
-  const [generatedApplications, setGeneratedApplications] = useState<Application[]>([
-    {
-      id: "1",
-      company: "Google",
-      jobTitle: "Software Engineer",
-      status: "completed" as const,
-      atsScore: 85,
-      createdAt: new Date("2023-05-15").toISOString(),
-    },
-    {
-      id: "2",
-      company: "Microsoft",
-      jobTitle: "Full Stack Developer",
-      status: "completed" as const,
-      atsScore: 92,
-      createdAt: new Date("2023-06-21").toISOString(),
-    },
-    {
-      id: "3",
-      company: "Amazon",
-      jobTitle: "DevOps Engineer",
-      status: "completed" as const,
-      atsScore: 78,
-      createdAt: new Date("2023-07-08").toISOString(),
-    },
-    {
-      id: "4",
-      company: "Netflix",
-      jobTitle: "Frontend Engineer",
-      status: "pending" as const,
-      atsScore: 0,
-      createdAt: new Date("2023-08-15").toISOString(),
-    },
-    {
-      id: "5",
-      company: "Facebook",
-      jobTitle: "Machine Learning Engineer",
-      status: "completed" as const,
-      atsScore: 91,
-      createdAt: new Date("2023-09-03").toISOString(),
-    },
-  ]);
+  const [generatedApplications, setGeneratedApplications] = useState<Application[]>([]);
+  const [isLoadingApplications, setIsLoadingApplications] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedRowId, setExpandedRowId] = useState<string | null>(null);
@@ -112,73 +89,27 @@ export default function GeneratePage() {
   const ITEMS_PER_PAGE = 3;
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Mock data for document preview
-  const mockResume = `JOHN DOE
-Software Engineer
+  // Fetch applications on component mount
+  useEffect(() => {
+    void fetchApplications();
+  }, []);
 
-CONTACT
-Phone: (123) 456-7890
-Email: john.doe@example.com
-LinkedIn: linkedin.com/in/johndoe
-GitHub: github.com/johndoe
-
-SUMMARY
-Experienced software engineer with 5+ years of experience in full-stack development, specializing in React, Node.js, and cloud technologies. Passionate about creating scalable and user-friendly applications.
-
-EXPERIENCE
-Senior Software Engineer | Tech Innovators Inc. | Jan 2020 - Present
-- Led the development of a customer-facing web application that increased user engagement by 35%
-- Implemented CI/CD pipelines that reduced deployment time by 50%
-- Mentored junior developers and conducted code reviews
-
-Software Engineer | Digital Solutions LLC | Mar 2017 - Dec 2019
-- Developed RESTful APIs using Node.js and Express
-- Collaborated with UX designers to implement responsive interfaces
-- Optimized database queries resulting in 40% faster load times
-
-EDUCATION
-Bachelor of Science in Computer Science
-University of Technology | 2013 - 2017
-
-SKILLS
-Languages: JavaScript, TypeScript, HTML, CSS, Python
-Frameworks: React, Node.js, Express, Next.js
-Tools: Git, Docker, AWS, Azure, Jenkins
-Concepts: REST APIs, Microservices, Agile, TDD`;
-
-  const mockCoverLetter = `John Doe
-123 Main Street
-Anytown, ST 12345
-john.doe@example.com
-(123) 456-7890
-
-November 15, 2023
-
-Hiring Manager
-Tech Solutions Inc.
-456 Business Ave.
-Techville, ST 67890
-
-Dear Hiring Manager,
-
-I am writing to express my interest in the Frontend Developer position at Tech Solutions Inc. With over 5 years of experience in web development and a strong focus on frontend technologies, I believe I would be a valuable addition to your team.
-
-My experience with React, JavaScript, and modern frontend frameworks aligns perfectly with the requirements outlined in your job description. In my current role as a Senior Software Engineer at Tech Innovators Inc., I've led the development of responsive, user-friendly web applications that have significantly improved user engagement and business metrics.
-
-I'm particularly impressed by Tech Solutions' commitment to innovation and your recent project involving AI-enhanced user interfaces. My background in implementing complex UI components and optimizing web performance would allow me to contribute immediately to these initiatives.
-
-I'm excited about the possibility of bringing my technical expertise and collaborative approach to Tech Solutions Inc. Thank you for considering my application. I look forward to the opportunity to discuss how my skills and experience can benefit your team.
-
-Sincerely,
-John Doe`;
-
-  // Mock ATS analysis data
-  const mockATSData = {
-    score: 85,
-    keywords: ["React", "JavaScript", "TypeScript", "Node.js", "Frontend"],
-    missedKeywords: ["Angular", "Vue.js", "AWS Amplify"],
-    feedback:
-      "Consider adding more details about your experience with cloud services and CI/CD pipelines. Include specific metrics about the impact of your work.",
+  const fetchApplications = async () => {
+    setIsLoadingApplications(true);
+    try {
+      const response = await fetch(`${API_URL}/api/applications`);
+      const data = (await response.json()) as { success: boolean; applications: Application[] };
+      if (data.success) {
+        setGeneratedApplications(data.applications);
+      } else {
+        toast.error("Failed to fetch applications");
+      }
+    } catch (error) {
+      console.error("Error fetching applications:", error);
+      toast.error("Failed to fetch applications");
+    } finally {
+      setIsLoadingApplications(false);
+    }
   };
 
   // Toggle document selection
@@ -188,7 +119,16 @@ John Doe`;
 
   // Handle row expansion
   const handleRowToggle = useCallback((id: string) => {
-    setExpandedRowId((prev) => (prev === id ? null : id));
+    setExpandedRowId((prev) => {
+      // If we're closing the current row, clear document content
+      if (prev === id) {
+        setCurrentDocumentContent(null);
+        setShowDocumentPreviews(false);
+        setActiveDocumentType(null);
+        return null;
+      }
+      return id;
+    });
   }, []);
 
   // Filter generated applications based on search term
@@ -203,179 +143,320 @@ John Doe`;
   const paginatedApplications = filteredApplications.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
 
   // Handlers for the new components
-  const handleFormSubmit = (values: FormValues) => {
-    console.log("Form submitted:", values);
-    // In a real app, this would trigger an API call to generate the application
-    setCompany(values.company);
-    setJobTitle(values.jobTitle);
-    setJobDescription(values.jobDescription);
+  const handleFormSubmit = async (values: FormValues) => {
+    // Optimistic update
+    const optimisticApplication: Application = {
+      id: `temp-${Date.now().toString()}`,
+      company: values.company,
+      jobTitle: values.jobTitle,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+      documents: [],
+    };
 
-    // Simulate document generation
-    setTimeout(() => {
-      // Add new application to the list
-      const newApp: Application = {
-        id: String(generatedApplications.length + 1),
-        company: values.company,
-        jobTitle: values.jobTitle,
-        status: "completed" as const,
-        atsScore: Math.floor(Math.random() * 20) + 75, // Random score between 75-95
-        createdAt: new Date().toISOString(),
-      };
+    if (values.includeResumeData) {
+      optimisticApplication.documents?.push({ type: "resume", fileName: "resume.pdf" });
+    }
+    if (values.includeCoverLetter) {
+      optimisticApplication.documents?.push({ type: "cover_letter", fileName: "cover_letter.pdf" });
+    }
 
-      setGeneratedApplications([newApp, ...generatedApplications]);
-      toast.success("Application generated successfully!");
-    }, 2000);
+    setGeneratedApplications([optimisticApplication, ...generatedApplications]);
+    setIsGeneratingDocs(true);
+
+    try {
+      const response = await fetch(`${API_URL}/api/applications`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          company: values.company,
+          jobTitle: values.jobTitle,
+          jobDescription: values.jobDescription,
+          includeResumeData: values.includeResumeData,
+          includeCoverLetter: values.includeCoverLetter,
+        }),
+      });
+
+      const data = (await response.json()) as { success: boolean; application: Application };
+
+      if (data.success) {
+        // Replace the optimistic entry with the real one
+        setGeneratedApplications((prev) => [data.application, ...prev.filter((app) => app.id !== optimisticApplication.id)]);
+        setCompany(values.company);
+        setJobTitle(values.jobTitle);
+        setJobDescription(values.jobDescription);
+
+        // Set the expanded row to the new application
+        setExpandedRowId(data.application.id);
+
+        // If documents were generated, fetch the first one
+        if (data.application.documents && data.application.documents.length > 0) {
+          const firstDoc = data.application.documents[0];
+          await fetchDocumentContent(firstDoc.type, data.application.id);
+          setActiveDocumentType(firstDoc.type);
+        }
+
+        toast.success("Application generated successfully!");
+      } else {
+        // Remove the optimistic entry
+        setGeneratedApplications((prev) => prev.filter((app) => app.id !== optimisticApplication.id));
+        toast.error("Failed to generate application");
+      }
+    } catch (error) {
+      console.error("Error generating application:", error);
+      setGeneratedApplications((prev) => prev.filter((app) => app.id !== optimisticApplication.id));
+      toast.error("Failed to generate application");
+    } finally {
+      setIsGeneratingDocs(false);
+    }
   };
 
-  const handleDownload = (documentType: "resume" | "coverLetter") => {
-    console.log(`Downloading ${documentType}`);
-    // In a real app, this would trigger a download
+  const fetchDocumentContent = async (documentType: string, applicationId: string) => {
+    if (!applicationId) return;
+
+    try {
+      const response = await fetch(`${API_URL}/api/applications/${applicationId}/documents/${documentType}`);
+      const data = (await response.json()) as { success: boolean; document: DocumentContent };
+
+      if (data.success) {
+        setCurrentDocumentContent(data.document);
+        setShowDocumentPreviews(true);
+
+        // Update filename state based on document type
+        if (documentType === "resume") {
+          setResumeFileName(data.document.fileName);
+        } else if (documentType === "cover_letter") {
+          setCoverLetterFileName(data.document.fileName);
+        }
+      } else {
+        toast.error(`Failed to fetch ${documentType}`);
+      }
+    } catch (error) {
+      console.error(`Error fetching ${documentType}:`, error);
+      toast.error(`Failed to fetch ${documentType}`);
+    }
+  };
+
+  const handleContentChange = async (newContent: string) => {
+    if (!expandedRowId || !currentDocumentContent) return;
+
+    const docType = currentDocumentContent.type;
+
+    try {
+      const response = await fetch(`${API_URL}/api/applications/${expandedRowId}/documents/${docType}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: newContent,
+        }),
+      });
+
+      const data = (await response.json()) as { success: boolean; document: DocumentContent };
+
+      if (data.success) {
+        setCurrentDocumentContent(data.document);
+        toast.success(`${docType === "resume" ? "Resume" : "Cover letter"} updated successfully`);
+      } else {
+        toast.error(`Failed to update ${docType}`);
+      }
+    } catch (error) {
+      console.error(`Error updating ${docType}:`, error);
+      toast.error(`Failed to update ${docType}`);
+    }
+  };
+
+  const handleDownload = async (documentType: "resume" | "coverLetter", applicationId: string) => {
+    if (!applicationId) return;
+
+    // For PDF direct download
+    const apiDocType = documentType === "resume" ? "resume" : "cover_letter";
+    const pdfUrl = `${API_URL}/api/applications/${applicationId}/documents/${apiDocType}?format=pdf`;
+
+    // Open in a new tab for download
+    window.open(pdfUrl, "_blank");
     toast.success(`Downloading ${documentType === "resume" ? "resume" : "cover letter"}`);
   };
 
-  const handleViewApplication = (application: Application) => {
-    console.log(`Viewing application ${application.id}`);
-    // In a real app, this would navigate to the application details
-    toast.success(`Viewing application ${application.id}`);
+  const handleSwitchDocument = async (docType: string) => {
+    if (!expandedRowId) return;
+
+    if (docType !== activeDocumentType) {
+      await fetchDocumentContent(docType, expandedRowId);
+      setActiveDocumentType(docType);
+    }
+  };
+
+  const handleViewApplication = async (application: Application) => {
+    try {
+      const response = await fetch(`${API_URL}/api/applications/${application.id}`);
+      const data = (await response.json()) as { success: boolean; application: Application };
+
+      if (data.success) {
+        // Set the application details for viewing
+        setExpandedRowId(application.id);
+
+        // If the application has documents, fetch the first one
+        if (application.documents && application.documents.length > 0) {
+          const firstDoc = application.documents[0];
+          await fetchDocumentContent(firstDoc.type, application.id);
+          setActiveDocumentType(firstDoc.type);
+        }
+      } else {
+        toast.error("Failed to fetch application details");
+      }
+    } catch (error) {
+      console.error("Error fetching application details:", error);
+      toast.error("Failed to fetch application details");
+    }
   };
 
   const handleDownloadApplication = (application: Application) => {
-    console.log(`Downloading application ${application.id}`);
-    // In a real app, this would trigger a download
-    toast.success(`Downloading application ${application.id}`);
+    if (application.documents && application.documents.length > 0) {
+      // Download all documents one by one
+      application.documents.forEach((doc) => {
+        const docType = doc.type === "resume" ? "resume" : "coverLetter";
+        void handleDownload(docType as "resume" | "coverLetter", application.id);
+      });
+    } else {
+      toast.error("No documents available to download");
+    }
   };
 
+  // This would be implemented in a real application
   const handleRegenerateApplication = (application: Application) => {
-    console.log(`Regenerating application ${application.id}`);
-    // In a real app, this would trigger regeneration
     toast.success(`Regenerating application ${application.id}`);
   };
 
-  const goToNextPage = useCallback(() => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prev) => prev + 1);
-      toast.success("Next page");
-    }
-  }, [currentPage, totalPages]);
-
-  const goToPrevPage = useCallback(() => {
-    if (currentPage > 1) {
-      setCurrentPage((prev) => prev - 1);
-      toast.success("Previous page");
-    }
-  }, [currentPage]);
-
-  const createNewApplication = useCallback(() => {
-    setActiveTab("new");
-    toast.success("Create new application");
-  }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey) {
-        switch (event.key) {
-          case "ArrowLeft":
-            event.preventDefault();
-            goToPrevPage();
-            break;
-          case "ArrowRight":
-            event.preventDefault();
-            goToNextPage();
-            break;
-          case " ":
-            event.preventDefault();
-            createNewApplication();
-            break;
-          default:
-            break;
-        }
+  const handleKeyDown = (event: KeyboardEvent) => {
+    // Handle keyboard shortcuts
+    if (event.metaKey || event.ctrlKey) {
+      if (event.key === "l") {
+        event.preventDefault();
+        document.querySelector<HTMLInputElement>("#application-search")?.focus();
       }
-    };
+    }
+  };
 
+  // Add keyboard shortcut listener
+  useEffect(() => {
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [goToNextPage, goToPrevPage, createNewApplication]);
+  }, []);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
   };
 
   return (
-    <div className="p-4">
-      <Toaster
-        toastOptions={{
-          style: {
-            maxWidth: "500px",
-            background: isDark ? "#111" : "#fff",
-            color: isDark ? "#fff" : "#000",
-            border: isDark ? "1px solid #333" : "1px solid #ddd",
-          },
-        }}
-      />
-
-      {/* Header */}
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b bg-background/50 p-4 md:p-6 text-3xl md:text-4xl backdrop-blur-lg mb-6">
-        <span>Generate Application</span>
-        <HotkeysDialog />
-      </header>
-
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="new">New Application</TabsTrigger>
-          <TabsTrigger value="history">Application History</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="new" className="space-y-6 pt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <JobApplicationForm onSubmit={handleFormSubmit} resumeData={mockResume} isLoading={isGeneratingDocs} />
-
-            <div className="space-y-6">
-              <DocumentPreview resume={mockResume} coverLetter={mockCoverLetter} onDownload={handleDownload} />
-
-              <ATSScoreAnalysis
-                score={mockATSData.score}
-                keywords={mockATSData.keywords}
-                missedKeywords={mockATSData.missedKeywords}
-                feedback={mockATSData.feedback}
-              />
-            </div>
+    <div className="container pb-8">
+      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+      <div className="my-4 flex flex-col gap-2">
+        <Tabs defaultValue="new" className="space-y-4" onValueChange={handleTabChange}>
+          <div className="flex items-center justify-between">
+            <TabsList>
+              <TabsTrigger value="new">New Application</TabsTrigger>
+              <TabsTrigger value="applications">My Applications</TabsTrigger>
+            </TabsList>
+            <HotkeysDialog />
           </div>
-        </TabsContent>
 
-        <TabsContent value="history" className="pt-4">
-          <div className="flex items-center mb-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <TabsContent value="new" className="space-y-4">
+            <JobApplicationForm
+              onSubmit={handleFormSubmit}
+              isSubmitting={isGeneratingDocs}
+              onToggleDocument={toggleDocumentSelection}
+              selectedDocuments={selectedDocuments}
+            />
+
+            {showDocumentPreviews && currentDocumentContent && (
+              <div className="mt-8">
+                {/* Document Type Selector */}
+                {expandedRowId && (
+                  <div className="mb-4">
+                    <Tabs value={activeDocumentType || ""} onValueChange={handleSwitchDocument} className="w-full">
+                      <TabsList>
+                        {generatedApplications
+                          .find((app) => app.id === expandedRowId)
+                          ?.documents?.map((doc) => (
+                            <TabsTrigger key={doc.type} value={doc.type}>
+                              {doc.type === "resume" ? "Resume" : "Cover Letter"}
+                            </TabsTrigger>
+                          ))}
+                      </TabsList>
+                    </Tabs>
+                  </div>
+                )}
+
+                <DocumentPreview
+                  title={activeDocumentType === "resume" ? "Resume" : "Cover Letter"}
+                  content={currentDocumentContent.content}
+                  contentType={currentDocumentContent.contentType}
+                  htmlContent={currentDocumentContent.htmlContent}
+                  fileName={currentDocumentContent.fileName}
+                  applicationId={expandedRowId || undefined}
+                  documentType={activeDocumentType || undefined}
+                  onFileNameChange={activeDocumentType === "resume" ? setResumeFileName : setCoverLetterFileName}
+                  isEditingFileName={activeDocumentType === "resume" ? isEditingResumeFileName : isEditingCoverLetterFileName}
+                  onEditFileName={() =>
+                    activeDocumentType === "resume" ? setIsEditingResumeFileName(true) : setIsEditingCoverLetterFileName(true)
+                  }
+                  onSaveFileName={() =>
+                    activeDocumentType === "resume" ? setIsEditingResumeFileName(false) : setIsEditingCoverLetterFileName(false)
+                  }
+                  onDownload={() =>
+                    handleDownload(activeDocumentType === "resume" ? "resume" : "coverLetter", expandedRowId || "")
+                  }
+                  onContentChange={handleContentChange}
+                />
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="applications" className="space-y-4">
+            <div className="flex items-center space-x-2">
+              <Search className="h-5 w-5 text-muted-foreground" />
               <Input
-                placeholder="Search by company or job title..."
+                id="application-search"
+                placeholder="Search applications..."
+                className="flex-1"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
               />
             </div>
-          </div>
 
-          <ApplicationsTable
-            applications={paginatedApplications}
-            onView={handleViewApplication}
-            onDownload={handleDownloadApplication}
-            onRegenerate={handleRegenerateApplication}
-          />
-
-          {/* Pagination controls */}
-          {filteredApplications.length > 0 && (
-            <PaginationControls
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onNext={goToNextPage}
-              onPrev={goToPrevPage}
-              onGoToPage={setCurrentPage}
+            <ApplicationsTable
+              applications={paginatedApplications}
+              expandedRowId={expandedRowId}
+              onToggleRow={handleRowToggle}
+              onViewApplication={handleViewApplication}
+              onDownloadApplication={handleDownloadApplication}
+              onRegenerateApplication={handleRegenerateApplication}
+              isLoading={isLoadingApplications}
+              showAtsScore={true}
             />
-          )}
-        </TabsContent>
-      </Tabs>
+
+            {filteredApplications.length > 0 && (
+              <PaginationControls currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {expandedRowId && (
+        <div className="mt-8">
+          <ATSScoreAnalysis
+            score={generatedApplications.find((a) => a.id === expandedRowId)?.atsScore || 0}
+            strengths={atsStrengths}
+            weaknesses={atsWeaknesses}
+          />
+        </div>
+      )}
     </div>
   );
 }

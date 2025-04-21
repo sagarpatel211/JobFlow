@@ -6,27 +6,21 @@ import { getTagsWithCounts, TagWithCount } from "../services/api";
 interface FilterBadgesProps {
   onSelectTag: (tag: string | null) => void;
   selectedTag: string | null;
-  onRefreshTagsFunc?: (refreshFunc: () => Promise<void>) => void;
+  onRefreshTagsFunc?: (refresh: () => Promise<void>) => void;
 }
 
-function useFiltersData(options: { loadTags?: boolean; initialTags?: string[] } = { loadTags: true }) {
-  const { loadTags = true, initialTags = [] } = options;
-  const [tags, setTags] = useState<string[]>(initialTags);
+function useFiltersData(loadTags = true) {
+  const [tags, setTags] = useState<string[]>([]);
   const [tagsWithCounts, setTagsWithCounts] = useState<TagWithCount[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
 
-  const refreshTags = useCallback(async (): Promise<void> => {
+  const refreshTags = useCallback(async () => {
     if (!loadTags) return;
     try {
       setLoading(true);
-      setError(null);
-      const tagData = await getTagsWithCounts();
-      setTagsWithCounts(tagData);
-      setTags(tagData.map((tag) => tag.name));
-    } catch (err) {
-      console.error("Error loading tags data:", err);
-      setError(err instanceof Error ? err : new Error("Unknown error loading tags data"));
+      const data = await getTagsWithCounts();
+      setTagsWithCounts(data);
+      setTags(data.map((t) => t.name));
     } finally {
       setLoading(false);
     }
@@ -36,24 +30,20 @@ function useFiltersData(options: { loadTags?: boolean; initialTags?: string[] } 
     void refreshTags();
   }, [refreshTags]);
 
-  return { tags, tagsWithCounts, loading, error, refreshTags };
+  return { tags, tagsWithCounts, loading, refreshTags };
 }
 
 export default function FilterBadges({ onSelectTag, selectedTag, onRefreshTagsFunc }: FilterBadgesProps) {
   const { tags, tagsWithCounts, loading, refreshTags } = useFiltersData();
+  const tagCountMap = useMemo(
+    () => tagsWithCounts.reduce<Record<string, number>>((acc, t) => ({ ...acc, [t.name]: Number(t.job_count) || 0 }), {}),
+    [tagsWithCounts],
+  );
 
-  const tagCountMap = useMemo(() => {
-    const map: Record<string, number> = {};
-    tagsWithCounts.forEach((t) => {
-      map[t.name] = Number(t.job_count) || 0;
-    });
-    return map;
-  }, [tagsWithCounts]);
-
-  const initialized = useRef(false);
+  const wired = useRef(false);
   useEffect(() => {
-    if (!initialized.current && onRefreshTagsFunc) {
-      initialized.current = true;
+    if (!wired.current && onRefreshTagsFunc) {
+      wired.current = true;
       onRefreshTagsFunc(refreshTags);
     }
   }, [refreshTags, onRefreshTagsFunc]);
@@ -64,14 +54,11 @@ export default function FilterBadges({ onSelectTag, selectedTag, onRefreshTagsFu
         <h3 className="text-lg font-semibold">Tag Filters</h3>
         {!loading && <span className="text-sm text-gray-500">{tags.length} unique tags</span>}
       </div>
-
       {loading ? (
         <div className="animate-pulse flex flex-wrap gap-2 mt-1">
-          {Array(5)
-            .fill(0)
-            .map((_, i) => (
-              <div key={i} className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded-full" />
-            ))}
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded-full" />
+          ))}
         </div>
       ) : (
         <div className="flex flex-wrap gap-2 mt-1">
@@ -95,7 +82,7 @@ export default function FilterBadges({ onSelectTag, selectedTag, onRefreshTagsFu
               }`}
             >
               {tag}
-              <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-gray-700/10">{tagCountMap[tag] || 0}</span>
+              <span className="ml-1.5 px-1.5 py-0.5 text-xs rounded-full bg-gray-700/10">{tagCountMap[tag] ?? 0}</span>
             </button>
           ))}
         </div>

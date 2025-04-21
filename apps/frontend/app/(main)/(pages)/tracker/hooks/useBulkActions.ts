@@ -12,131 +12,122 @@ import {
 import { toast } from "react-hot-toast";
 
 interface UseBulkActionsParams {
-  baseUrl: string;
   refreshData: () => Promise<void>;
 }
 
-export function useBulkActions({ baseUrl, refreshData }: UseBulkActionsParams) {
-  const handleDeleteOlderThan = useCallback(
-    async (months: number): Promise<void> => {
+type CountResponse = {
+  deleted_count?: number;
+  archived_count?: number;
+  marked_count?: number;
+  removed_count?: number;
+};
+
+export function useBulkActions({ refreshData }: UseBulkActionsParams) {
+  const runCountAction = useCallback(
+    async (action: () => Promise<CountResponse>, loadingMsg: string, successMsg: (count: number) => string): Promise<void> => {
+      const toastId = toast.loading(loadingMsg);
       try {
-        toast.loading("Deleting old data...");
-        const result = await deleteOlderThan(months);
-        toast.dismiss();
-        toast.success(`Successfully deleted ${String(result.deleted_count)} jobs older than ${String(months)} months`);
+        const res = await action();
+        toast.dismiss(toastId);
+        const count = res.deleted_count ?? res.archived_count ?? res.marked_count ?? res.removed_count ?? 0;
+        toast.success(successMsg(count));
         await refreshData();
       } catch (error) {
-        toast.dismiss();
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        toast.error("Failed to delete old jobs: " + errorMessage);
+        toast.dismiss(toastId);
+        const msg = error instanceof Error ? error.message : String(error);
+        toast.error(msg);
       }
     },
     [refreshData],
   );
 
-  const handleRemoveDeadLinks = useCallback(async (): Promise<void> => {
-    try {
-      toast.loading("Checking for dead links...");
-      const result = await removeDeadLinks();
-      toast.dismiss();
-      toast.success(`Successfully identified ${String(result.removed_count)} links with issues`);
-      await refreshData();
-    } catch (error) {
-      toast.dismiss();
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      toast.error("Failed to check links: " + errorMessage);
-      console.error("Error checking links:", error);
-    }
-  }, [refreshData]);
+  const handleDeleteOlderThan = useCallback(
+    (months: number): void => {
+      void runCountAction(
+        () => deleteOlderThan(months),
+        "Deleting old jobs…",
+        (count) => `Deleted ${String(count)} job${count !== 1 ? "s" : ""}`,
+      );
+    },
+    [runCountAction],
+  );
 
-  const handleArchiveRejected = useCallback(async (): Promise<void> => {
-    try {
-      toast.loading("Archiving rejected applications...");
-      const result = await archiveRejected();
-      toast.dismiss();
-      toast.success(`Successfully archived ${String(result.archived_count)} rejected applications`);
-      await refreshData();
-    } catch (error) {
-      toast.dismiss();
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      toast.error("Failed to archive rejected jobs: " + errorMessage);
-    }
-  }, [refreshData]);
+  const handleRemoveDeadLinks = useCallback((): void => {
+    void runCountAction(
+      removeDeadLinks as () => Promise<CountResponse>,
+      "Checking for dead links…",
+      (count) => `${String(count)} dead link${count !== 1 ? "s" : ""} found`,
+    );
+  }, [runCountAction]);
+
+  const handleArchiveRejected = useCallback((): void => {
+    void runCountAction(
+      archiveRejected,
+      "Archiving rejected applications…",
+      (count) => `Archived ${String(count)} rejected application${count !== 1 ? "s" : ""}`,
+    );
+  }, [runCountAction]);
 
   const handleArchiveAppliedOlderThan = useCallback(
-    async (months: number): Promise<void> => {
-      try {
-        toast.loading(`Archiving applied jobs older than ${String(months)} months...`);
-        const result = await archiveAppliedOlderThan(months);
-        toast.dismiss();
-        toast.success(`Successfully archived ${String(result.archived_count)} applied jobs older than ${String(months)} months`);
-        await refreshData();
-      } catch (error) {
-        toast.dismiss();
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
-        toast.error("Failed to archive jobs: " + errorMessage);
-        console.error("Error archiving jobs:", error);
-      }
+    (months: number): void => {
+      void runCountAction(
+        () => archiveAppliedOlderThan(months),
+        `Archiving applied jobs older than ${String(months)} month${months !== 1 ? "s" : ""}…`,
+        (count) => `Archived ${String(count)} applied job${count !== 1 ? "s" : ""}`,
+      );
     },
-    [refreshData],
+    [runCountAction],
   );
 
-  const handleMarkOldestAsPriority = useCallback(async (): Promise<void> => {
-    try {
-      toast.loading("Marking oldest 50 jobs as priority...");
-      const result = await markOldestAsPriority();
-      toast.dismiss();
-      toast.success(`Successfully marked ${String(result.marked_count)} oldest jobs as priority`);
-      await refreshData();
-    } catch (error) {
-      toast.dismiss();
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      toast.error("Failed to mark jobs: " + errorMessage);
-      console.error("Error marking jobs:", error);
-    }
-  }, [refreshData]);
+  const handleMarkOldestAsPriority = useCallback((): void => {
+    void runCountAction(
+      markOldestAsPriority,
+      "Marking oldest jobs as priority…",
+      (count) => `Marked ${String(count)} job${count !== 1 ? "s" : ""}`,
+    );
+  }, [runCountAction]);
 
   const handleScrape = useCallback(
-    async (isScraping: boolean): Promise<void> => {
-      if (isScraping) {
-        try {
-          const result = await cancelScrape();
-          if (result.success) {
-            toast.success("Scrape cancelled");
-            await refreshData();
-          }
-        } catch (err) {
-          console.error(err);
-          toast.error("Failed to cancel scrape");
-        }
-      } else {
-        try {
-          const result = await startScrape();
-          if (result.success) {
-            toast.success("Scrape started");
-
-            const interval = setInterval(() => {
-              const checkStatus = async () => {
-                try {
-                  const statusData = await getScrapeStatus();
-                  if (!statusData.scraping) {
-                    clearInterval(interval);
-                    await refreshData();
-                    toast.success("Scrape completed!");
-                  }
-                } catch (error) {
-                  console.error("Error checking scrape status:", error);
-                }
-              };
-
-              void checkStatus();
-            }, 2000);
-          }
-        } catch (err) {
-          console.error(err);
-          toast.error("Failed to start scrape");
-        }
+    (scraping: boolean): void => {
+      if (scraping) {
+        void cancelScrape()
+          .then((res) => {
+            if (res.success) {
+              toast.success("Scrape cancelled");
+              void refreshData();
+            } else {
+              toast.error("Failed to cancel scrape");
+            }
+          })
+          .catch((err: unknown) => {
+            const msg = err instanceof Error ? err.message : String(err);
+            toast.error(msg);
+          });
+        return;
       }
+
+      void startScrape()
+        .then((res) => {
+          if (!res.success) {
+            toast.error("Failed to start scrape");
+            return;
+          }
+          toast.success("Scrape started");
+          const intervalId = setInterval(() => {
+            void getScrapeStatus()
+              .then((status) => {
+                if (!status.scraping) {
+                  clearInterval(intervalId);
+                  void refreshData().then(() => toast.success("Scrape completed"));
+                }
+              })
+              .catch((err: unknown) => console.error("Error polling scrape status:", err));
+          }, 2000);
+        })
+        .catch((err: unknown) => {
+          const msg = err instanceof Error ? err.message : String(err);
+          toast.error(msg);
+        });
     },
     [refreshData],
   );

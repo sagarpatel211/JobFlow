@@ -5,12 +5,21 @@ import { cn } from "@/lib/utils";
 
 interface ATSScoreAnalysisProps {
   score: number;
-  keywords: string[];
-  missedKeywords: string[];
-  feedback: string;
+  strengths?: string[];
+  weaknesses?: string[];
+  keywords?: string[];
+  missedKeywords?: string[];
+  feedback?: string;
 }
 
-export function ATSScoreAnalysis({ score, keywords = [], missedKeywords = [], feedback = "" }: ATSScoreAnalysisProps) {
+export function ATSScoreAnalysis({
+  score,
+  strengths = [],
+  weaknesses = [],
+  keywords = [],
+  missedKeywords = [],
+  feedback = "",
+}: ATSScoreAnalysisProps) {
   // Helper function to determine the color based on the score
   const getScoreColor = (score: number) => {
     if (score >= 80) return "text-green-600";
@@ -39,35 +48,57 @@ export function ATSScoreAnalysis({ score, keywords = [], missedKeywords = [], fe
           <Progress value={score} className={cn("h-2", getProgressColor(score))} />
         </div>
 
-        <div>
-          <h4 className="font-medium mb-2">Detected Keywords</h4>
-          <div className="flex flex-wrap gap-2">
-            {keywords.length > 0 ? (
-              keywords.map((keyword, index) => (
+        {strengths.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-2">Strengths</h4>
+            <div className="flex flex-wrap gap-2">
+              {strengths.map((strength, index) => (
+                <span key={index} className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
+                  {strength}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {weaknesses.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-2">Areas for Improvement</h4>
+            <div className="flex flex-wrap gap-2">
+              {weaknesses.map((weakness, index) => (
+                <span key={index} className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
+                  {weakness}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {keywords.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-2">Detected Keywords</h4>
+            <div className="flex flex-wrap gap-2">
+              {keywords.map((keyword, index) => (
                 <span key={index} className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
                   {keyword}
                 </span>
-              ))
-            ) : (
-              <span className="text-sm text-muted-foreground">No keywords detected</span>
-            )}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div>
-          <h4 className="font-medium mb-2">Missing Keywords</h4>
-          <div className="flex flex-wrap gap-2">
-            {missedKeywords.length > 0 ? (
-              missedKeywords.map((keyword, index) => (
+        {missedKeywords.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-2">Missing Keywords</h4>
+            <div className="flex flex-wrap gap-2">
+              {missedKeywords.map((keyword, index) => (
                 <span key={index} className="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">
                   {keyword}
                 </span>
-              ))
-            ) : (
-              <span className="text-sm text-muted-foreground">No missing keywords</span>
-            )}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {feedback && (
           <div>

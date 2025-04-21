@@ -11,7 +11,7 @@ const statusMapping: Record<number, JobStatus> = {
   0: "nothing_done",
   1: "applying",
   2: "applied",
-  3: "OA",
+  3: "oa",
   4: "interview",
   5: "offer",
   6: "rejected",
@@ -27,7 +27,7 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
   return (
     <TableRow>
       <TableCell>
-        <div className="flex flex-row gap-2 -mr-48">
+        <div className="flex gap-2 -mr-48">
           <Input
             name="company"
             placeholder="Company"
@@ -44,30 +44,24 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
           />
         </div>
       </TableCell>
-
       <TableCell>
-        <Input type="date" name="postedDate" className="w-40 -mr-14" value={dateInputValue} onChange={handleDateChange} />
+        <Input type="date" name="postedDate" value={dateInputValue} onChange={handleDateChange} className="w-40 -mr-14" />
       </TableCell>
-
       <TableCell>
         <Input
           name="link"
           placeholder="Job Link"
-          value={job.link || ""}
+          value={job.link ?? ""}
           onChange={(e) => onUpdateJob(job.id, { link: e.target.value })}
           className="w-60"
         />
       </TableCell>
-
       <TableCell>
         <div className="flex items-center gap-2">
           <button
             onClick={() => {
-              const newIndex = Math.max(0, job.statusIndex - 1);
-              onUpdateJob(job.id, {
-                statusIndex: newIndex,
-                status: statusMapping[newIndex],
-              });
+              const idx = Math.max(0, job.statusIndex - 1);
+              onUpdateJob(job.id, { statusIndex: idx, status: statusMapping[idx] });
             }}
             disabled={job.statusIndex === 0}
             className="disabled:opacity-50"
@@ -76,17 +70,14 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
             <ChevronLeft className="h-4 w-4 text-muted-foreground" />
           </button>
           <span
-            className={`inline-flex items-center rounded-full px-2 py-1 text-xs min-w-[100px] text-center justify-center ${statusColors[job.statusIndex]}`}
+            className={`inline-flex items-center rounded-full px-2 py-1 text-xs min-w-[100px] justify-center ${statusColors[job.statusIndex]}`}
           >
             {statuses[job.statusIndex]}
           </span>
           <button
             onClick={() => {
-              const newIndex = Math.min(statuses.length - 1, job.statusIndex + 1);
-              onUpdateJob(job.id, {
-                statusIndex: newIndex,
-                status: statusMapping[newIndex],
-              });
+              const idx = Math.min(statuses.length - 1, job.statusIndex + 1);
+              onUpdateJob(job.id, { statusIndex: idx, status: statusMapping[idx] });
             }}
             disabled={job.statusIndex === statuses.length - 1}
             className="disabled:opacity-50"
@@ -96,9 +87,7 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
           </button>
         </div>
       </TableCell>
-
-      <TableCell></TableCell>
-
+      <TableCell />
       <TableCell>
         <div className="flex gap-2">
           <button className="text-blue-500" onClick={() => onCancelModifyJob(job.id)}>
@@ -106,8 +95,8 @@ export function ModifyJobRow({ job, onUpdateJob, onSaveJob, onCancelModifyJob, u
           </button>
           <button
             className={`text-green-500 ${isSaveDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-            onClick={() => onSaveJob(job.id)}
             disabled={isSaveDisabled}
+            onClick={() => onSaveJob(job.id)}
           >
             Save
           </button>

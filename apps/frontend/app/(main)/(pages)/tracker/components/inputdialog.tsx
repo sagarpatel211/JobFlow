@@ -22,8 +22,7 @@ const InputDialog: React.FC<InputDialogProps> = ({
   variant = "default",
 }) => {
   const [value, setValue] = useState<string>(String(defaultValue));
-  const [error, setError] = useState<string>("");
-
+  const [error, setError] = useState("");
   useBodyScrollLock(isOpen);
 
   useEffect(() => {
@@ -34,39 +33,33 @@ const InputDialog: React.FC<InputDialogProps> = ({
   }, [isOpen, defaultValue]);
 
   const handleConfirm = useCallback(() => {
-    const numValue = parseInt(value, 10);
-    if (isNaN(numValue) || numValue <= 0) {
+    const num = Number(value);
+    if (!num || num <= 0) {
       setError("Please enter a valid positive number");
       return;
     }
-    onConfirm(numValue);
+    onConfirm(num);
     onClose();
   }, [value, onConfirm, onClose]);
 
-  const handleClose = useCallback(() => {
-    onClose();
-  }, [onClose]);
-
   const handleEscapeKey = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        handleClose();
-      }
+      if (e.key === "Escape") onClose();
     },
-    [handleClose],
+    [onClose],
   );
 
   if (!isOpen) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center" tabIndex={-1} onKeyDown={handleEscapeKey}>
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={handleClose} />
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
       <div
         className="fixed z-[51] w-full max-w-md p-6 rounded-lg border bg-background shadow-lg"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col space-y-1.5 text-center sm:text-left">
-          <h2 className="text-lg font-semibold leading-none tracking-tight">{title}</h2>
+          <h2 className="text-lg font-semibold">{title}</h2>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
         <div className="grid gap-4 py-4">
@@ -78,13 +71,13 @@ const InputDialog: React.FC<InputDialogProps> = ({
               id="value"
               type="number"
               value={value}
+              min="1"
               onChange={(e) => {
                 setValue(e.target.value);
                 setError("");
               }}
               placeholder={placeholder}
               className="col-span-3"
-              min="1"
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
@@ -97,7 +90,7 @@ const InputDialog: React.FC<InputDialogProps> = ({
           </div>
         </div>
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 gap-2">
-          <Button variant="outline" onClick={handleClose}>
+          <Button variant="outline" onClick={onClose}>
             {cancelText}
           </Button>
           <Button
@@ -110,7 +103,7 @@ const InputDialog: React.FC<InputDialogProps> = ({
         </div>
         <button
           className="absolute right-4 top-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 h-4 w-4"
-          onClick={handleClose}
+          onClick={onClose}
         >
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>

@@ -1,15 +1,13 @@
 "use client";
 import React, { useEffect, useCallback } from "react";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { JobTableProps } from "@/types/job";
 import { JobRow } from "./jobrow";
 import { ModifyJobRow } from "./modifyjob";
 import { useUpdateJobStatus } from "../hooks/useUpdateJobStatus";
+import { JobTableProps } from "@/types/job";
 
 export function JobTable({
-  jobs,
-  currentPage,
-  itemsPerPage,
+  jobs = [],
   setTotalJobs,
   onUpdateJob,
   onSaveJob,
@@ -18,60 +16,53 @@ export function JobTable({
   onDeleteJob,
   onTogglePriorityJob,
   onUpdateJobStatusArrow,
-  statusCounts,
   groupByCompany = false,
   onFocusJob,
+  isJobProcessing,
 }: JobTableProps) {
   useEffect(() => {
     setTotalJobs(jobs.length);
   }, [jobs, setTotalJobs]);
 
-  const updateStatus = useUpdateJobStatus(jobs, onUpdateJob, onUpdateJobStatusArrow);
+  const updateStatusWithPromise = useUpdateJobStatus(jobs, onUpdateJob, onUpdateJobStatusArrow);
+
+  // Wrap the Promise-returning function with a void function
+  const updateStatus = useCallback(
+    (...args: Parameters<typeof updateStatusWithPromise>) => {
+      void updateStatusWithPromise(...args);
+    },
+    [updateStatusWithPromise],
+  );
 
   const togglePriority = useCallback(
-    (jobId: number) => {
-      const job = jobs.find((j) => j.id === jobId);
-      if (!job) return;
-      if (onTogglePriorityJob) {
-        onTogglePriorityJob(jobId);
-      } else {
-        onUpdateJob(jobId, { priority: !job.priority });
-      }
+    (id: number) => {
+      const target = jobs.find((j) => j.id === id);
+      if (!target) return;
+      if (onTogglePriorityJob) onTogglePriorityJob(id);
+      else onUpdateJob(id, { priority: !target.priority });
     },
     [jobs, onTogglePriorityJob, onUpdateJob],
   );
 
-  const handleModifyJob = useCallback(
-    (jobId: number) => {
-      onUpdateJob(jobId, { isModifying: true });
-    },
-    [onUpdateJob],
-  );
+  const handleModify = useCallback((id: number) => onUpdateJob(id, { isModifying: true }), [onUpdateJob]);
 
-  const currentCompanyName = groupByCompany && jobs.length > 0 ? jobs[0].company : null;
+  const currentCompanyName = groupByCompany && jobs.length ? jobs[0].company : null;
 
-  // Add event handlers to focus jobs
-  const handleFocusJob = (id: number) => {
-    if (onFocusJob) {
-      onFocusJob(id);
-    }
-  };
+  const handleFocusJob = (id: number) => onFocusJob?.(id);
 
   return (
     <div className="flex flex-col gap-2">
       {groupByCompany && currentCompanyName && (
-        <div className="py-2 px-4 bg-muted/30 rounded-lg flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <h3 className="text-lg font-semibold">{currentCompanyName}</h3>
-            <span className="text-sm text-muted-foreground">
-              {jobs.length} job{jobs.length !== 1 ? "s" : ""}
-            </span>
-          </div>
+        <div className="py-2 px-4 bg-muted/30 rounded-lg flex items-center gap-2">
+          <h3 className="text-lg font-semibold">{currentCompanyName}</h3>
+          <span className="text-sm text-muted-foreground">
+            {jobs.length} job{jobs.length !== 1 && "s"}
+          </span>
         </div>
       )}
       <Table>
         <TableHeader>
-          <TableRow className="text-left">
+          <TableRow>
             <TableHead>Company &amp; Job Title</TableHead>
             <TableHead>Posted Date</TableHead>
             <TableHead>Link</TableHead>
@@ -97,10 +88,12 @@ export function JobTable({
                 job={job}
                 updateStatus={updateStatus}
                 togglePriority={togglePriority}
-                onModifyJob={handleModifyJob}
+                onModifyJob={handleModify}
                 onArchiveJob={onArchiveJob}
                 onDeleteJob={onDeleteJob}
                 onFocus={handleFocusJob}
+                onUpdateJob={onUpdateJob}
+                isBeingProcessed={isJobProcessing?.(job.id) || false}
               />
             ),
           )}

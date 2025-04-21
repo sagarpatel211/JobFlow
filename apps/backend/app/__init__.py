@@ -1,5 +1,5 @@
 # app/__init__.py
-from flask import Flask
+from flask import Flask, request, jsonify
 from flask_cors import CORS  # Import CORS
 from .config import DevelopmentConfig  # Use ProductionConfig in production
 from .extensions import db, migrate, init_cache, init_es
@@ -8,8 +8,22 @@ def create_app(config_class=DevelopmentConfig):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Enable CORS
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    # Enable CORS with explicit methods
+    CORS(app, 
+         resources={r"/api/*": {
+            "origins": "*",
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"]
+         }},
+         supports_credentials=True)
+    
+    # Add CORS headers to all responses
+    @app.after_request
+    def after_request(response):
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        return response
 
     # Initialize extensions
     db.init_app(app)
@@ -32,5 +46,9 @@ def create_app(config_class=DevelopmentConfig):
 
     from .routes.scraper import scraper_bp
     app.register_blueprint(scraper_bp, url_prefix="/api/scrape")
+    
+    # Register new applications blueprint
+    from .routes.applications import applications_bp
+    app.register_blueprint(applications_bp, url_prefix="/api/applications")
 
     return app

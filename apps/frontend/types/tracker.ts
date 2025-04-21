@@ -5,7 +5,7 @@ export interface StatusCounts {
   nothing_done: number;
   applying: number;
   applied: number;
-  OA: number;
+  oa: number;
   interview: number;
   offer: number;
   rejected: number;

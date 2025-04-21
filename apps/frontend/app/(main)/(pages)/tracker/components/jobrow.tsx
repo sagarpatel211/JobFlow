@@ -1,43 +1,44 @@
 "use client";
 import React, { useState, useEffect, useCallback } from "react";
-import { Avatar } from "@/components/ui/avatar";
-import { TableRow, TableCell } from "@/components/ui/table";
-import { format } from "date-fns";
-import { JobRowProps } from "@/types/job";
-import { StatusBadge } from "./statusbadge";
-import { Archive, MoreVertical, Star } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import toast from "react-hot-toast";
+import { format } from "date-fns";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { TableRow, TableCell } from "@/components/ui/table";
+import { Archive, MoreVertical, Star } from "lucide-react";
+import { JobRowProps } from "@/types/job";
+import { StatusBadge } from "./statusbadge";
 import { JobActions } from "./jobactions";
 import ApplicationPopover from "./apppopover";
-import { updateJob, whitelistCompany, updateCompanyFollowers } from "../services/api";
+import { updateCompanyFollowers, whitelistCompany } from "../services/api";
+import { createUndoableToast } from "./undotoast";
 
-function ensureProtocol(url: string): string {
-  if (!url) return "";
+function ensureProtocol(url: string) {
   return url.startsWith("http://") || url.startsWith("https://") ? url : `https://${url}`;
 }
 
-function formatPostedDate(dateStr: string): string {
+function formatPostedDate(dateStr: string) {
   if (!dateStr) return "";
-  try {
-    let date: Date;
-    if (dateStr.includes(".")) {
-      const [day, month, year] = dateStr.split(".").map(Number);
-      date = new Date(year, month - 1, day);
-    } else {
-      date = new Date(dateStr);
-    }
-    return isNaN(date.getTime()) ? dateStr : format(date, "MMM d, yyyy");
-  } catch {
-    return dateStr;
-  }
+  const parts = dateStr.split(".");
+  const date = parts.length === 3 ? new Date(Number(parts[2]), Number(parts[1]) - 1, Number(parts[0])) : new Date(dateStr);
+  return isNaN(date.getTime()) ? dateStr : format(date, "MMM d, yyyy");
 }
 
-export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchiveJob, onDeleteJob, onFocus }: JobRowProps) {
+export function JobRow({
+  job,
+  updateStatus,
+  togglePriority,
+  onModifyJob,
+  onArchiveJob,
+  onDeleteJob,
+  onFocus,
+  onUpdateJob,
+  isBeingProcessed = false,
+}: JobRowProps) {
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [generateResume, setGenerateResume] = useState(false);
   const [generateCoverLetter, setGenerateCoverLetter] = useState(false);
@@ -45,145 +46,52 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
   const [isFollowersPopoverOpen, setIsFollowersPopoverOpen] = useState(false);
-  const [followers, setFollowers] = useState<number>(job.followerCount || 0);
+  const [followers, setFollowers] = useState<number>(job.followerCount ?? 0);
 
   useEffect(() => {
-    setFollowers(job.followerCount || 0);
+    setFollowers(job.followerCount ?? 0);
   }, [job.followerCount]);
 
-  const decreaseStatus = () => {
-    updateStatus(job.id, -1);
-  };
+  const decreaseStatus = () => updateStatus(job.id, -1);
+  const increaseStatus = () => updateStatus(job.id, 1);
+  const handleTogglePriority = () => togglePriority(job.id);
 
-  const increaseStatus = () => {
-    updateStatus(job.id, 1);
-  };
-
-  const handleTogglePriority = () => {
-    togglePriority(job.id);
-  };
-
-  const handleModify = () => {
-    if (onModifyJob) onModifyJob(job.id);
-  };
-
-  const handleArchive = () => {
-    if (onArchiveJob) {
-      onArchiveJob(job.id);
-    } else {
-      toast.success(`Archived ${job.title} @ ${job.company}`);
-    }
-  };
-
-  const handleDelete = () => {
-    if (onDeleteJob) {
-      onDeleteJob(job.id);
-    } else {
-      toast.success(`Deleted ${job.title} @ ${job.company}`);
-    }
-  };
-
-  const handleUpdateTags = (jobId: number, tags: string[]) => {
-    try {
-      void updateJob(jobId, { tags });
-    } catch (error) {
-      console.error("Error updating tags:", error);
-      toast.error("Failed to update tags");
-    }
-  };
-
-  const handleUpdateNotes = (jobId: number, notes: string) => {
-    try {
-      if (notes !== job.notes) {
-        void updateJob(jobId, { notes });
-      }
-    } catch (error) {
-      console.error("Error updating notes:", error);
-      toast.error("Failed to update notes");
-    }
-  };
+  const handleModify = () => onModifyJob?.(job.id);
+  const handleArchive = () => onArchiveJob?.(job.id);
+  const handleDelete = () => onDeleteJob?.(job.id);
 
   const onBlacklistCompany = (company: string) => {
-    toast(
-      (t) => (
-        <div className="w-[400px] flex items-center">
-          <div className="flex-1 truncate whitespace-nowrap">
-            Blacklisted <b>{company}</b>
-          </div>
-          <Button variant="link" className="ml-2 text-blue-500 underline shrink-0" onClick={() => toast.dismiss(t.id)}>
-            Undo
-          </Button>
-        </div>
-      ),
-      { duration: 5000 },
+    const message = (
+      <>
+        Blacklisted <b>{company}</b>
+      </>
     );
-    window.location.reload();
+
+    const handleUndo = () => {
+      toast.success(`Removed ${company} from blacklist`);
+    };
+
+    createUndoableToast(message, handleUndo);
   };
 
   const handleWhitelistCompany = useCallback(async () => {
-    try {
-      await whitelistCompany(job.company);
-      toast.success(`Whitelisted ${job.company}`);
-      window.location.reload();
-    } catch (error) {
-      console.error("Error whitelisting company:", error);
-      toast.error("Failed to whitelist company");
-    }
+    await whitelistCompany(job.company);
+    toast.success(`Whitelisted ${job.company}`);
   }, [job.company]);
 
   const handleSetFollowers = useCallback(async () => {
-    try {
-      await updateCompanyFollowers(job.company, followers);
-      toast.success(`Updated followers for ${job.company}`);
-      window.location.reload();
-    } catch (error) {
-      console.error("Error updating followers:", error);
-      toast.error("Failed to update follower count");
-    }
+    await updateCompanyFollowers(job.company, followers);
+    toast.success(`Updated followers for ${job.company}`);
   }, [job.company, followers]);
 
-  const handleSubmitAI = () => {
-    navigator.clipboard
-      .writeText(job.link)
-      .then(() => {
-        if (typeof chrome !== "undefined" && "runtime" in chrome && typeof chrome.runtime?.sendMessage === "function") {
-          return new Promise<void>((resolve, reject) => {
-            chrome.runtime.sendMessage(
-              {
-                message: "EXTRACT_JOB_INFO",
-                link: job.link,
-                options: { generateResume, generateCoverLetter },
-              },
-              (response) => {
-                if (chrome.runtime.lastError !== undefined && typeof chrome.runtime.lastError.message === "string") {
-                  reject(new Error(chrome.runtime.lastError.message));
-                } else {
-                  resolve();
-                }
-              },
-            );
-          });
-        }
-        return Promise.resolve();
-      })
-      .catch((error: unknown) => {
-        console.error("Error in handleSubmitAI:", error);
-      })
-      .finally(() => {
-        setIsPopoverOpen(false);
-      });
-  };
-
   const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setResumeFile(e.target.files[0]);
-    }
+    const file = e.target.files?.[0];
+    if (file) setResumeFile(file);
   };
 
   const handleCoverLetterUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setCoverLetterFile(e.target.files[0]);
-    }
+    const file = e.target.files?.[0];
+    if (file) setCoverLetterFile(file);
   };
 
   const downloadFile = (file: File) => {
@@ -191,16 +99,14 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
     const a = document.createElement("a");
     a.href = url;
     a.download = file.name;
-    document.body.appendChild(a);
+    document.body.append(a);
     a.click();
-    document.body.removeChild(a);
+    a.remove();
     URL.revokeObjectURL(url);
   };
 
   const handleClick = useCallback(() => {
-    if (onFocus) {
-      onFocus(job.id);
-    }
+    onFocus?.(job.id);
   }, [job.id, onFocus]);
 
   return (
@@ -241,8 +147,9 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
                           type="number"
                           value={followers}
                           onChange={(e) => setFollowers(Number(e.target.value))}
-                          placeholder="Enter follower count"
                           min="0"
+                          placeholder="Enter follower count"
+                          title="Number of followers"
                           className="border rounded px-2 py-1"
                         />
                         <Button variant="default" onClick={() => void handleSetFollowers()}>
@@ -257,9 +164,7 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
           </div>
         </div>
       </TableCell>
-      <TableCell>
-        {job.postedDate && typeof job.postedDate === "string" ? formatPostedDate(job.postedDate) : job.postedDate}
-      </TableCell>
+      <TableCell>{typeof job.postedDate === "string" ? formatPostedDate(job.postedDate) : job.postedDate}</TableCell>
       <TableCell>
         <div className="max-w-[300px] truncate -mr-[48px]">
           <a href={ensureProtocol(job.link)} target="_blank" rel="noopener noreferrer" className="hover:underline">
@@ -275,30 +180,27 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
               href={ensureProtocol(job.link)}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative inline-flex h-8 overflow-hidden rounded-md p-[2px] focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-slate-50"
+              className="group relative inline-flex h-8 overflow-hidden rounded-md p-[2px]"
               onClick={(e) => {
                 e.preventDefault();
                 setIsPopoverOpen(true);
               }}
             >
-              <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] group-hover:animate-[spin_2s_linear_reverse_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#B0D0FF_0%,#1E3A8A_50%,#B0D0FF_100%)] group-hover:bg-[conic-gradient(from_90deg_at_50%_50%,#A0C4FF_0%,#162D70_50%,#A0C4FF_100%)] transition-[background] duration-3000 ease-in-out" />
-              <span className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-md bg-slate-100 dark:bg-slate-950 px-3 py-1 text-sm font-medium dark:text-white backdrop-blur-3xl">
+              <span className="absolute inset-[-1000%] animate-spin bg-[conic-gradient(from_90deg_at_50%_50%,#B0D0FF_0%,#1E3A8A_50%,#B0D0FF_100%)]" />
+              <span className="inline-flex h-full w-full items-center justify-center rounded-md bg-slate-100 dark:bg-slate-950 px-3 py-1 text-sm font-medium dark:text-white backdrop-blur-3xl">
                 Fill with AI
               </span>
             </Link>
           </PopoverTrigger>
           <PopoverContent className="p-4 w-72 bg-white bg-opacity-80 backdrop-blur-sm">
             <div className="flex flex-col gap-3">
-              <Button variant={generateResume ? "secondary" : "outline"} onClick={() => setGenerateResume((prev) => !prev)}>
+              <Button variant={generateResume ? "secondary" : "outline"} onClick={() => setGenerateResume((p) => !p)}>
                 Generate Resume
               </Button>
-              <Button
-                variant={generateCoverLetter ? "secondary" : "outline"}
-                onClick={() => setGenerateCoverLetter((prev) => !prev)}
-              >
+              <Button variant={generateCoverLetter ? "secondary" : "outline"} onClick={() => setGenerateCoverLetter((p) => !p)}>
                 Generate Cover Letter
               </Button>
-              <Button onClick={handleSubmitAI}>Submit</Button>
+              <Button onClick={() => void navigator.clipboard.writeText(job.link)}>Submit</Button>
             </div>
           </PopoverContent>
         </Popover>
@@ -315,8 +217,7 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
             handleResumeUpload={handleResumeUpload}
             handleCoverLetterUpload={handleCoverLetterUpload}
             downloadFile={downloadFile}
-            updateTags={handleUpdateTags}
-            updateNotes={handleUpdateNotes}
+            onUpdateJob={onUpdateJob}
           />
         </Popover>
       </TableCell>
@@ -328,6 +229,7 @@ export function JobRow({ job, updateStatus, togglePriority, onModifyJob, onArchi
           onModify={handleModify}
           onArchive={handleArchive}
           onDelete={handleDelete}
+          disabled={isBeingProcessed}
         />
       </TableCell>
     </TableRow>

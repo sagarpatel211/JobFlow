@@ -8,6 +8,21 @@ import Workflows from "@/components/icons/interviews";
 import { Feature } from "@/types/header";
 
 export const statuses = ["Nothing Done", "Applying", "Applied", "OA", "Interview", "Offer", "Rejected"];
+export const statusKeys = ["nothing_done", "applying", "applied", "oa", "interview", "offer", "rejected"];
+export type StatusKey = (typeof statusKeys)[number];
+export function getStatusFromIndex(idx: number): StatusKey {
+  const clamped = Math.max(0, Math.min(idx, statusKeys.length - 1));
+  return statusKeys[clamped];
+}
+export const statusLabels: Record<StatusKey, string> = {
+  nothing_done: "Nothing Done",
+  applying: "Applying",
+  applied: "Applied",
+  oa: "OA",
+  interview: "Interview",
+  offer: "Offer",
+  rejected: "Rejected",
+};
 
 export const statusColors = [
   "bg-red-500/10 text-red-500",

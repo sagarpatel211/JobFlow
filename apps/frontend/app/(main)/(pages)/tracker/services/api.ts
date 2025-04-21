@@ -1,59 +1,58 @@
-import { Job, RoleType, JobStatus } from "@/types/job";
-import { APIResponse, BackendJob, TrackerAPIResponse, AddJobResponse, UpdateJobResponse } from "@/types/api";
 import { format } from "date-fns";
-import { getStatusFromIndex } from "./constants";
+import { Job, JobStatus, RoleType } from "@/types/job";
+import { APIResponse, BackendJob, TrackerAPIResponse, AddJobResponse, UpdateJobResponse } from "@/types/api";
+import { getStatusFromIndex } from "@/lib/constants";
 
-const BASE_URL_RAW: string = process.env.NEXT_PUBLIC_API_URL ?? "";
-const BASE_URL: string = BASE_URL_RAW.endsWith("/") ? BASE_URL_RAW.slice(0, -1) : BASE_URL_RAW;
-const API_HEADERS = { "Content-Type": "application/json" };
+const RAW = process.env.NEXT_PUBLIC_API_URL ?? "";
+const BASE_URL = RAW.endsWith("/") ? RAW.slice(0, -1) : RAW;
+const HEADERS = { "Content-Type": "application/json" };
 
-function safeString(value: number | string): string {
-  return String(value);
+export async function optimistic<T>(mutateLocal: () => void, apiCall: () => Promise<T>, rollback: () => void): Promise<T> {
+  try {
+    mutateLocal();
+    return await apiCall();
+  } catch (e) {
+    rollback();
+    throw e;
+  }
 }
 
-function validateDateString(dateStr: string | undefined | null): string {
-  if (!dateStr) return format(new Date(), "yyyy-MM-dd");
+function s(v: string | number) {
+  return String(v);
+}
+
+function safeDate(d?: string | null) {
+  if (!d) return format(new Date(), "yyyy-MM-dd");
   try {
-    if (dateStr.includes(".")) {
-      const [day, month, year] = dateStr.split(".").map(Number);
-      const date = new Date(year, month - 1, day);
-      if (isNaN(date.getTime())) throw new Error(`Invalid date: ${dateStr}`);
-      return format(date, "yyyy-MM-dd");
-    } else {
-      const date = new Date(dateStr);
-      if (isNaN(date.getTime())) throw new Error(`Invalid date: ${dateStr}`);
-      return format(date, "yyyy-MM-dd");
+    if (d.includes(".")) {
+      const [day, month, year] = d.split(".").map(Number);
+      return format(new Date(year, month - 1, day), "yyyy-MM-dd");
     }
-  } catch (error: unknown) {
-    console.error("Date validation error:", error);
+    return format(new Date(d), "yyyy-MM-dd");
+  } catch {
     return format(new Date(), "yyyy-MM-dd");
   }
 }
 
-async function apiRequest<T>(url: string, options?: RequestInit): Promise<T> {
-  const response = await fetch(url, options);
-  if (!response.ok) {
-    let errorMessage = `Request failed with status: ${safeString(response.status)}`;
+async function req<T>(url: string, opt?: RequestInit): Promise<T> {
+  const r = await fetch(url, opt);
+  if (!r.ok) {
+    let msg = `status ${r.status}`;
     try {
-      const errorData: unknown = await response.json();
-      if (typeof errorData === "object" && errorData !== null && "error" in errorData) {
-        errorMessage = String((errorData as { error?: unknown }).error);
-      }
-    } catch (_e) {}
-    throw new Error(errorMessage);
+      const j = (await r.json()) as { error?: string };
+      if (j?.error) msg = j.error;
+    } catch {}
+    throw new Error(msg);
   }
-  return response.json() as T;
+  return (await r.json()) as T;
 }
 
 export async function fetchTrackerData(params: URLSearchParams): Promise<TrackerAPIResponse> {
-  const url = `${BASE_URL}/api/tracker?${params.toString()}`;
-  const data = await apiRequest<TrackerAPIResponse>(url);
-  if (!data.success) throw new Error(String(data.error) || "Failed to fetch tracker data");
-  return data;
+  return req(`${BASE_URL}/api/tracker?${params.toString()}`);
 }
 
 export async function getJobs(): Promise<Job[]> {
-  interface RawJob {
+  interface Raw {
     id: number;
     company: string;
     title: string;
@@ -67,187 +66,187 @@ export async function getJobs(): Promise<Job[]> {
     tags?: string[];
     notes?: string;
     follower_count?: number;
-    [key: string]: unknown;
   }
-  interface JobResponse { jobs: RawJob[]; }
-  const data = await apiRequest<JobResponse>(`${BASE_URL}/api/jobs`);
-  return data.jobs.map((job) => ({
-    id: job.id,
-    company: job.company,
-    title: job.title,
-    link: job.link,
-    postedDate: job.posted_date,
-    status: job.status,
-    role_type: job.role_type,
-    priority: job.priority,
-    archived: job.archived,
+  const d = await req<{ jobs: Raw[] }>(`${BASE_URL}/api/jobs`);
+  return d.jobs.map((j) => ({
+    id: j.id,
+    company: j.company,
+    title: j.title,
+    link: j.link,
+    postedDate: j.posted_date,
+    status: j.status,
+    role_type: j.role_type,
+    priority: j.priority,
+    archived: j.archived,
     statusIndex: 0,
     isModifying: false,
     deleted: false,
-    atsScore: job.atsScore,
-    tags: job.tags,
-    notes: job.notes,
-    followerCount: job.follower_count ? Number(job.follower_count) : 0,
+    atsScore: j.atsScore,
+    tags: j.tags,
+    notes: j.notes,
+    followerCount: j.follower_count ? Number(j.follower_count) : 0,
   }));
 }
 
-export async function addJob(job: Job): Promise<AddJobResponse> {
-  const backendJob: BackendJob = {
-    company: { name: job.company },
-    title: job.title,
-    role_type: job.role_type ?? "newgrad",
-    status: job.status ?? "nothing_done",
-    posted_date: validateDateString(job.postedDate),
-    link: job.link,
-    priority: job.priority,
-    archived: job.archived,
-    ats_score: job.atsScore || 0,
-    tags: job.tags || [],
-    notes: job.notes || "",
+export async function addJob(j: Job) {
+  const bj: BackendJob = {
+    company: { name: j.company },
+    title: j.title,
+    role_type: j.role_type ?? "newgrad",
+    status: j.status ?? "nothing_done",
+    posted_date: safeDate(j.postedDate),
+    link: j.link,
+    priority: j.priority,
+    archived: j.archived,
+    ats_score: j.atsScore || 0,
+    tags: j.tags || [],
+    notes: j.notes || "",
   };
-  return await apiRequest<AddJobResponse>(`${BASE_URL}/api/jobs`, {
+  return req<AddJobResponse>(`${BASE_URL}/api/jobs`, {
     method: "POST",
-    headers: API_HEADERS,
-    body: JSON.stringify({ job: backendJob }),
+    headers: HEADERS,
+    body: JSON.stringify({ job: bj }),
   });
 }
 
-export async function updateJob(id: number, job: Partial<Job>): Promise<UpdateJobResponse> {
-  function createBackendJob(job: Partial<Job>): BackendJob {
-    const backendJob: BackendJob = {};
-    if (job.company !== undefined) backendJob.company = { name: job.company };
-    if (job.title !== undefined) backendJob.title = job.title;
-    if (job.role_type !== undefined) backendJob.role_type = job.role_type;
-    if (job.statusIndex !== undefined || job.status !== undefined) {
-      backendJob.status = job.status || (job.statusIndex !== undefined ? getStatusFromIndex(job.statusIndex) : undefined);
-    }
-    if (job.postedDate !== undefined) backendJob.posted_date = validateDateString(job.postedDate);
-    if (job.link !== undefined) backendJob.link = job.link;
-    if (job.priority !== undefined) backendJob.priority = job.priority;
-    if (job.archived !== undefined) backendJob.archived = job.archived;
-    if (job.atsScore !== undefined) backendJob.ats_score = job.atsScore;
-    if (job.tags !== undefined) backendJob.tags = job.tags;
-    if (job.notes !== undefined) backendJob.notes = job.notes;
-    return backendJob;
+function patchToBackend(p: Partial<Job>): BackendJob {
+  const b: BackendJob = {};
+  if (p.company !== undefined) b.company = { name: p.company };
+  if (p.title !== undefined) b.title = p.title;
+  if (p.role_type !== undefined) b.role_type = p.role_type;
+  if (p.status !== undefined || p.statusIndex !== undefined) {
+    b.status = p.status ?? (p.statusIndex !== undefined ? getStatusFromIndex(p.statusIndex) : undefined);
   }
-  const backendJob = createBackendJob(job);
-  return await apiRequest<UpdateJobResponse>(`${BASE_URL}/api/jobs/${safeString(id)}`, {
+  if (p.postedDate !== undefined) b.posted_date = safeDate(p.postedDate);
+  if (p.link !== undefined) b.link = p.link;
+  if (p.priority !== undefined) b.priority = p.priority;
+  if (p.archived !== undefined) b.archived = p.archived;
+  if (p.atsScore !== undefined) b.ats_score = p.atsScore;
+  if (p.tags !== undefined) b.tags = p.tags;
+  if (p.notes !== undefined) b.notes = p.notes;
+  return b;
+}
+
+export async function updateJob(id: number, p: Partial<Job>) {
+  return req<UpdateJobResponse>(`${BASE_URL}/api/jobs/${s(id)}`, {
     method: "PUT",
-    headers: API_HEADERS,
-    body: JSON.stringify({ job: backendJob }),
+    headers: HEADERS,
+    body: JSON.stringify({ job: patchToBackend(p) }),
   });
 }
 
-export async function archiveJob(id: number): Promise<APIResponse> {
-  return await apiRequest<APIResponse>(`${BASE_URL}/api/jobs/${safeString(id)}/archive`, {
+export async function archiveJob(id: number) {
+  return req<APIResponse>(`${BASE_URL}/api/jobs/${s(id)}/archive`, {
     method: "PUT",
-    headers: API_HEADERS,
+    headers: HEADERS,
   });
 }
 
-export async function togglePriorityJob(id: number): Promise<{ success: boolean; priority: boolean }> {
-  return await apiRequest<{ success: boolean; priority: boolean }>(`${BASE_URL}/api/jobs/${safeString(id)}/priority`, {
+export async function togglePriorityJob(id: number) {
+  return req<{ success: boolean; priority: boolean }>(`${BASE_URL}/api/jobs/${s(id)}/priority`, {
     method: "PUT",
-    headers: API_HEADERS,
+    headers: HEADERS,
   });
 }
 
-export async function deleteJob(id: number): Promise<APIResponse> {
-  return await apiRequest<APIResponse>(`${BASE_URL}/api/jobs/${safeString(id)}/soft-delete`, {
+export async function deleteJob(id: number) {
+  return req<APIResponse>(`${BASE_URL}/api/jobs/${s(id)}/soft-delete`, {
     method: "PUT",
-    headers: API_HEADERS,
+    headers: HEADERS,
   });
 }
 
-export async function updateJobStatusArrow(id: number, direction: number): Promise<APIResponse> {
-  return await apiRequest<APIResponse>(`${BASE_URL}/api/jobs/${safeString(id)}/status-arrow`, {
+export async function restoreJob(id: number) {
+  return req<APIResponse>(`${BASE_URL}/api/jobs/${s(id)}/restore`, {
     method: "PUT",
-    headers: API_HEADERS,
-    body: JSON.stringify({ direction }),
+    headers: HEADERS,
   });
 }
 
-export async function deleteOlderThan(months: number): Promise<{ deleted_count: number }> {
-  return await apiRequest<{ deleted_count: number }>(`${BASE_URL}/api/jobs/delete-older-than/${safeString(months)}`, {
+export async function permanentDeleteJob(id: number) {
+  return req<APIResponse>(`${BASE_URL}/api/jobs/${s(id)}/permanent-delete`, {
     method: "DELETE",
-    headers: API_HEADERS,
+    headers: HEADERS,
   });
 }
 
-export async function removeDeadLinks(): Promise<{ removed_count: number }> {
-  return await apiRequest<{ removed_count: number }>(`${BASE_URL}/api/jobs/remove-dead-links`, {
-    method: "POST",
-    headers: API_HEADERS,
-  });
-}
-
-export async function archiveRejected(): Promise<{ archived_count: number }> {
-  return await apiRequest<{ archived_count: number }>(`${BASE_URL}/api/jobs/archive-rejected`, {
-    method: "POST",
-    headers: API_HEADERS,
-  });
-}
-
-export async function archiveAppliedOlderThan(months: number): Promise<{ archived_count: number }> {
-  return await apiRequest<{ archived_count: number }>(`${BASE_URL}/api/jobs/archive-applied-older-than/${safeString(months)}`, {
-    method: "POST",
-    headers: API_HEADERS,
-  });
-}
-
-export async function markOldestAsPriority(): Promise<{ marked_count: number }> {
-  return await apiRequest<{ marked_count: number }>(`${BASE_URL}/api/jobs/mark-oldest-as-priority`, {
-    method: "POST",
-    headers: API_HEADERS,
-  });
-}
-
-export async function startScrape(): Promise<{ success: boolean }> {
-  return await apiRequest<{ success: boolean }>(`${BASE_URL}/api/scrape`, {
-    method: "POST",
-    headers: API_HEADERS,
-  });
-}
-
-export async function cancelScrape(): Promise<{ success: boolean }> {
-  return await apiRequest<{ success: boolean }>(`${BASE_URL}/api/scrape/cancel`, {
-    method: "POST",
-    headers: API_HEADERS,
-  });
-}
-
-export async function getScrapeStatus(): Promise<{ scraping: boolean }> {
-  return await apiRequest<{ scraping: boolean }>(`${BASE_URL}/api/scrape/status`);
-}
-
-export async function getHealthStatus(): Promise<{ isHealthy: boolean }> {
-  return await apiRequest<{ isHealthy: boolean }>(`${BASE_URL}/api/health`);
-}
-
-export async function whitelistCompany(company: string): Promise<APIResponse> {
-  return await apiRequest<APIResponse>(`${BASE_URL}/api/companies/whitelist/${encodeURIComponent(company)}`, {
+export async function updateJobStatusArrow(id: number, d: number) {
+  return req<APIResponse>(`${BASE_URL}/api/jobs/${s(id)}/status-arrow`, {
     method: "PUT",
-    headers: API_HEADERS,
+    headers: HEADERS,
+    body: JSON.stringify({ direction: d }),
   });
 }
 
-export async function blacklistCompany(company: string): Promise<APIResponse> {
-  return await apiRequest<APIResponse>(`${BASE_URL}/api/companies/blacklist/${encodeURIComponent(company)}`, {
+export async function deleteOlderThan(m: number) {
+  return req<{ deleted_count: number }>(`${BASE_URL}/api/jobs/delete-older-than/${s(m)}`, { method: "DELETE", headers: HEADERS });
+}
+
+export async function removeDeadLinks() {
+  return req<{ removed_count: number }>(`${BASE_URL}/api/jobs/remove-dead-links`, {
+    method: "POST",
+    headers: HEADERS,
+  });
+}
+
+export async function archiveRejected() {
+  return req<{ archived_count: number }>(`${BASE_URL}/api/jobs/archive-rejected`, {
+    method: "POST",
+    headers: HEADERS,
+  });
+}
+
+export async function archiveAppliedOlderThan(m: number) {
+  return req<{ archived_count: number }>(`${BASE_URL}/api/jobs/archive-applied-older-than/${s(m)}`, {
+    method: "POST",
+    headers: HEADERS,
+  });
+}
+
+export async function markOldestAsPriority() {
+  return req<{ marked_count: number }>(`${BASE_URL}/api/jobs/mark-oldest-as-priority`, { method: "POST", headers: HEADERS });
+}
+
+export async function startScrape() {
+  return req<{ success: boolean }>(`${BASE_URL}/api/scrape`, {
+    method: "POST",
+    headers: HEADERS,
+  });
+}
+
+export async function cancelScrape() {
+  return req<{ success: boolean }>(`${BASE_URL}/api/scrape/cancel`, {
+    method: "POST",
+    headers: HEADERS,
+  });
+}
+
+export async function getScrapeStatus() {
+  return req<{ scraping: boolean }>(`${BASE_URL}/api/scrape/status`);
+}
+
+export async function getHealthStatus() {
+  return req<{ isHealthy: boolean }>(`${BASE_URL}/api/health`);
+}
+
+export async function whitelistCompany(c: string) {
+  return req<APIResponse>(`${BASE_URL}/api/companies/whitelist/${encodeURIComponent(c)}`, { method: "PUT", headers: HEADERS });
+}
+
+export async function blacklistCompany(c: string) {
+  return req<APIResponse>(`${BASE_URL}/api/companies/blacklist/${encodeURIComponent(c)}`, { method: "PUT", headers: HEADERS });
+}
+
+export async function updateCompanyFollowers(c: string, f: number) {
+  return req<APIResponse>(`${BASE_URL}/api/companies/followers/${encodeURIComponent(c)}`, {
     method: "PUT",
-    headers: API_HEADERS,
+    headers: HEADERS,
+    body: JSON.stringify({ followers: f }),
   });
 }
 
-export async function updateCompanyFollowers(company: string, followers: number): Promise<APIResponse> {
-  return await apiRequest<APIResponse>(`${BASE_URL}/api/companies/followers/${encodeURIComponent(company)}`, {
-    method: "PUT",
-    headers: API_HEADERS,
-    body: JSON.stringify({ followers }),
-  });
-}
-
-export function getRoleTypeFromString(roleType: string): RoleType {
-  return roleType === "intern" ? "intern" : "newgrad";
+export function getRoleTypeFromString(r: string): RoleType {
+  return r === "intern" ? "intern" : "newgrad";
 }
 
 export interface TagWithCount {
@@ -256,8 +255,6 @@ export interface TagWithCount {
   job_count: number;
 }
 
-export async function getTagsWithCounts(): Promise<TagWithCount[]> {
-  interface TagsResponse { tags: TagWithCount[]; }
-  const data = await apiRequest<TagsResponse>(`${BASE_URL}/api/tracker/tags`);
-  return data.tags;
+export async function getTagsWithCounts() {
+  return req<{ tags: TagWithCount[] }>(`${BASE_URL}/api/tracker/tags`).then((d) => d.tags);
 }

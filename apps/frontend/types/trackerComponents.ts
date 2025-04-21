@@ -1,8 +1,6 @@
 import { ReactNode } from "react";
-import { StatusCounts } from "./tracker";
 import { Job } from "./job";
 
-// Chart Section Types
 export interface ChartsSectionProps {
   statusCounts: Record<string, number>;
 }
@@ -19,12 +17,11 @@ export interface CustomTooltipProps {
     name?: string;
     dataKey?: string;
     value?: number;
-    [key: string]: any;
+    [key: string]: string | number | boolean | undefined;
   }>;
   label?: string;
 }
 
-// Input Dialog Types
 export interface InputDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -41,7 +38,6 @@ export interface InputDialogProps {
   max?: number;
 }
 
-// Confirmation Dialog Types
 export interface ConfirmationDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -54,7 +50,6 @@ export interface ConfirmationDialogProps {
   icon?: ReactNode;
 }
 
-// Tracker Header Types
 export interface TrackerHeaderProps {
   isHealthy: boolean;
   scraping: boolean;
@@ -68,7 +63,6 @@ export interface TrackerHeaderProps {
   onMarkOldestAsPriority: () => void;
 }
 
-// Application Popover Types
 export interface ApplicationPopoverProps {
   job: Job;
   resumeFile: File | null;
@@ -78,4 +72,5 @@ export interface ApplicationPopoverProps {
   downloadFile: (file: File) => void;
   updateTags?: (jobId: number, tags: string[]) => void;
   updateNotes?: (jobId: number, notes: string) => void;
+  onUpdateJob: (id: number, patch: Partial<Job>) => void;
 }

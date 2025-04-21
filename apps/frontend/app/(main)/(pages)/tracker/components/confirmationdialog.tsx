@@ -30,9 +30,7 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
 
   const handleEscapeKey = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "Escape") {
-        handleCancel();
-      }
+      if (e.key === "Escape") handleCancel();
     },
     [handleCancel],
   );
@@ -47,8 +45,8 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col space-y-1.5 text-center sm:text-left">
-          <h2 className="text-lg font-semibold leading-none tracking-tight flex items-center gap-2">
-            {icon || (variant === "destructive" && <AlertTriangle className="h-5 w-5 text-red-500" />)}
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            {icon ?? (variant === "destructive" && <AlertTriangle className="h-5 w-5 text-red-500" />)}
             {title}
           </h2>
           <p className="text-sm text-muted-foreground">{description}</p>

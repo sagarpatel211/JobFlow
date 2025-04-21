@@ -1,6 +1,7 @@
-// Define string literal types for role and status
+import { StatusKey } from "@/lib/constants";
+
 export type RoleType = "intern" | "newgrad";
-export type JobStatus = "nothing_done" | "applying" | "applied" | "OA" | "interview" | "offer" | "rejected";
+export type JobStatus = StatusKey;
 
 export interface Job {
   id: number;
@@ -36,6 +37,7 @@ export interface JobTableProps {
   statusCounts: Record<string, number>;
   groupByCompany?: boolean;
   onFocusJob?: React.Dispatch<React.SetStateAction<number | null>>;
+  isJobProcessing?: (id: number) => boolean;
 }
 
 export interface JobToolbarProps {
@@ -60,6 +62,8 @@ export interface JobRowProps {
   onArchiveJob?: (jobId: number) => void;
   onDeleteJob?: (jobId: number) => void;
   onFocus?: (jobId: number) => void;
+  onUpdateJob: (jobId: number, patch: Partial<Job>) => void;
+  isBeingProcessed?: boolean;
 }
 
 export interface JobActionsProps {
@@ -69,6 +73,7 @@ export interface JobActionsProps {
   onModify: () => void;
   onArchive: () => void;
   onDelete: () => void;
+  disabled?: boolean;
 }
 
 export interface ModifyJobRowProps {

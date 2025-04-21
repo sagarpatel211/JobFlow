@@ -23,7 +23,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { TrackerFilters } from "@/types/trackerHooks";
 
-// Options for filtering with an icon for each
 const filterOptions = [
   { label: "Only Not Applied Jobs", color: "bg-blue-500 text-white", icon: <Clock className="w-4 h-4 inline mr-1" /> },
   { label: "Posted <1 week", color: "bg-green-500 text-white", icon: <Calendar className="w-4 h-4 inline mr-1" /> },
@@ -45,7 +44,6 @@ interface Props {
 }
 
 const JobToolbar: React.FC<Props> = ({ filters, updateFilters, onAddNewJob }) => {
-  // Filter toggle handler: simply updates the corresponding property in filters.
   const toggleFilter = useCallback(
     (label: string) => {
       const key = filterMap[label];
@@ -56,7 +54,6 @@ const JobToolbar: React.FC<Props> = ({ filters, updateFilters, onAddNewJob }) =>
     [filters, updateFilters],
   );
 
-  // Search handlers
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       updateFilters({ searchTerm: e.target.value });
@@ -77,7 +74,6 @@ const JobToolbar: React.FC<Props> = ({ filters, updateFilters, onAddNewJob }) =>
     updateFilters({ searchTerm: "" });
   }, [updateFilters]);
 
-  // Sorting handlers: update sortBy and sortDirection in filters.
   const selectSortBy = useCallback(
     (sortField: string) => {
       updateFilters({ sortBy: sortField });
@@ -89,7 +85,6 @@ const JobToolbar: React.FC<Props> = ({ filters, updateFilters, onAddNewJob }) =>
     updateFilters({ sortDirection: filters.sortDirection === "asc" ? "desc" : "asc" });
   }, [filters.sortDirection, updateFilters]);
 
-  // Group, show archived and priority toggles:
   const toggleGroupByCompany = useCallback(() => {
     updateFilters({ groupByCompany: !filters.groupByCompany, sortBy: filters.groupByCompany ? filters.sortBy : "company" });
   }, [filters.groupByCompany, filters.sortBy, updateFilters]);
@@ -104,7 +99,6 @@ const JobToolbar: React.FC<Props> = ({ filters, updateFilters, onAddNewJob }) =>
 
   return (
     <div className="flex items-center justify-between px-4">
-      {/* Search Input */}
       <span className="flex items-center w-full max-w-md rounded-full bg-muted px-4 border-2 border-transparent focus-within:border-primary focus-within:shadow-lg transition-all">
         <Search className="text-muted-foreground" />
         <Input
@@ -117,7 +111,6 @@ const JobToolbar: React.FC<Props> = ({ filters, updateFilters, onAddNewJob }) =>
         {filters.searchTerm && <X className="text-muted-foreground cursor-pointer" onClick={clearSearch} />}
       </span>
 
-      {/* Filter Options */}
       <div className="flex items-center gap-2 px-4 flex-wrap">
         {filterOptions.map(({ label, color, icon }) => {
           const key = filterMap[label];
@@ -135,8 +128,6 @@ const JobToolbar: React.FC<Props> = ({ filters, updateFilters, onAddNewJob }) =>
           );
         })}
       </div>
-
-      {/* Sorting and Actions */}
       <div className="flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
