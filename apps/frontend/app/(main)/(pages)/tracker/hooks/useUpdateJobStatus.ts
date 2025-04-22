@@ -11,7 +11,7 @@ export function useUpdateJobStatus(
   return useCallback(
     async (id: number, d: number) => {
       if (external) {
-        await external(id, d);
+        external(id, d);
         return;
       }
       const j = jobs.find((x) => x.id === id);

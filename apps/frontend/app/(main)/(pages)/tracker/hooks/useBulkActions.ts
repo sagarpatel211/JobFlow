@@ -122,7 +122,7 @@ export function useBulkActions({ refreshData }: UseBulkActionsParams) {
                 }
               })
               .catch((err: unknown) => console.error("Error polling scrape status:", err));
-          }, 2000);
+          }, 10000);
         })
         .catch((err: unknown) => {
           const msg = err instanceof Error ? err.message : String(err);

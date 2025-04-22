@@ -7,7 +7,7 @@ import markdown
 import tempfile
 import os
 import json
-from app.extensions import db
+from app.config import db
 from app.models import Job, Company, Status, RoleType, JobAttachment
 
 try:

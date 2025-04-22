@@ -102,22 +102,22 @@ const ApplicationPopover: React.FC<ApplicationPopoverProps> = ({
           onDownload={() => coverLetterFile && downloadFile(coverLetterFile)}
         />
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <h4 className="font-bold">ATS Score</h4>
-            <span className="text-sm font-medium">{job.atsScore ?? 0}</span>
-          </div>
-          <div className="relative h-2.5 w-full bg-gray-300 dark:bg-zinc-700 rounded-full">
-            <div
-              className="h-full rounded-full bg-gradient-to-r from-red-500 to-green-500"
-              style={{ width: `${String(job.atsScore ?? 0)}%` }}
-            />
-          </div>
-        </div>
-        <div>
           <h4 className="font-bold mb-1.5">Personal Notes</h4>
           <textarea
             value={notes}
-            onChange={handleNotesChange}
+            onChange={(e) => {
+              const newNotes = e.target.value;
+              setNotes(newNotes);
+              debouncedUpdateNotes(newNotes);
+            }}
+            onBlur={() => {
+              debouncedUpdateNotes.flush();
+              onUpdateJob(job.id, { notes });
+              updateJob(job.id, { notes }).catch(() => {
+                setNotes(job.notes ?? "");
+                toast.error("Failed to save notes");
+              });
+            }}
             placeholder="Add personal notes about this job..."
             className="w-full h-16 p-2 border rounded text-sm resize-none dark:bg-zinc-800 dark:border-gray-700"
           />
@@ -132,7 +132,15 @@ const ApplicationPopover: React.FC<ApplicationPopoverProps> = ({
                   className="flex-shrink-0 flex items-center rounded-full px-3 py-1 whitespace-nowrap text-white bg-gradient-to-r from-blue-600 to-indigo-800"
                 >
                   <span className="text-sm font-medium">{tag}</span>
-                  <button type="button" className="ml-1.5 text-xs text-white hover:text-gray-200" onClick={() => removeTag(tag)}>
+                  <button
+                    type="button"
+                    className="ml-1.5 text-xs text-white hover:text-gray-200"
+                    onClick={() => {
+                      const newTags = tags.filter((t) => t !== tag);
+                      setTags(newTags);
+                      debouncedUpdateTags(newTags);
+                    }}
+                  >
                     &times;
                   </button>
                 </div>
@@ -143,12 +151,36 @@ const ApplicationPopover: React.FC<ApplicationPopoverProps> = ({
             <input
               type="text"
               value={tagInput}
-              onChange={handleTagInputChange}
-              onKeyDown={handleTagInputKeyDown}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const trimmed = tagInput.trim();
+                  if (trimmed && !tags.includes(trimmed)) {
+                    const newTags = [...tags, trimmed];
+                    setTags(newTags);
+                    setTagInput("");
+                    debouncedUpdateTags(newTags);
+                  }
+                }
+              }}
               placeholder="Add a tag..."
               className="flex-1 border rounded px-2 py-1 text-sm dark:bg-zinc-800 dark:border-gray-700"
             />
-            <Button variant="outline" size="sm" className="text-xs" onClick={addTag}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="text-xs"
+              onClick={() => {
+                const trimmed = tagInput.trim();
+                if (trimmed && !tags.includes(trimmed)) {
+                  const newTags = [...tags, trimmed];
+                  setTags(newTags);
+                  setTagInput("");
+                  debouncedUpdateTags(newTags);
+                }
+              }}
+            >
               Add
             </Button>
           </div>

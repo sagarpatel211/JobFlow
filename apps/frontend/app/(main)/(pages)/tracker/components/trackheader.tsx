@@ -26,7 +26,7 @@ type ActionType =
   | "deleteOlderThan6"
   | "deleteOlderThan12";
 
-export const TrackerHeader: React.FC<TrackerHeaderProps> = ({
+const TrackerHeader: React.FC<TrackerHeaderProps> = ({
   isHealthy,
   scraping,
   scrapeProgress,

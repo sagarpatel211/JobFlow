@@ -1,43 +1,75 @@
-Fixes to do:
-- Ask GPT for more actions to implement and implement them
-- Add support for upload resume
-- Add support for upload cover letter
-- Add custom tags support
-- Add the 4 tag filters to work
-- Add quick search to work
-- Finish Group by company to work
-- each company should have a logo, blacklist, whitelist, followers, and other row options
-- Clean up backend
-- Clean up frontend
-- Get scraping to work
-- Fix blacklist, whitelist and other row options
-- Add backend functionality for things like filters and actions dropdown and scrape
-- add the loading skeleton to only fix the table cuz it keeps flashing on each change which sucks when most components should stay the same only table content should change (do this today)
-- ask gpt for more functionality for this entire job tracker page to make me more productive
+# JobFlow Tracker TODOs
 
+## Core Features
 
-implement cover letter and resume upload on popover
+- [ ] Implement upload resume via popover  
+- [ ] Implement upload cover letter via popover  
+- [ ] Add support for custom tags  
+- [ ] Add 4 tag filters and make them functional  
+- [ ] Add quick search functionality  
+- [ ] Finish "Group by Company" functionality  
+- [ ] Each company should support:
+  - [ ] Company logo  
+  - [ ] Blacklist / Whitelist  
+  - [ ] Followers  
+  - [ ] Row options  
+- [ ] Fix tag filtering pagination (filters 4 items per *page*, not globally)  
+- [ ] Auto-delete unused tags (i.e. tags with no associated jobs)  
+- [ ] Add folder section:
+  - [ ] Add jobs to folders (e.g. "Summer 2025")
+  - [ ] View jobs by folders
+- [ ] Add tag + folder browsing section (below table or in its own view)  
 
-add hotkeys for the tracker so we can be so much more productive
+## UI/UX
 
+- [ ] Clean up frontend  
+- [ ] Only table content should re-render on updates — prevent full component flashing (📌 _Do this today_)  
+- [ ] Add loading skeleton for the job table (not the whole layout)  
+- [ ] Add hotkeys for the tracker for better productivity  
+- [ ] In `apppopover.tsx`, add:
+  - [ ] Personal Notes (multi-line input)  
+  - [ ] Folder assignment dropdown  
 
-when we filter by tags it doesnt show 4 jobs per page it filters per the 4 jobs on each page 
+## Smart Search (Advanced)
 
-tags should auto delete if they have no associated jobs
+- [ ] Redesign search bar:
+  - [ ] Show job rows as usual  
+  - [ ] Show custom tag matches  
+  - [ ] Show personal note matches  
+  - [ ] Add left-side suggestions panel (e.g. past interviews, technical questions, links)  
 
-Fixes To Do:
+## Backend
 
-Also in the apppopover.tsx, we should add a Personal notes section for multi line text. Also in the apppopover.tsx we should be able to add jobs to folders be able to put jobs in folders. Then there should be a section either below the table or a new window where we can see jobs for folders and tags so design this component well so it is useful.
+- [ ] Clean up backend
+- [ ] Each job shouldn't have a newgrad/intern row, we just use the tags we have and search among those
+- [ ] If we rename a company on the frontend, when we refresh the page, it should know which company it is so that should be the key to the database
+- [ ] Create decorators for common backend patterns (eg. try-catch, etc.)
+- [ ] Get scraping to work  
+- [ ] Fix blacklist / whitelist / row actions  
+- [ ] Implement backend functionality for:
+  - [ ] Filters  
+  - [ ] Actions dropdown  
+  - [ ] Scraping endpoint  
+- [X] Set up blob storage  
+- [X] Set up Elasticsearch search indexing  
 
-ask gpt what features we would need to make this tracker more efficient
+## Productivity Boost (GPT Ideas)
 
+- [ ] Ask GPT for additional tracker features to improve productivity  
+- [ ] Ask GPT for more actions to implement and implement them  
+- [ ] Ask GPT for ways to enhance this page (grouping, visual cues, AI recommendations, etc.)
 
-- make the search bar more advanced, it should not just show job rows but have a column for personal info sections
-- and suggested results and then the left side is also job rows cuz we might want to search for previous interview questions or something. make this more advanced where we keep previous technicals and links and stuff
+## Fix Warnings / Cleanup
 
-- add folder and tags sections
+- [ ] Update `.env` and `.env.template`:
+  - [ ] Clean formatting  
+  - [ ] Add documentation for:
+    - [ ] Accessing MinIO  
+    - [ ] Accessing Elasticsearch  
+    - [ ] Accessing Redis  
 
+## Search
 
-- we should be able to add folder section since we might want to add jobs based on summer 2025 or something
-
--set up elasticsearch and blob storage
+- [ ] Get search bar to work with:
+  - [ ] Custom tags  
+  - [ ] Personal notes  

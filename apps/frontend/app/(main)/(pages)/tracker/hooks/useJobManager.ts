@@ -41,8 +41,21 @@ export function useJobManager({ trackerJobs, updateLocalJob, setTrackerJobs, set
 
   const handleAddNewJob = useCallback((): void => {
     const newJob = createNewJob();
-    setTrackerJobs([newJob, ...trackerJobs]);
-  }, [createNewJob, trackerJobs, setTrackerJobs]);
+    if (setTrackerData) {
+      setTrackerData((prev) => {
+        const newStatusCounts = { ...prev.statusCounts };
+        const statusKey = statusKeys[newJob.statusIndex];
+        newStatusCounts[statusKey] = (newStatusCounts[statusKey] ?? 0) + 1;
+        return {
+          ...prev,
+          jobs: [newJob, ...prev.jobs],
+          statusCounts: newStatusCounts,
+        };
+      });
+    } else {
+      setTrackerJobs([newJob, ...trackerJobs]);
+    }
+  }, [createNewJob, trackerJobs, setTrackerJobs, setTrackerData]);
 
   // Store original job when starting to modify
   const storeOriginalJob = useCallback(
@@ -58,26 +71,38 @@ export function useJobManager({ trackerJobs, updateLocalJob, setTrackerJobs, set
   const handleCancelModifyJob = useCallback(
     (job: Job) => {
       if (job.id < 0) {
-        // new, un‐saved job
-        setTrackerJobs(trackerJobs.filter((j) => j.id !== job.id));
+        // new, un-saved job: decrement status count and remove job
+        if (setTrackerData) {
+          setTrackerData((prev) => {
+            const newStatusCounts = { ...prev.statusCounts };
+            const statusKey = statusKeys[job.statusIndex];
+            if (newStatusCounts[statusKey] && newStatusCounts[statusKey] > 0) {
+              newStatusCounts[statusKey] -= 1;
+            }
+            return {
+              ...prev,
+              jobs: prev.jobs.filter((j) => j.id !== job.id),
+              statusCounts: newStatusCounts,
+            };
+          });
+        } else {
+          setTrackerJobs(trackerJobs.filter((j) => j.id !== job.id));
+        }
       } else {
-        // Restore original job data
+        // existing job: restore original values
         const originalJob = originalJobsRef.current.get(job.id);
         if (originalJob) {
-          // Use updateLocalJob to update all fields back to original values
           updateLocalJob(job.id, {
             ...originalJob,
             isModifying: false,
           });
-          // Clean up the stored original
           originalJobsRef.current.delete(job.id);
         } else {
-          // Fallback if original not found
           updateLocalJob(job.id, { isModifying: false });
         }
       }
     },
-    [trackerJobs, updateLocalJob, setTrackerJobs],
+    [trackerJobs, updateLocalJob, setTrackerJobs, setTrackerData],
   );
 
   const handleSaveJob = useCallback(
@@ -86,20 +111,35 @@ export function useJobManager({ trackerJobs, updateLocalJob, setTrackerJobs, set
       if (!job) return;
       const clone = { ...job };
       const { isModifying, ...payload } = clone;
-      updateLocalJob(id, { isModifying: false });
+
+      // Ensure status is in sync with statusIndex
+      const statusMapping: Record<number, JobStatus> = {
+        0: "nothing_done",
+        1: "applying",
+        2: "applied",
+        3: "oa",
+        4: "interview",
+        5: "offer",
+        6: "rejected",
+      };
+
+      // Update status based on current statusIndex before sending to API
+      payload.status = statusMapping[payload.statusIndex];
+      // Optimistically apply all updated fields locally, including company, title, link, etc., and clear modifying state
+      updateLocalJob(id, { ...payload, isModifying: false });
 
       // Clear the original stored job since we're saving changes
       originalJobsRef.current.delete(id);
 
       if (id < 0) {
-        const result = await addJob(payload);
+        const result = await addJob({ ...payload, isModifying: false });
         // Remove the temp job and add server job with updated status counts
         const newJob = {
           ...payload,
           id: Number(result.job.id),
           isModifying: false,
           statusIndex: payload.statusIndex,
-          status: payload.status as JobStatus,
+          status: payload.status,
           followerCount: 0,
         };
 
@@ -108,15 +148,11 @@ export function useJobManager({ trackerJobs, updateLocalJob, setTrackerJobs, set
           setTrackerData((prev) => {
             const newJobs = [newJob, ...prev.jobs.filter((j) => j.id !== id)];
 
-            // Update status counts when adding a new job
-            const newStatusCounts = { ...prev.statusCounts };
-            const statusKey = statusKeys[newJob.statusIndex];
-            newStatusCounts[statusKey] = (newStatusCounts[statusKey] || 0) + 1;
-
+            // Don't update status counts here - they were already updated when the job was created
+            // We're just replacing the temporary job with the server-saved one
             return {
               ...prev,
               jobs: newJobs,
-              statusCounts: newStatusCounts,
             };
           });
         } else {

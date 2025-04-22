@@ -14,7 +14,7 @@ import { JobRowProps } from "@/types/job";
 import { StatusBadge } from "./statusbadge";
 import { JobActions } from "./jobactions";
 import ApplicationPopover from "./apppopover";
-import { updateCompanyFollowers, whitelistCompany } from "../services/api";
+import { updateCompanyFollowers, whitelistCompany, uploadJobAttachment } from "../services/api";
 import { createUndoableToast } from "./undotoast";
 
 function ensureProtocol(url: string) {
@@ -43,8 +43,12 @@ export function JobRow({
   const [generateResume, setGenerateResume] = useState(false);
   const [generateCoverLetter, setGenerateCoverLetter] = useState(false);
   const [isAppPopoverOpen, setIsAppPopoverOpen] = useState(false);
-  const [resumeFile, setResumeFile] = useState<File | null>(null);
-  const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
+  const [resumeAttachment, setResumeAttachment] = useState<{ name: string; url: string } | null>(
+    job.resumeUrl ? { name: job.resumeFilename || "", url: job.resumeUrl } : null,
+  );
+  const [coverLetterAttachment, setCoverLetterAttachment] = useState<{ name: string; url: string } | null>(
+    job.coverLetterUrl ? { name: job.coverLetterFilename || "", url: job.coverLetterUrl } : null,
+  );
   const [isFollowersPopoverOpen, setIsFollowersPopoverOpen] = useState(false);
   const [followers, setFollowers] = useState<number>(job.followerCount ?? 0);
 
@@ -84,25 +88,48 @@ export function JobRow({
     toast.success(`Updated followers for ${job.company}`);
   }, [job.company, followers]);
 
-  const handleResumeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) setResumeFile(file);
-  };
+  const handleResumeUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const { url, filename } = await uploadJobAttachment(job.id, file, "resume");
+        setResumeAttachment({ name: filename, url });
+      } catch (error) {
+        console.error("Resume upload failed:", error);
+        toast.error("Failed to upload resume");
+      }
+    },
+    [job.id],
+  );
 
-  const handleCoverLetterUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) setCoverLetterFile(file);
-  };
+  useEffect(() => {
+    setResumeAttachment(job.resumeUrl ? { name: job.resumeFilename || "", url: job.resumeUrl } : null);
+    setCoverLetterAttachment(job.coverLetterUrl ? { name: job.coverLetterFilename || "", url: job.coverLetterUrl } : null);
+  }, [job.resumeFilename, job.resumeUrl, job.coverLetterFilename, job.coverLetterUrl]);
 
-  const downloadFile = (file: File) => {
-    const url = URL.createObjectURL(file);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = file.name;
-    document.body.append(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+  const handleCoverLetterUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      try {
+        const { url, filename } = await uploadJobAttachment(job.id, file, "cover_letter");
+        setCoverLetterAttachment({ name: filename, url });
+      } catch (error) {
+        console.error("Cover letter upload failed:", error);
+        toast.error("Failed to upload cover letter");
+      }
+    },
+    [job.id],
+  );
+
+  // Download resume via backend proxy
+  const handleDownloadResume = () => {
+    window.open(`/api/jobs/${String(job.id)}/attachment/resume/download`, "_blank");
+  };
+  // Download cover letter via backend proxy
+  const handleDownloadCoverLetter = () => {
+    window.open(`/api/jobs/${String(job.id)}/attachment/cover_letter/download`, "_blank");
   };
 
   const handleClick = useCallback(() => {
@@ -114,7 +141,21 @@ export function JobRow({
       <TableCell className="font-medium">
         <div className="flex items-center gap-2 -mr-[90px]">
           <Avatar className="h-6 w-6">
-            <Image src="/globe.svg" alt={job.company} width={24} height={24} />
+            {job.company_image_url ? (
+              <Image
+                src={job.company_image_url}
+                alt={job.company}
+                width={24}
+                height={24}
+                className="object-contain"
+                onError={(e) => {
+                  // Fallback to globe icon if image fails to load
+                  e.currentTarget.src = "/globe.svg";
+                }}
+              />
+            ) : (
+              <Image src="/globe.svg" alt={job.company} width={24} height={24} />
+            )}
           </Avatar>
           <div className="flex items-center gap-2">
             <div className="w-[200px]">
@@ -212,11 +253,18 @@ export function JobRow({
           </PopoverTrigger>
           <ApplicationPopover
             job={job}
-            resumeFile={resumeFile}
-            coverLetterFile={coverLetterFile}
-            handleResumeUpload={handleResumeUpload}
-            handleCoverLetterUpload={handleCoverLetterUpload}
-            downloadFile={downloadFile}
+            resumeFile={resumeAttachment}
+            coverLetterFile={coverLetterAttachment}
+            handleResumeUpload={(e) => {
+              void handleResumeUpload(e);
+            }}
+            handleCoverLetterUpload={(e) => {
+              void handleCoverLetterUpload(e);
+            }}
+            downloadFile={(attachment) => {
+              if (attachment === resumeAttachment) handleDownloadResume();
+              else if (attachment === coverLetterAttachment) handleDownloadCoverLetter();
+            }}
             onUpdateJob={onUpdateJob}
           />
         </Popover>

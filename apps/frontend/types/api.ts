@@ -14,7 +14,7 @@ export interface APIResponse {
 
 // Add helper interface for backend job
 export interface BackendJob {
-  company?: { name: string };
+  company?: { name: string; image_url?: string | null };
   title?: string;
   role_type?: RoleType;
   status?: JobStatus;
@@ -25,6 +25,7 @@ export interface BackendJob {
   ats_score?: number;
   tags?: string[];
   notes?: string;
+  company_image_url?: string | null;
 }
 
 export interface TrackerAPIResponse extends APIResponse {

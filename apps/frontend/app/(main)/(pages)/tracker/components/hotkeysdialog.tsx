@@ -57,7 +57,6 @@ export function HotkeysDialog({ trigger }: HotkeysDialogProps) {
             <Hotkey combo={["Ctrl", "Shift", "A"]} description="Archive focused job" />
             <Hotkey combo={["Ctrl", "Shift", "D"]} description="Delete focused job" />
             <Hotkey combo={["Ctrl", "Shift", "P"]} description="Toggle priority for focused job" />
-            <Hotkey combo={["Win", "S"]} description="Initiate scrape" />
           </div>
           <div className="border-b pb-2">
             <h3 className="text-sm font-medium mb-2">Filters</h3>

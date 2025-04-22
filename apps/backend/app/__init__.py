@@ -2,34 +2,40 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS  # Import CORS
 from .config import DevelopmentConfig  # Use ProductionConfig in production
-from .extensions import db, migrate, init_cache, init_es
+from .config import db, migrate, init_cache, init_es
 
 def create_app(config_class=DevelopmentConfig):
     app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Enable CORS with explicit methods
-    CORS(app, 
-         resources={r"/api/*": {
-            "origins": "*",
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization"]
-         }},
+    # Enable CORS for all API endpoints
+    CORS(app,
+         resources={r"/api/.*": {"origins": "*"}},
          supports_credentials=True)
-    
-    # Add CORS headers to all responses
-    @app.after_request
-    def after_request(response):
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        return response
 
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
     app.extensions["redis"] = init_cache(app)
-    app.extensions["es"] = init_es(app)
+    # Initialize Elasticsearch client and attempt to set up index
+    es = init_es(app)
+    app.extensions["es"] = es
+    try:
+        # Only create the 'jobs' index if it doesn't already exist
+        if not es.indices.exists(index="jobs"):
+            es.indices.create(index="jobs", body={
+                "mappings": {
+                    "properties": {
+                        "title": {"type": "text"},
+                        "company": {"type": "text"},
+                        "tags": {"type": "keyword"},
+                        "notes": {"type": "text"}
+                    }
+                }
+            })
+    except Exception as e:
+        # ES might not be available yet (e.g. container startup); log and continue
+        app.logger.warning(f"Skipping Elasticsearch index setup: {e}")
 
     # Register blueprints
     from .routes.jobs import jobs_bp

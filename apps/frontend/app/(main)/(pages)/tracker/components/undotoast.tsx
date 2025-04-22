@@ -1,6 +1,6 @@
-import { Toast } from "react-hot-toast";
-import { Button } from "@/components/ui/button";
+import toast, { Toast } from "react-hot-toast";
 import { useTheme } from "next-themes";
+import { AlertTriangle } from "lucide-react";
 
 interface UndoableToastProps {
   t: Toast;
@@ -42,7 +42,3 @@ export const createUndoableToast = (message: React.ReactNode, onUndo: () => void
     duration: 5000,
   });
 };
-
-// Import at the top level to avoid a circular dependency issue
-import { toast } from "react-hot-toast";
-import { AlertTriangle, XOctagon } from "lucide-react";

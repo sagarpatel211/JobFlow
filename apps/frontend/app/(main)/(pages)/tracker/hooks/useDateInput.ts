@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { format, isValid } from "date-fns";
 
-export function toInputDateFormat(dateStr: string): string {
+function toInputDateFormat(dateStr: string): string {
   if (!dateStr) return "";
   try {
     if (dateStr.includes(".")) {
@@ -22,7 +22,7 @@ export function toInputDateFormat(dateStr: string): string {
   return "";
 }
 
-export function toBackendDateFormat(dateStr: string): string {
+function toBackendDateFormat(dateStr: string): string {
   if (!dateStr) return "";
   try {
     const [year, month, day] = dateStr.split("-").map(Number);

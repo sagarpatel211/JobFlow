@@ -38,9 +38,10 @@ export default function TrackerPage() {
     updateLocalJob,
     handleTogglePriority,
     handleUpdateJobStatus,
-    handleArchiveJob,
+    handleArchiveToggle,
     handleDeleteJob,
     isJobProcessing,
+    loadTrackerData,
   } = useTrackerData({ initialPage: 1, itemsPerPage: ITEMS_PER_PAGE });
 
   const { handleAddNewJob, handleCancelModifyJob, handleSaveJob, storeOriginalJob } = useJobManager({
@@ -57,10 +58,7 @@ export default function TrackerPage() {
     handleMarkOldestAsPriority,
     handleScrape,
     handleRemoveDeadLinks,
-  } = useBulkActions({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL ?? "",
-    refreshData: () => Promise.resolve(),
-  });
+  } = useBulkActions({ refreshData: loadTrackerData });
 
   const { selectedTag, groupByCompany } = filters;
 
@@ -107,8 +105,8 @@ export default function TrackerPage() {
     setDeleteDialogOpen(true);
   }, []);
 
-  const confirmDeleteOlderThan = useCallback(async () => {
-    await handleDeleteOlderThan(deletionMonths);
+  const confirmDeleteOlderThan = useCallback(() => {
+    handleDeleteOlderThan(deletionMonths);
     setDeleteDialogOpen(false);
   }, [deletionMonths, handleDeleteOlderThan]);
 
@@ -120,16 +118,8 @@ export default function TrackerPage() {
     [handleDeleteJob, refreshTagsIfNeeded],
   );
 
-  const handleArchiveWithTagRefresh = useCallback(
-    async (id: number) => {
-      await handleArchiveJob(id);
-      await refreshTagsIfNeeded();
-    },
-    [handleArchiveJob, refreshTagsIfNeeded],
-  );
-
   const onScrapeHandler = useCallback(() => {
-    void handleScrape(trackerData.scrapeInfo.scraping);
+    handleScrape(trackerData.scrapeInfo.scraping);
   }, [handleScrape, trackerData.scrapeInfo.scraping]);
 
   const handleEditFocusedJob = useCallback(() => {
@@ -141,10 +131,6 @@ export default function TrackerPage() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "s" && (e.metaKey || e.getModifierState("Meta"))) {
-        e.preventDefault();
-        onScrapeHandler();
-      }
       if (e.ctrlKey && e.key === " ") {
         e.preventDefault();
         addNewJobHandler();
@@ -160,22 +146,41 @@ export default function TrackerPage() {
         }
       }
       if (e.ctrlKey && e.shiftKey) {
-        switch (e.key.toLowerCase()) {
-          case "e":
+        const code = e.code;
+        switch (code) {
+          case "KeyE":
             e.preventDefault();
             handleEditFocusedJob();
             break;
-          case "a":
+          case "KeyA":
             e.preventDefault();
             if (focusedJobId !== null) {
-              void handleArchiveWithTagRefresh(focusedJobId);
+              handleArchiveToggle(focusedJobId).catch((err: unknown) => console.error("Archive toggle error:", err));
             }
             break;
-          case "d":
+          case "KeyD":
             e.preventDefault();
             if (focusedJobId !== null) {
-              void handleDeleteWithTagRefresh(focusedJobId);
+              handleDeleteWithTagRefresh(focusedJobId).catch((err: unknown) =>
+                console.error("Delete with tag refresh error:", err),
+              );
             }
+            break;
+          case "Digit1":
+            e.preventDefault();
+            updateFilters({ filterNotApplied: !filters.filterNotApplied });
+            break;
+          case "Digit2":
+            e.preventDefault();
+            updateFilters({ filterWithinWeek: !filters.filterWithinWeek });
+            break;
+          case "Digit3":
+            e.preventDefault();
+            updateFilters({ filterIntern: !filters.filterIntern });
+            break;
+          case "Digit4":
+            e.preventDefault();
+            updateFilters({ filterNewgrad: !filters.filterNewgrad });
             break;
         }
       }
@@ -188,9 +193,14 @@ export default function TrackerPage() {
     goToPrevPage,
     onScrapeHandler,
     handleEditFocusedJob,
-    handleArchiveWithTagRefresh,
+    handleArchiveToggle,
     handleDeleteWithTagRefresh,
     focusedJobId,
+    updateFilters,
+    filters.filterNotApplied,
+    filters.filterWithinWeek,
+    filters.filterIntern,
+    filters.filterNewgrad,
   ]);
 
   const headerProps = {
@@ -200,10 +210,10 @@ export default function TrackerPage() {
     estimatedSeconds: trackerData.scrapeInfo.estimatedSeconds,
     onScrape: onScrapeHandler,
     onDeleteOlderThan: handleOpenDeleteDialog,
-    onRemoveDeadLinks: () => void handleRemoveDeadLinks(),
-    onArchiveRejected: () => void handleArchiveRejected(),
-    onArchiveAppliedOlderThan: (m: number) => void handleArchiveAppliedOlderThan(m),
-    onMarkOldestAsPriority: () => void handleMarkOldestAsPriority(),
+    onRemoveDeadLinks: handleRemoveDeadLinks,
+    onArchiveRejected: handleArchiveRejected,
+    onArchiveAppliedOlderThan: handleArchiveAppliedOlderThan,
+    onMarkOldestAsPriority: handleMarkOldestAsPriority,
   };
 
   if (isInitialLoading) return <LoadingSkeleton />;
@@ -248,13 +258,26 @@ export default function TrackerPage() {
                 storeOriginalJob(id);
               }
               updateLocalJob(id, fields);
+              if (fields.tags !== undefined) {
+                refreshTagsIfNeeded().catch((err: unknown) => console.error("Failed to refresh tags:", err));
+              }
             }}
-            onSaveJob={(id) => saveJobHandler(id)}
-            onCancelModifyJob={cancelModifyJobHandler}
-            onArchiveJob={(id) => handleArchiveWithTagRefresh(id)}
-            onDeleteJob={(id) => handleDeleteWithTagRefresh(id)}
-            onTogglePriorityJob={(id) => handleTogglePriority(id)}
-            onUpdateJobStatusArrow={(id, dir) => handleUpdateJobStatus(id, dir)}
+            onSaveJob={(id) => {
+              saveJobHandler(id).catch((err: unknown) => console.error("Save job error:", err));
+            }}
+            onCancelModifyJob={(id) => cancelModifyJobHandler(id)}
+            onArchiveJob={(id) => {
+              handleArchiveToggle(id).catch((err: unknown) => console.error("Archive job error:", err));
+            }}
+            onDeleteJob={(id) => {
+              handleDeleteWithTagRefresh(id).catch((err: unknown) => console.error("Delete job error:", err));
+            }}
+            onTogglePriorityJob={(id) => {
+              handleTogglePriority(id).catch((err: unknown) => console.error("Toggle priority error:", err));
+            }}
+            onUpdateJobStatusArrow={(id, dir) => {
+              handleUpdateJobStatus(id, dir).catch((err: unknown) => console.error("Update job status error:", err));
+            }}
             statusCounts={trackerData.statusCounts}
             groupByCompany={groupByCompany}
             onFocusJob={setFocusedJobId}
@@ -273,7 +296,7 @@ export default function TrackerPage() {
       <ConfirmationDialog
         isOpen={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
-        onConfirm={() => void confirmDeleteOlderThan()}
+        onConfirm={confirmDeleteOlderThan}
         title="Delete Old Job Data"
         description={`Delete all job data older than ${String(deletionMonths)} months? This cannot be undone.`}
         confirmText="Delete"

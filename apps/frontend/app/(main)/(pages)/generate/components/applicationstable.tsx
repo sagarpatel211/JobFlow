@@ -4,7 +4,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Eye, Download, RotateCw } from "lucide-react";
 
-interface Application {
+export type DocumentType = "resume" | "cover_letter";
+
+export interface Application {
   id: string;
   jobTitle: string;
   company: string;
@@ -12,7 +14,7 @@ interface Application {
   atsScore?: number;
   createdAt: string;
   documents?: {
-    type: string;
+    type: DocumentType;
     fileName: string;
   }[];
 }

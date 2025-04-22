@@ -5,7 +5,7 @@ import { Upload, Download } from "lucide-react";
 
 interface FileSectionProps {
   title: string;
-  file: File | null;
+  file: { name: string; url: string } | null;
   onUpload: React.ChangeEventHandler<HTMLInputElement>;
   onDownload: () => void;
 }
@@ -18,7 +18,7 @@ const FileSection: React.FC<FileSectionProps> = ({ title, file, onUpload, onDown
         <label className="cursor-pointer inline-flex items-center p-1 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">
           <Upload className="h-3.5 w-3.5 mr-1" />
           Upload
-          <input type="file" className="hidden" onChange={onUpload} />
+          <input type="file" className="sr-only" onChange={onUpload} />
         </label>
         <Button variant="ghost" size="sm" className="p-1 h-auto text-sm" disabled={!file} onClick={onDownload}>
           <Download className="h-3.5 w-3.5 mr-1" />

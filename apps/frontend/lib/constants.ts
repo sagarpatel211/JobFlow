@@ -14,7 +14,7 @@ export function getStatusFromIndex(idx: number): StatusKey {
   const clamped = Math.max(0, Math.min(idx, statusKeys.length - 1));
   return statusKeys[clamped];
 }
-export const statusLabels: Record<StatusKey, string> = {
+const statusLabels: Record<StatusKey, string> = {
   nothing_done: "Nothing Done",
   applying: "Applying",
   applied: "Applied",

@@ -1,20 +1,19 @@
+"use client";
+
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
+import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Download, Edit, Save, Eye, FileDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import dynamic from "next/dynamic";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
-// Dynamically import MDEditor to avoid SSR issues
 const MDEditor = dynamic(() => import("@uiw/react-md-editor").then((mod) => mod.default), { ssr: false });
 
-// Dynamically import Markdown component
-const ReactMarkdown = dynamic(() => import("react-markdown"), { ssr: false });
-const rehypeRaw = dynamic(() => import("rehype-raw"), { ssr: false });
-const remarkGfm = dynamic(() => import("remark-gfm"), { ssr: false });
-
-interface DocumentPreviewProps {
+export interface DocumentPreviewProps {
   title: string;
   content: string;
   contentType?: string;
@@ -34,7 +33,7 @@ interface DocumentPreviewProps {
 export function DocumentPreview({
   title,
   content,
-  contentType = "text/markdown",
+  contentType,
   htmlContent,
   fileName,
   onFileNameChange,
@@ -50,27 +49,12 @@ export function DocumentPreview({
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState(content);
   const [viewMode, setViewMode] = useState<"edit" | "preview" | "pdf">("preview");
-  const [iframeKey, setIframeKey] = useState(Date.now()); // Force iframe refresh
+  const [iframeKey, setIframeKey] = useState(Date.now());
 
-  // Save edited content
-  const handleSaveContent = () => {
-    if (onContentChange) {
-      onContentChange(editedContent);
-    }
-    setIsEditing(false);
-  };
-
-  // Handle content change in the editor
-  const handleContentChange = (value?: string) => {
-    if (value !== undefined) {
-      setEditedContent(value);
-    }
-  };
-
-  // Toggle edit mode
   const toggleEditMode = () => {
     if (isEditing) {
-      handleSaveContent();
+      onContentChange?.(editedContent);
+      setIsEditing(false);
     } else {
       setEditedContent(content);
       setIsEditing(true);
@@ -78,54 +62,42 @@ export function DocumentPreview({
     }
   };
 
-  // Generate PDF URL
   const getPdfUrl = () => {
     if (!applicationId || !documentType) return "";
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:5000";
     return `${apiUrl}/api/applications/${applicationId}/documents/${documentType}?format=pdf`;
   };
 
-  // Generate HTML URL
-  const getHtmlUrl = () => {
-    if (!applicationId || !documentType) return "";
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    return `${apiUrl}/api/applications/${applicationId}/documents/${documentType}?format=html`;
-  };
-
-  // Refresh the iframe when switching to PDF view to ensure latest content
-  const handleViewModeChange = (value: string) => {
-    if (value === "pdf") {
-      setIframeKey(Date.now());
-    }
-    setViewMode(value as "edit" | "preview" | "pdf");
+  const changeView = (value: string) => {
+    const mode = value as "edit" | "preview" | "pdf";
+    if (mode === "pdf") setIframeKey(Date.now());
+    setViewMode(mode);
   };
 
   return (
     <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex items-center justify-between">
         <CardTitle>{title}</CardTitle>
         <div className="flex space-x-2">
           {!readonly && (
             <Button variant="outline" size="sm" onClick={toggleEditMode} className="flex items-center gap-1">
               {isEditing ? (
                 <>
-                  <Save className="h-4 w-4" />
-                  Save
+                  <Save className="h-4 w-4" /> Save
                 </>
               ) : (
                 <>
-                  <Edit className="h-4 w-4" />
-                  Edit
+                  <Edit className="h-4 w-4" /> Edit
                 </>
               )}
             </Button>
           )}
           <Button variant="outline" size="sm" onClick={onDownload} className="flex items-center gap-1">
-            <Download className="h-4 w-4" />
-            Download
+            <Download className="h-4 w-4" /> Download
           </Button>
         </div>
       </CardHeader>
+
       <CardContent>
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -148,8 +120,7 @@ export function DocumentPreview({
               </div>
             )}
           </div>
-
-          <Tabs value={viewMode} onValueChange={handleViewModeChange} className="w-auto">
+          <Tabs value={viewMode} onValueChange={changeView} className="w-auto">
             <TabsList className="grid w-[240px] grid-cols-3">
               {isEditing && (
                 <TabsTrigger value="edit" className="flex items-center gap-1">
@@ -171,7 +142,12 @@ export function DocumentPreview({
             {isEditing && (
               <TabsContent value="edit" className="m-0">
                 <div data-color-mode="light" className="min-h-[500px]">
-                  <MDEditor value={editedContent} onChange={handleContentChange} height={500} preview="edit" />
+                  <MDEditor
+                    value={editedContent}
+                    onChange={(v) => v !== undefined && setEditedContent(v)}
+                    height={500}
+                    preview="edit"
+                  />
                 </div>
               </TabsContent>
             )}
@@ -190,9 +166,7 @@ export function DocumentPreview({
 
             <TabsContent value="pdf" className="m-0 p-0 min-h-[500px]">
               {applicationId && documentType ? (
-                <div className="w-full h-[600px]">
-                  <iframe key={iframeKey} src={getPdfUrl()} className="w-full h-full border-0" title={`${title} PDF Preview`} />
-                </div>
+                <iframe key={iframeKey} src={getPdfUrl()} className="w-full h-full border-0" title={`${title} PDF Preview`} />
               ) : (
                 <div className="flex items-center justify-center h-[500px] text-muted-foreground">
                   PDF preview not available. Please save the document first.

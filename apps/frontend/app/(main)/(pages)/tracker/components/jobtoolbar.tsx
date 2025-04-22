@@ -153,6 +153,14 @@ const JobToolbar: React.FC<Props> = ({ filters, updateFilters, onAddNewJob }) =>
               {filters.sortBy === "company" ? <Check className="mr-2 h-4 w-4" /> : <span className="w-4 mr-2" />}
               Company Name
             </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => selectSortBy("title")} className="flex items-center">
+              {filters.sortBy === "title" ? <Check className="mr-2 h-4 w-4" /> : <span className="w-4 mr-2" />}
+              Job Title
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => selectSortBy("priority")} className="flex items-center">
+              {filters.sortBy === "priority" ? <Check className="mr-2 h-4 w-4" /> : <span className="w-4 mr-2" />}
+              Priority
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <Button

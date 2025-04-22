@@ -14,7 +14,7 @@ from sqlalchemy import (
     func,
 )
 from sqlalchemy.orm import relationship
-from .extensions import db
+from .config import db
 
 
 class RoleType(enum.Enum):
@@ -49,6 +49,7 @@ class Company(db.Model):
     name = Column(String, unique=True, nullable=False)
     blacklisted = Column(Boolean, default=False)
     follower_count = Column(Integer, default=0)
+    image_url = Column(String, nullable=True)  # URL to company logo in Minio
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 

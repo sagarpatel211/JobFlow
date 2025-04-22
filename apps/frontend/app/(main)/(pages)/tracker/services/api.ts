@@ -37,7 +37,7 @@ function safeDate(d?: string | null) {
 async function req<T>(url: string, opt?: RequestInit): Promise<T> {
   const r = await fetch(url, opt);
   if (!r.ok) {
-    let msg = `status ${r.status}`;
+    let msg = "status " + String(r.status);
     try {
       const j = (await r.json()) as { error?: string };
       if (j?.error) msg = j.error;
@@ -51,7 +51,7 @@ export async function fetchTrackerData(params: URLSearchParams): Promise<Tracker
   return req(`${BASE_URL}/api/tracker?${params.toString()}`);
 }
 
-export async function getJobs(): Promise<Job[]> {
+async function getJobs(): Promise<Job[]> {
   interface Raw {
     id: number;
     company: string;
@@ -66,6 +66,7 @@ export async function getJobs(): Promise<Job[]> {
     tags?: string[];
     notes?: string;
     follower_count?: number;
+    company_image_url?: string | null;
   }
   const d = await req<{ jobs: Raw[] }>(`${BASE_URL}/api/jobs`);
   return d.jobs.map((j) => ({
@@ -85,6 +86,7 @@ export async function getJobs(): Promise<Job[]> {
     tags: j.tags,
     notes: j.notes,
     followerCount: j.follower_count ? Number(j.follower_count) : 0,
+    company_image_url: j.company_image_url,
   }));
 }
 
@@ -156,6 +158,13 @@ export async function deleteJob(id: number) {
   });
 }
 
+export async function unarchiveJob(id: number): Promise<APIResponse> {
+  return req<APIResponse>(`${BASE_URL}/api/jobs/${String(id)}/unarchive`, {
+    method: "PUT",
+    headers: HEADERS,
+  });
+}
+
 export async function restoreJob(id: number) {
   return req<APIResponse>(`${BASE_URL}/api/jobs/${s(id)}/restore`, {
     method: "PUT",
@@ -222,10 +231,10 @@ export async function cancelScrape() {
 }
 
 export async function getScrapeStatus() {
-  return req<{ scraping: boolean }>(`${BASE_URL}/api/scrape/status`);
+  return req<{ scraping: boolean; scrapeProgress: number; estimatedSeconds: number }>(`${BASE_URL}/api/scrape/status`);
 }
 
-export async function getHealthStatus() {
+async function getHealthStatus() {
   return req<{ isHealthy: boolean }>(`${BASE_URL}/api/health`);
 }
 
@@ -233,7 +242,7 @@ export async function whitelistCompany(c: string) {
   return req<APIResponse>(`${BASE_URL}/api/companies/whitelist/${encodeURIComponent(c)}`, { method: "PUT", headers: HEADERS });
 }
 
-export async function blacklistCompany(c: string) {
+async function blacklistCompany(c: string) {
   return req<APIResponse>(`${BASE_URL}/api/companies/blacklist/${encodeURIComponent(c)}`, { method: "PUT", headers: HEADERS });
 }
 
@@ -245,7 +254,7 @@ export async function updateCompanyFollowers(c: string, f: number) {
   });
 }
 
-export function getRoleTypeFromString(r: string): RoleType {
+function getRoleTypeFromString(r: string): RoleType {
   return r === "intern" ? "intern" : "newgrad";
 }
 
@@ -257,4 +266,59 @@ export interface TagWithCount {
 
 export async function getTagsWithCounts() {
   return req<{ tags: TagWithCount[] }>(`${BASE_URL}/api/tracker/tags`).then((d) => d.tags);
+}
+
+// Function to upload a company logo
+async function uploadCompanyLogo(companyId: number, logoFile: File): Promise<{ success: boolean; image_url: string }> {
+  const formData = new FormData();
+  formData.append("logo", logoFile);
+
+  return req<{ success: boolean; image_url: string }>(`${BASE_URL}/api/companies/logo/${String(companyId)}`, {
+    method: "POST",
+    body: formData,
+  });
+}
+
+// Attachments
+// Upload a resume or cover letter file for a job
+export async function uploadJobAttachment(
+  jobId: number,
+  file: File,
+  attachmentType: string,
+): Promise<{ url: string; filename: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("attachment_type", attachmentType);
+  const resp = await fetch(`${BASE_URL}/api/jobs/${String(jobId)}/attachment`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(err);
+  }
+  // Safely parse backend response
+  const raw: unknown = await resp.json();
+  if (typeof raw !== "object" || raw === null) {
+    throw new Error("Invalid attachment response");
+  }
+  const parsed = raw as Record<string, unknown>;
+  const attachmentField = parsed["attachment"];
+  if (typeof attachmentField !== "object" || attachmentField === null) {
+    throw new Error("Missing attachment field");
+  }
+  const attachmentObj = attachmentField as Record<string, unknown>;
+  const filenameValue = attachmentObj["filename"];
+  if (typeof filenameValue !== "string") {
+    throw new Error("Invalid filename in response");
+  }
+  // Get presigned URL for download
+  const url = await getJobAttachmentUrl(jobId, attachmentType);
+  return { url, filename: filenameValue };
+}
+
+// Fetch a presigned URL for an attachment
+async function getJobAttachmentUrl(jobId: number, attachmentType: string): Promise<string> {
+  const data = await req<{ url: string; filename: string }>(`${BASE_URL}/api/jobs/${String(jobId)}/attachment/${attachmentType}`);
+  return data.url;
 }

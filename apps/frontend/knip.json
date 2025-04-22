@@ -1,0 +1,4 @@
+{
+  "entry": ["app/**/*.tsx"],
+  "ignore": ["types/**/*.ts", "lib/utils.ts", "**/*.d.ts"]
+}

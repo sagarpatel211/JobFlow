@@ -65,12 +65,10 @@ export interface TrackerHeaderProps {
 
 export interface ApplicationPopoverProps {
   job: Job;
-  resumeFile: File | null;
-  coverLetterFile: File | null;
+  resumeFile: { name: string; url: string } | null;
+  coverLetterFile: { name: string; url: string } | null;
   handleResumeUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleCoverLetterUpload: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  downloadFile: (file: File) => void;
-  updateTags?: (jobId: number, tags: string[]) => void;
-  updateNotes?: (jobId: number, notes: string) => void;
+  downloadFile: (attachment: { name: string; url: string } | null) => void;
   onUpdateJob: (id: number, patch: Partial<Job>) => void;
 }

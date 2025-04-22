@@ -1,6 +1,6 @@
 from flask import Flask
 from ..config import DevelopmentConfig, ProductionConfig
-from ..extensions import db, migrate
+from ..config import db, migrate
 from flask_cors import CORS
 
 def create_app(config_class=DevelopmentConfig):

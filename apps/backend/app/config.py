@@ -1,5 +1,9 @@
 # app/config.py
 import os
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
+from redis import Redis
+from elasticsearch import Elasticsearch
 
 class Config:
     SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-key")
@@ -8,11 +12,20 @@ class Config:
     REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
     ELASTICSEARCH_URL = os.getenv("ELASTICSEARCH_URL", "http://elasticsearch:9200")
     MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio:9000")
-    MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "minioaccesskey")
-    MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "miniosecretkey")
+    MINIO_ROOT_USER = os.getenv("MINIO_ROOT_USER", "minioaccesskey")
+    MINIO_ROOT_PASSWORD = os.getenv("MINIO_ROOT_PASSWORD", "miniosecretkey")
 
 class DevelopmentConfig(Config):
     DEBUG = True
 
 class ProductionConfig(Config):
     DEBUG = False
+
+db = SQLAlchemy()
+migrate = Migrate()
+
+def init_cache(app):
+    return Redis.from_url(app.config["REDIS_URL"])
+
+def init_es(app):
+    return Elasticsearch([app.config["ELASTICSEARCH_URL"]])

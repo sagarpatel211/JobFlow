@@ -20,6 +20,11 @@ export interface Job {
   tags?: string[];
   notes?: string;
   followerCount?: number;
+  company_image_url?: string | null;
+  resumeFilename?: string;
+  resumeUrl?: string;
+  coverLetterFilename?: string;
+  coverLetterUrl?: string;
 }
 
 export interface JobTableProps {

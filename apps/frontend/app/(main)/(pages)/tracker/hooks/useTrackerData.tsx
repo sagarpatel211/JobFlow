@@ -9,24 +9,42 @@ import {
   togglePriorityJob,
   updateJobStatusArrow,
   optimistic,
+  unarchiveJob,
 } from "../services/api";
 import { defaultTrackerData } from "../services/constants";
 import { TrackerFilters } from "@/types/trackerHooks";
 import { TrackerData } from "@/types/tracker";
-import { Job } from "@/types/job";
-import { statuses, statusKeys } from "@/lib/constants";
+import { Job, RoleType } from "@/types/job";
 import { toast } from "react-hot-toast";
 import { createUndoableToast } from "../components/undotoast";
+import { statusKeys, StatusKey } from "@/lib/constants";
 
 interface Params {
   initialPage: number;
   itemsPerPage: number;
 }
 
-// Define the raw API response type to handle the mismatch
-interface ApiJob extends Omit<Job, "postedDate" | "statusIndex" | "isModifying"> {
+// API job shape as returned from backend
+interface ApiJob {
+  id: number;
+  company: string;
+  title: string;
+  link: string;
   posted_date: string;
-  status: string;
+  status: StatusKey;
+  role_type?: string;
+  priority: boolean;
+  archived: boolean;
+  atsScore?: number;
+  tags?: string[];
+  notes?: string;
+  follower_count?: number;
+  company_image_url?: string | null;
+  deleted?: boolean;
+  resumeFilename?: string;
+  resumeUrl?: string;
+  coverLetterFilename?: string;
+  coverLetterUrl?: string;
 }
 
 export function useTrackerData({ initialPage, itemsPerPage }: Params) {
@@ -58,28 +76,21 @@ export function useTrackerData({ initialPage, itemsPerPage }: Params) {
     (jobs: Job[]): Job[] =>
       jobs.filter((job) => {
         if (!filters.showArchived && job.archived) return false;
-        if (filters.onlyNotApplied && job.statusIndex !== 0) return false;
-        if (filters.recentOnly) {
+        if (filters.filterWithinWeek) {
           const posted = new Date(job.postedDate.split(".").reverse().join("-"));
           if (Date.now() - posted.getTime() > 7 * 24 * 60 * 60 * 1000) return false;
         }
         if (filters.filterIntern && job.role_type !== "intern") return false;
         if (filters.filterNewgrad && job.role_type !== "newgrad") return false;
-        if (filters.searchTerm) {
-          const term = filters.searchTerm.toLowerCase();
-          if (!job.company.toLowerCase().includes(term) && !job.title.toLowerCase().includes(term)) return false;
-        }
         if (filters.selectedTag && !job.tags?.includes(filters.selectedTag)) return false;
         if (filters.showPriorityOnly && !job.priority) return false;
         return true;
       }),
     [
       filters.showArchived,
-      filters.onlyNotApplied,
-      filters.recentOnly,
+      filters.filterWithinWeek,
       filters.filterIntern,
       filters.filterNewgrad,
-      filters.searchTerm,
       filters.selectedTag,
       filters.showPriorityOnly,
     ],
@@ -93,8 +104,8 @@ export function useTrackerData({ initialPage, itemsPerPage }: Params) {
       sort_direction: filters.sortDirection,
       show_archived: filters.showArchived ? "1" : "0",
       show_priority: filters.showPriorityOnly ? "1" : "0",
-      filter_not_applied: filters.onlyNotApplied ? "1" : "0",
-      filter_within_week: filters.recentOnly ? "1" : "0",
+      filter_not_applied: filters.filterNotApplied ? "1" : "0",
+      filter_within_week: filters.filterWithinWeek ? "1" : "0",
       filter_intern: filters.filterIntern ? "1" : "0",
       filter_newgrad: filters.filterNewgrad ? "1" : "0",
       group_by_company: filters.groupByCompany ? "1" : "0",
@@ -108,25 +119,65 @@ export function useTrackerData({ initialPage, itemsPerPage }: Params) {
     setLoading(true);
     try {
       const data = await fetchTrackerData(query());
-      const td = data.trackerData || defaultTrackerData;
 
-      const jobs = (td.jobs ?? []).map((j: ApiJob) => ({
-        ...j,
-        postedDate: j.posted_date,
-        statusIndex: statusKeys.indexOf(j.status as (typeof statusKeys)[number]) || 0,
-        isModifying: false,
-      }));
+      // Map raw backend jobs to our Job type
+      const rawJobs = (data.trackerData?.jobs ?? []) as unknown as ApiJob[];
+      const jobs: Job[] = rawJobs.map(
+        ({
+          id,
+          company,
+          title,
+          link,
+          posted_date,
+          status: apiStatus,
+          role_type: rawRoleType,
+          priority,
+          archived,
+          atsScore,
+          tags,
+          notes,
+          follower_count,
+          company_image_url,
+          deleted,
+          resumeFilename,
+          resumeUrl,
+          coverLetterFilename,
+          coverLetterUrl,
+        }) => ({
+          id,
+          company,
+          title,
+          link,
+          postedDate: posted_date,
+          status: apiStatus,
+          statusIndex: statusKeys.indexOf(apiStatus) || 0,
+          role_type: rawRoleType as RoleType,
+          priority,
+          archived,
+          atsScore,
+          tags,
+          notes,
+          followerCount: follower_count ?? 0,
+          company_image_url: company_image_url ?? null,
+          deleted: deleted ?? false,
+          isModifying: false,
+          resumeFilename,
+          resumeUrl,
+          coverLetterFilename,
+          coverLetterUrl,
+        }),
+      );
 
       setTrackerData({
-        ...td,
+        ...(data.trackerData ?? defaultTrackerData),
         jobs: applyClientSideFilters(jobs),
-        pagination: { ...td.pagination, currentPage },
-        statusCounts: td.statusCounts ?? defaultTrackerData.statusCounts,
-        scrapeInfo: td.scrapeInfo ?? defaultTrackerData.scrapeInfo,
-        health: td.health ?? defaultTrackerData.health,
+        pagination: { ...(data.trackerData?.pagination ?? defaultTrackerData.pagination), currentPage },
+        statusCounts: data.trackerData?.statusCounts ?? defaultTrackerData.statusCounts,
+        scrapeInfo: data.trackerData?.scrapeInfo ?? defaultTrackerData.scrapeInfo,
+        health: data.trackerData?.health ?? defaultTrackerData.health,
       });
       setError(null);
-    } catch {
+    } catch (_error: unknown) {
       setError("Failed to fetch data");
     } finally {
       setLoading(false);
@@ -169,6 +220,21 @@ export function useTrackerData({ initialPage, itemsPerPage }: Params) {
       );
     },
     [trackerData.jobs],
+  );
+
+  // Toggle archived flag: archive or unarchive based on current state
+  const handleArchiveToggle = useCallback(
+    async (id: number) => {
+      const job = trackerData.jobs.find((j) => j.id === id);
+      if (!job) return;
+      const prevArchived = job.archived;
+      await optimistic(
+        () => updateLocalJob(id, { archived: !prevArchived }),
+        () => (prevArchived ? unarchiveJob(id) : archiveJob(id)),
+        () => updateLocalJob(id, { archived: prevArchived }),
+      );
+    },
+    [trackerData.jobs, updateLocalJob],
   );
 
   const handleTogglePriority = useCallback(
@@ -228,7 +294,7 @@ export function useTrackerData({ initialPage, itemsPerPage }: Params) {
         // Set up permanent deletion timeout
         const deletionTimeout = setTimeout(() => {
           if (!undoClicked) {
-            permanentDeleteJob(id).catch((error) => {
+            permanentDeleteJob(id).catch((error: unknown) => {
               console.error("Error permanently deleting job:", error);
             });
           }
@@ -271,11 +337,16 @@ export function useTrackerData({ initialPage, itemsPerPage }: Params) {
                 return newSet;
               });
             })
-            .catch((error) => {
+            .catch((error: unknown) => {
               console.error("Failed to restore job:", error);
               toast.error("Failed to restore job");
 
               // Still remove from processing jobs if restore fails
+              setTrackerData((p) => ({
+                ...p,
+                jobs: [...prev],
+                statusCounts: prevStatusCounts,
+              }));
               setProcessingJobs((prev) => {
                 const newSet = new Set(prev);
                 newSet.delete(id);
@@ -286,7 +357,7 @@ export function useTrackerData({ initialPage, itemsPerPage }: Params) {
 
         // Show the undoable toast
         createUndoableToast(message, handleUndo);
-      } catch (error) {
+      } catch (error: unknown) {
         console.error("Error in handleDeleteJob:", error);
         toast.error("An error occurred while deleting the job");
 
@@ -307,8 +378,15 @@ export function useTrackerData({ initialPage, itemsPerPage }: Params) {
       if (!j) return;
       const prev = j.statusIndex;
       let idx = prev + d;
-      idx = Math.max(0, Math.min(statuses.length - 1, idx));
+      idx = Math.max(0, Math.min(statusKeys.length - 1, idx));
       if (idx === prev) return;
+
+      // For new unsaved jobs, just update local state without API or optimistic revert
+      if (id < 0) {
+        updateLocalJob(id, { statusIndex: idx });
+        return;
+      }
+
       await optimistic(
         () => updateLocalJob(id, { statusIndex: idx }),
         () => updateJobStatusArrow(id, d),
@@ -342,6 +420,15 @@ export function useTrackerData({ initialPage, itemsPerPage }: Params) {
     [processingJobs],
   );
 
+  // Archive or unarchive then reload all tracker data
+  const handleArchiveWithRefresh = useCallback(
+    async (id: number) => {
+      await handleArchiveToggle(id);
+      await loadTrackerData();
+    },
+    [handleArchiveToggle, loadTrackerData],
+  );
+
   return {
     trackerData,
     loading,
@@ -352,6 +439,7 @@ export function useTrackerData({ initialPage, itemsPerPage }: Params) {
     updateFilters,
     updateLocalJob,
     handleArchiveJob,
+    handleArchiveToggle,
     handleTogglePriority,
     handleDeleteJob,
     handleUpdateJobStatus,
@@ -360,5 +448,7 @@ export function useTrackerData({ initialPage, itemsPerPage }: Params) {
     goToPage,
     setTrackerData,
     isJobProcessing,
+    handleArchiveWithRefresh,
+    loadTrackerData,
   };
 }

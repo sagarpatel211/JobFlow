@@ -24,7 +24,7 @@ export function LampComponent() {
   );
 }
 
-export const LampContainer = ({ children, className }: { children: React.ReactNode; className?: string }) => {
+const LampContainer = ({ children, className }: { children: React.ReactNode; className?: string }) => {
   return (
     <div
       className={cn(

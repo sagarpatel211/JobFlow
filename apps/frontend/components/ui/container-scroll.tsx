@@ -79,7 +79,7 @@ const ContainerContent = ({
   );
 };
 
-export const Header = ({ translate, titleComponent }: HeaderProps) => {
+const Header = ({ translate, titleComponent }: HeaderProps) => {
   return (
     <motion.div
       style={{
@@ -92,7 +92,7 @@ export const Header = ({ translate, titleComponent }: HeaderProps) => {
   );
 };
 
-export const Card = ({
+const Card = ({
   rotate,
   scale,
   children,
