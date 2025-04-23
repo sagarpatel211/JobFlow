@@ -5,6 +5,7 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
+      - ./migrations:/app/migrations
     env_file: .env
     environment:
       ELASTICSEARCH_URL: "${ELASTICSEARCH_URL}"
@@ -13,9 +14,9 @@ services:
         condition: service_started
       redis:
         condition: service_started
-      elasticsearch:
-        condition: service_healthy
       minio:
+        condition: service_started
+      elasticsearch:
         condition: service_started
 
   db:
@@ -38,6 +39,7 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.17.5
     environment:
       - discovery.type=single-node
+      - ingest.geoip.downloader.enabled=false
     command: ["elasticsearch", "-Elogger.level=warn"]
     ports:
       - "9200:9200"
@@ -59,6 +61,24 @@ services:
       MINIO_ROOT_PASSWORD: "${MINIO_ROOT_PASSWORD}"
     command: server /data
 
+  pgadmin:
+    image: dpage/pgadmin4
+    env_file: .env
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "${PGADMIN_DEFAULT_EMAIL}"
+      PGADMIN_DEFAULT_PASSWORD: "${PGADMIN_DEFAULT_PASSWORD}"
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./servers.json:/pgadmin4/servers.json
+    depends_on:
+      db:
+        condition: service_started
+
 volumes:
   postgres_data:
   minio_data:
+  pgadmin_data:

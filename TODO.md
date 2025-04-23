@@ -1,9 +1,16 @@
 # JobFlow Tracker TODOs
 
+- [ ] Set up user authentication
+- [ ] Set up light/dark mode
+- [ ] Each company DB should be a single DB so we don't refech company icons or followers, but each user should have their own for blacklist/whitelist/etc.
+- [ ] Fix architecture and README listing the correct tech stack we use and fix /techstack endpoint
+- [ ] Set up onboarding to work because auth works but some pages in onboarding need to be fixed and when we submit we need to add to DB functionality
+
 ## Core Features
 
 - [ ] Implement upload resume via popover  
 - [ ] Implement upload cover letter via popover  
+- [ ] Scraper should show the progress bar and cancel button once we start yet it doesn't
 - [ ] Add support for custom tags  
 - [ ] Add 4 tag filters and make them functional  
 - [ ] Add quick search functionality  

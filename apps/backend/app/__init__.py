@@ -1,43 +1,49 @@
-# app/__init__.py
-from flask import Flask, request, jsonify
-from flask_cors import CORS  # Import CORS
-from .config import DevelopmentConfig  # Use ProductionConfig in production
-from .config import db, migrate, init_cache, init_es
+from flask import Flask
+from flask_cors import CORS
+from flask_jwt_extended import JWTManager
+from .config import DevelopmentConfig, db, migrate, init_cache, init_es
+
+# Instantiate the JWTManager
+jwt = JWTManager()
 
 def create_app(config_class=DevelopmentConfig):
     app = Flask(__name__)
     app.config.from_object(config_class)
-    
-    # Enable CORS for all API endpoints
-    CORS(app,
-         resources={r"/api/.*": {"origins": "*"}},
-         supports_credentials=True)
 
-    # Initialize extensions
+    CORS(
+        app,
+        resources={r"/api/.*": {"origins": "http://localhost:3000"}},
+        supports_credentials=True,
+        methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        allow_headers=["Content-Type", "Authorization"],
+    )
+
     db.init_app(app)
-    migrate.init_app(app, db)
+    migrate.init_app(app, db, directory="migrations")
     app.extensions["redis"] = init_cache(app)
-    # Initialize Elasticsearch client and attempt to set up index
     es = init_es(app)
     app.extensions["es"] = es
     try:
-        # Only create the 'jobs' index if it doesn't already exist
         if not es.indices.exists(index="jobs"):
-            es.indices.create(index="jobs", body={
-                "mappings": {
-                    "properties": {
-                        "title": {"type": "text"},
-                        "company": {"type": "text"},
-                        "tags": {"type": "keyword"},
-                        "notes": {"type": "text"}
+            es.indices.create(
+                index="jobs",
+                body={
+                    "mappings": {
+                        "properties": {
+                            "title": {"type": "text"},
+                            "company": {"type": "text"},
+                            "tags": {"type": "keyword"},
+                            "notes": {"type": "text"},
+                        }
                     }
-                }
-            })
+                },
+            )
     except Exception as e:
-        # ES might not be available yet (e.g. container startup); log and continue
         app.logger.warning(f"Skipping Elasticsearch index setup: {e}")
 
-    # Register blueprints
+    # Initialize JWTManager with the Flask app
+    jwt.init_app(app)
+
     from .routes.jobs import jobs_bp
     app.register_blueprint(jobs_bp, url_prefix="/api/jobs")
 
@@ -52,9 +58,11 @@ def create_app(config_class=DevelopmentConfig):
 
     from .routes.scraper import scraper_bp
     app.register_blueprint(scraper_bp, url_prefix="/api/scrape")
-    
-    # Register new applications blueprint
+
     from .routes.applications import applications_bp
     app.register_blueprint(applications_bp, url_prefix="/api/applications")
+
+    from .routes.auth import auth_bp
+    app.register_blueprint(auth_bp, url_prefix="/api/auth")
 
     return app

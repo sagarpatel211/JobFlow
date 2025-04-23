@@ -15,6 +15,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import relationship
 from .config import db
+from passlib.hash import bcrypt
 
 
 class RoleType(enum.Enum):
@@ -123,3 +124,21 @@ class JobAttachment(db.Model):
         Index("idx_attachment_job_id", job_id),
         Index("idx_attachment_type", attachment_type),
     )
+
+
+class User(db.Model):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String, unique=True, nullable=False, index=True)
+    password_hash = Column(String, nullable=False)
+    is_onboarded = Column(Boolean, default=False)
+    name = Column(String, nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    def set_password(self, password: str):
+        self.password_hash = bcrypt.hash(password)
+
+    def check_password(self, password: str) -> bool:
+        return bcrypt.verify(password, self.password_hash)

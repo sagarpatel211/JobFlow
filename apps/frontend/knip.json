@@ -1,4 +1,5 @@
 {
   "entry": ["app/**/*.tsx"],
-  "ignore": ["types/**/*.ts", "lib/utils.ts", "**/*.d.ts"]
+  "ignore": ["types/**/*.ts", "lib/utils.ts", "**/*.d.ts"],
+  "ignoreDependencies": ["eslint-config-next", "eslint-plugin-unused-imports"]
 }

@@ -6,27 +6,33 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { IconBrandGithub, IconBrandGoogle } from "@tabler/icons-react";
-import { toast, Toaster } from "react-hot-toast";
+import { Toaster } from "react-hot-toast";
 import { AuroraBackground } from "@/components/ui/aurora-background";
+import { useRouter } from "next/navigation";
+import { register } from "../services/api";
 
 export default function SignUpPage() {
   const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
-    setTimeout(() => {
+    setError(null);
+    try {
+      const { access_token } = await register(email, password);
+      localStorage.setItem("access_token", access_token);
+      document.cookie = `access_token=${access_token}; Path=/; Max-Age=${String(60 * 60 * 24 * 30)}`;
+      router.push("/onboarding");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
       setLoading(false);
-      const isSuccess = Math.random() > 0.5;
-      if (isSuccess) {
-        console.log("Signup successful");
-        toast.success("Signed up successfully!");
-      } else {
-        toast.error("Signup failed. Try again.");
-      }
-    }, 2000);
+    }
   };
 
   const isDark = theme === "dark";
@@ -49,7 +55,8 @@ export default function SignUpPage() {
             Sign up to JobFlow to start automating the job process!
           </p>
 
-          <form className="my-8" onSubmit={handleSubmit}>
+          <form className="my-8" onSubmit={(e) => void handleSubmit(e)}>
+            {error && <p className="text-red-500">{error}</p>}
             <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-2 mb-4">
               <LabelInputContainer>
                 <Label htmlFor="firstname">First name</Label>
@@ -62,11 +69,25 @@ export default function SignUpPage() {
             </div>
             <LabelInputContainer className="mb-4">
               <Label htmlFor="email">Email Address</Label>
-              <Input id="email" placeholder="projectmayhem@fc.com" type="email" />
+              <Input
+                id="email"
+                placeholder="projectmayhem@fc.com"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </LabelInputContainer>
             <LabelInputContainer className="mb-4">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" placeholder="••••••••" type="password" />
+              <Input
+                id="password"
+                placeholder="••••••••"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
             </LabelInputContainer>
             <button
               className={cn(

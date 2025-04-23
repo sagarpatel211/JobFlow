@@ -10,7 +10,10 @@ export default function FinalStepForm({ formData, handleCheckboxChange }: FinalS
 
   const handleScroll = () => {
     const el = scrollRef.current;
-    if (el && el.scrollTop + el.clientHeight >= el.scrollHeight) {
+    if (!el) return;
+    const threshold = 10;
+    const bottomReached = el.scrollHeight - el.scrollTop <= el.clientHeight + threshold;
+    if (bottomReached && !hasScrolledToBottom) {
       setHasScrolledToBottom(true);
     }
   };

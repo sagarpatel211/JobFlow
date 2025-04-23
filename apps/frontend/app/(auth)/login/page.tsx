@@ -8,25 +8,36 @@ import { cn } from "@/lib/utils";
 import { IconBrandGithub, IconBrandGoogle } from "@tabler/icons-react";
 import { toast, Toaster } from "react-hot-toast";
 import { AuroraBackground } from "@/components/ui/aurora-background";
+import { useRouter } from "next/navigation";
+import { login, getProfile } from "../services/api";
 
 export default function LoginPage() {
   const { theme } = useTheme();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-
-    setTimeout(() => {
-      setLoading(false);
-      const isSuccess = Math.random() > 0.5;
-      if (isSuccess) {
-        console.log("Login successful");
-        toast.success("Logged in successfully!");
+    try {
+      const { access_token } = await login(email, password);
+      localStorage.setItem("access_token", access_token);
+      document.cookie = `access_token=${access_token}; Path=/; Max-Age=${String(60 * 60 * 24 * 30)}`;
+      toast.success("Logged in successfully!");
+      const profile = await getProfile();
+      if (!profile.is_onboarded) {
+        router.push("/onboarding");
       } else {
-        toast.error("Login failed. Try again.");
+        router.push("/dashboard");
       }
-    }, 2000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Login failed. Try again.";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const isDark = theme === "dark";
@@ -45,14 +56,28 @@ export default function LoginPage() {
       <div className="relative z-50 h-screen flex items-center justify-center">
         <div className="max-w-md w-full mx-auto rounded-none md:rounded-2xl p-4 md:p-8 shadow-input bg-white dark:bg-black">
           <h2 className="font-bold text-xl text-neutral-800 dark:text-neutral-200">Login to Your Account</h2>
-          <form className="my-8" onSubmit={handleSubmit}>
+          <form className="my-8" onSubmit={(e) => void handleSubmit(e)}>
             <LabelInputContainer className="mb-4">
               <Label htmlFor="email">Email Address</Label>
-              <Input id="email" placeholder="you@example.com" type="email" required />
+              <Input
+                id="email"
+                placeholder="you@example.com"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </LabelInputContainer>
             <LabelInputContainer className="mb-4">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" placeholder="••••••••" type="password" required />
+              <Input
+                id="password"
+                placeholder="••••••••"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
             </LabelInputContainer>
             <button
               className={cn(

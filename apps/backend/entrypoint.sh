@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e
 
-echo "Waiting for Elasticsearch cluster to be healthy..."
-until curl -sSf "http://elasticsearch:9200/_cluster/health?wait_for_status=yellow" >/dev/null; do
-  echo "Elasticsearch cluster not healthy yet, retrying in 3 seconds..."
-  sleep 3
+# wait for Postgres
+until pg_isready -h db -U postgres; do
+  echo "Waiting for Postgres…"
+  sleep 2
 done
 
-# Run database migrations
+# then run migrations
 flask db upgrade
 
 # Start Supervisor (which will launch Gunicorn and the scraper)

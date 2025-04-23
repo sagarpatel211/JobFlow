@@ -6,7 +6,10 @@ from redis import Redis
 from elasticsearch import Elasticsearch
 
 class Config:
+    # Application secret key
     SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-key")
+    # JWT uses its own secret key (fallback to SECRET_KEY if not explicitly set)
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@db:5432/app_db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")

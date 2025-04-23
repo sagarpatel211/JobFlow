@@ -21,4 +21,4 @@ def upgrade():
 
 
 def downgrade():
-    op.drop_column('companies', 'image_url') 
+    op.drop_column('companies', 'image_url')

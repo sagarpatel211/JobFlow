@@ -6,7 +6,8 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
     supervisor \
-    curl && \
+    curl \
+    postgresql-client && \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
