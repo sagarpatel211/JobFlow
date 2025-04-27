@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -9,10 +9,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
 import { UploadSection } from "./upload-section";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getProfile, updateProfile } from "@/app/(auth)/services/api";
 
 const ProfileForm = () => {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [university, setUniversity] = useState("");
@@ -37,10 +36,36 @@ const ProfileForm = () => {
   const [deleteDuration, setDeleteDuration] = useState("A Month");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Load existing settings and tracking preferences
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const profile = await getProfile();
+        setEmail(profile.email);
+        setPhoneNumber(profile.phoneNumber || "");
+        setAddress(profile.address || "");
+        setUniversity(profile.university || "");
+        setAboutMe(profile.aboutMe || "");
+        setOpenAIKey(profile.openAIKey || "");
+        setArchiveDuration(profile.archiveDuration);
+        setDeleteDuration(profile.deleteDuration);
+        setLeetcodeEnabled(profile.leetcodeEnabled);
+        setLeetcodeGoal(profile.leetcodeGoal.toString());
+        setBehaviouralEnabled(profile.behaviouralEnabled);
+        setBehaviouralGoal(profile.behaviouralGoal.toString());
+        setJobsEnabled(profile.jobsEnabled);
+        setJobsGoal(profile.jobsGoal.toString());
+        setSystemDesignEnabled(profile.systemDesignEnabled);
+        setSystemDesignGoal(profile.systemDesignGoal.toString());
+      } catch (error) {
+        console.error("Failed to load settings", error);
+      }
+    };
+    void load();
+  }, []);
+
   // Validation: All required fields (and checkbox goal fields when enabled) must be non-empty.
   const isFormValid =
-    firstName.trim() !== "" &&
-    lastName.trim() !== "" &&
     email.trim() !== "" &&
     address.trim() !== "" &&
     university.trim() !== "" &&
@@ -52,36 +77,56 @@ const ProfileForm = () => {
     (!jobsEnabled || jobsGoal.trim() !== "") &&
     (!systemDesignEnabled || systemDesignGoal.trim() !== "");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid) {
       toast.error("Please fill out all required fields.");
       return;
     }
     setIsLoading(true);
-
-    setTimeout(() => {
+    try {
+      await updateProfile({
+        email,
+        phoneNumber,
+        address,
+        university,
+        aboutMe,
+        openAIKey,
+        archiveDuration,
+        deleteDuration,
+        leetcodeEnabled,
+        leetcodeGoal: Number(leetcodeGoal),
+        behaviouralEnabled,
+        behaviouralGoal: Number(behaviouralGoal),
+        jobsEnabled,
+        jobsGoal: Number(jobsGoal),
+        systemDesignEnabled,
+        systemDesignGoal: Number(systemDesignGoal),
+      });
+      toast.dismiss(); // Dismiss any existing toasts
+      toast.success("Settings saved successfully.", {
+        position: "top-center",
+        style: { background: "#1f2937", color: "#fff" },
+      });
+      // Refresh the page to reflect updated settings and remain on this page
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to save settings", error);
+      toast.error("Failed to save settings.");
+    } finally {
       setIsLoading(false);
-      // Randomize success/failure with a 50% chance.
-      const saveSuccess = Math.random() < 0.5;
-
-      if (saveSuccess) {
-        toast.success("Your user settings have been saved successfully.");
-      } else {
-        toast.error("Failed to save your settings.");
-      }
-    }, 1000);
+    }
   };
 
   return (
-    <div className="grid grid-cols-2 gap-8 items-stretch">
-      <form className="grid grid-cols-1 gap-6" onSubmit={handleSubmit}>
-        {/* Inline First Name and Last Name */}
-        <div className="grid grid-cols-2 gap-4">
-          <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} placeholder="First Name" />
-          <Input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Last Name" />
-        </div>
-
+    <div className="grid grid-cols-2 gap-8 items-start">
+      <form
+        className="grid grid-cols-1 gap-6"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void handleSubmit(e);
+        }}
+      >
         {/* Inline Email and Phone Number */}
         <div className="grid grid-cols-2 gap-4">
           <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" type="email" />

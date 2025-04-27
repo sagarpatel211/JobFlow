@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { IconBrandGithub, IconBrandGoogle } from "@tabler/icons-react";
-import { Toaster } from "react-hot-toast";
+import { Toaster, toast } from "react-hot-toast";
 import { AuroraBackground } from "@/components/ui/aurora-background";
 import { useRouter } from "next/navigation";
 import { register } from "../services/api";
@@ -21,6 +21,10 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!/^(?=.*\d).{3,}$/.test(password)) {
+      toast.error("Password must be at least 3 characters long and include a number");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {

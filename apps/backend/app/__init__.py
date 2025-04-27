@@ -65,4 +65,12 @@ def create_app(config_class=DevelopmentConfig):
     from .routes.auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
 
+    # Register billing (Stripe) endpoints
+    from .routes.billing import billing_bp
+    app.register_blueprint(billing_bp, url_prefix="/api/billing")
+
+    # Register daily stats endpoints
+    from .routes.stats import stats_bp
+    app.register_blueprint(stats_bp, url_prefix="/api/stats")
+
     return app

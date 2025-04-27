@@ -5,6 +5,16 @@
 - [ ] Each company DB should be a single DB so we don't refech company icons or followers, but each user should have their own for blacklist/whitelist/etc.
 - [ ] Fix architecture and README listing the correct tech stack we use and fix /techstack endpoint
 - [ ] Set up onboarding to work because auth works but some pages in onboarding need to be fixed and when we submit we need to add to DB functionality
+- [ ] Clean up the code base since its a bit messy
+- [ ] Remove nextjs auth since we are using our own in python
+- [ ] Set up company logo fetching from https://brandfetch.com/developers/logo-api or https://www.logo.dev/pricing
+- [ ] Set up github and google signin providers
+- [ ] Fix generate to also allow QA and behavioural questions
+get black list whitelist and fix the followers dropdown we should be able to type in the dropdown. restructure db so each user gets their own blacklist and whitelist but followers and logo is global. can we also restructure the database
+- [ ] Add a section to save behavioural questions and QA questions to practice
+- fix search bar so the personal notes and tags work for the search bar
+- [ ] Fix dashboard so it actully shows lifetime stats like jobs ever applied to, companies ever applied to, etc.
+
 
 ## Core Features
 

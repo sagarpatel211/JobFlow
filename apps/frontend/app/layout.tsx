@@ -1,7 +1,4 @@
 import type { Metadata } from "next";
-import { getServerSession } from "next-auth/next";
-import AuthProvider from "@/providers/auth-provider";
-import { authOptions } from "@/app/api/auth/[...nextauth]/authOptions";
 import { DM_Sans } from "next/font/google";
 import { ThemeProvider } from "@/providers/theme-provider";
 import "./globals.css";
@@ -13,13 +10,12 @@ export const metadata: Metadata = {
   description: "A tool to help automate your job search",
 };
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const session = await getServerSession(authOptions);
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
       <body className={`${dmSans.className} antialiased`}>
         <ThemeProvider attribute="class" enableSystem={true} defaultTheme="dark">
-          <AuthProvider session={session}>{children}</AuthProvider>
+          {children}
         </ThemeProvider>
       </body>
     </html>

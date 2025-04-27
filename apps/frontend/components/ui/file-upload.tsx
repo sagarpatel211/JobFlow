@@ -8,9 +8,11 @@ import { Cloud, File } from "lucide-react";
 interface FileUploadProps {
   title: string;
   onFileChange: (file: File) => void;
+  /** Optional accept string to restrict file types, e.g. 'image/*', '.pdf' */
+  accept?: string;
 }
 
-export function FileUpload({ title, onFileChange }: FileUploadProps) {
+export function FileUpload({ title, onFileChange, accept }: FileUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [progress, setProgress] = useState(0);
 
@@ -43,7 +45,7 @@ export function FileUpload({ title, onFileChange }: FileUploadProps) {
           isDragActive ? "border-green-500 bg-green-50" : "border-gray-300"
         }`}
       >
-        <input {...getInputProps()} />
+        <input {...getInputProps()} accept={accept} />
         {file ? (
           <div className="flex items-center space-x-2">
             <File className="w-8 h-8 text-green-500" />

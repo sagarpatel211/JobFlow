@@ -12,10 +12,13 @@ from sqlalchemy import (
     Text,
     Index,
     func,
+    Date,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import relationship
 from .config import db
-from passlib.hash import bcrypt
+from passlib.hash import bcrypt  # type: ignore
+from datetime import date
 
 
 class RoleType(enum.Enum):
@@ -40,6 +43,21 @@ job_tags_table = Table(
     Column("tag_id", ForeignKey("tags.id", ondelete="CASCADE"), primary_key=True),
     Index("idx_job_tags_job_id", "job_id"),
     Index("idx_job_tags_tag_id", "tag_id"),
+)
+
+# Add user-specific blacklist and whitelist association tables
+user_blacklist_table = Table(
+    "user_blacklisted_companies",
+    db.metadata,
+    Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("company_id", ForeignKey("companies.id", ondelete="CASCADE"), primary_key=True),
+)
+
+user_whitelist_table = Table(
+    "user_whitelisted_companies",
+    db.metadata,
+    Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
+    Column("company_id", ForeignKey("companies.id", ondelete="CASCADE"), primary_key=True),
 )
 
 
@@ -134,6 +152,53 @@ class User(db.Model):
     password_hash = Column(String, nullable=False)
     is_onboarded = Column(Boolean, default=False)
     name = Column(String, nullable=True)
+    # preferred email for cover letters
+    preferred_email = Column(String, nullable=True)
+    # onboarding fields
+    first_name = Column(String, nullable=True)
+    last_name = Column(String, nullable=True)
+    phone_number = Column(String, nullable=True)
+    address = Column(String, nullable=True)
+    # settings fields
+    university = Column(String, nullable=True)
+    about_me = Column(Text, nullable=True)
+    openai_api_key = Column(String, nullable=True)
+    archive_duration = Column(String, default="A Month", nullable=False)
+    delete_duration = Column(String, default="A Month", nullable=False)
+    # tracking preferences
+    leetcode_enabled = Column(Boolean, default=False)
+    behavioural_enabled = Column(Boolean, default=False)
+    jobs_enabled = Column(Boolean, default=False)
+    system_design_enabled = Column(Boolean, default=False)
+    # tracking goals
+    leetcode_goal = Column(Integer, default=0)
+    behavioural_goal = Column(Integer, default=0)
+    jobs_goal = Column(Integer, default=0)
+    system_design_goal = Column(Integer, default=0)
+    # document URLs (if stored externally)
+    resume_url = Column(String, nullable=True)
+    cover_letter_url = Column(String, nullable=True)
+    transcript_url = Column(String, nullable=True)
+    latex_url = Column(String, nullable=True)
+    # profile picture URL
+    profile_pic_url = Column(String, nullable=True)
+    # job-automation preferences
+    preferred_job_titles = Column(String, nullable=True)
+    # use relationships for user-specific company lists
+    blacklisted_companies = relationship(
+        "Company",
+        secondary=user_blacklist_table,
+        backref="users_blacklisting",
+    )
+    whitelisted_companies = relationship(
+        "Company",
+        secondary=user_whitelist_table,
+        backref="users_whitelisting",
+    )
+    auto_apply = Column(Boolean, default=False)
+    additional_notes = Column(Text, nullable=True)
+    # which onboarding step the user is on
+    onboarding_step = Column(Integer, default=1)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
@@ -142,3 +207,25 @@ class User(db.Model):
 
     def check_password(self, password: str) -> bool:
         return bcrypt.verify(password, self.password_hash)
+
+
+class StatType(enum.Enum):
+    leetcode = "leetcode"
+    jobs_applied = "jobs_applied"
+    behavioural = "behavioural"
+    system_design = "system_design"
+
+
+class DailyStat(db.Model):
+    __tablename__ = "daily_stats"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    stat_type = Column(Enum(StatType), nullable=False)
+    date = Column(Date, nullable=False, default=date.today)
+    value = Column(Integer, default=1)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint('user_id', 'stat_type', 'date', name='uq_user_stat_date'),
+    )

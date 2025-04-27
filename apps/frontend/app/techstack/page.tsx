@@ -78,7 +78,7 @@ const TechStackPage = () => {
   return (
     <div className="flex flex-col items-center p-8 space-y-8">
       <h1 className="text-4xl font-bold">Tech Stack Diagram</h1>
-      <div className="w-full h-[700px] max-w-6xl rounded-lg shadow border">
+      <div className="w-full h-[85vh] rounded-lg shadow border">
         <ReactFlow nodes={initialNodes} edges={initialEdges} fitView>
           <MiniMap />
           <Controls />

@@ -8,22 +8,16 @@ export const config = {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // Allow unrestricted public access for homepage and techstack
-  if (pathname === "/" || pathname === "/techstack") {
-    return;
-  }
-
-  // Skip Next.js internals, static files, and API routes
+  // Skip static assets and Next.js internals
   if (pathname.startsWith("/_next") || pathname.startsWith("/api") || pathname.includes(".")) {
     return;
   }
 
-  // Public pages that don't require auth
-  const PUBLIC_PATHS = ["/login", "/signup"];
-
+  // Public pages open to unauthenticated users
+  const PUBLIC_PATHS = ["/login", "/signup", "/techstack", "/"];
   const token = req.cookies.get("access_token")?.value;
 
-  // No token → only allow public pages
+  // If no token, only allow public paths
   if (!token) {
     if (!PUBLIC_PATHS.includes(pathname)) {
       return NextResponse.redirect(new URL("/login", req.url));
@@ -32,7 +26,11 @@ export async function middleware(req: NextRequest) {
   }
 
   // Verify token by fetching profile from backend
-  const profileRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/profile`, {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl) {
+    throw new Error("NEXT_PUBLIC_API_URL is not defined");
+  }
+  const profileRes = await fetch(`${apiUrl}/api/auth/profile`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
@@ -44,11 +42,13 @@ export async function middleware(req: NextRequest) {
     return res;
   }
 
-  const { is_onboarded } = await profileRes.json();
+  // Parse profile response and assert shape
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const { is_onboarded } = (await profileRes.json()) as { is_onboarded: boolean };
 
-  // If already authenticated and landing on login/signup, bounce them
-  if (PUBLIC_PATHS.includes(pathname)) {
-    return NextResponse.redirect(new URL(is_onboarded ? "/dashboard" : "/onboarding", req.url));
+  // Prevent authenticated users from accessing login or signup pages
+  if (["/login", "/signup"].includes(pathname)) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   // Not onboarded → force onboarding on all protected pages

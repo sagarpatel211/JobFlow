@@ -4,12 +4,15 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from redis import Redis
 from elasticsearch import Elasticsearch
+from datetime import timedelta
 
 class Config:
     # Application secret key
     SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-key")
     # JWT uses its own secret key (fallback to SECRET_KEY if not explicitly set)
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", SECRET_KEY)
+    # Extend access token expiration (e.g., 7 days)
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=7)
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@db:5432/app_db")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     REDIS_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
@@ -17,6 +20,8 @@ class Config:
     MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio:9000")
     MINIO_ROOT_USER = os.getenv("MINIO_ROOT_USER", "minioaccesskey")
     MINIO_ROOT_PASSWORD = os.getenv("MINIO_ROOT_PASSWORD", "miniosecretkey")
+    # Stripe configuration
+    STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
 
 class DevelopmentConfig(Config):
     DEBUG = True
