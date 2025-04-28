@@ -254,7 +254,7 @@ def onboard():
         # keep at final step
         user.onboarding_step = 5
     db.session.commit()  # type: ignore
-    return jsonify({"msg": "Onboard step saved", "onboarding_step": user.onboarding_step}), 200
+    return jsonify({"msg": "Onboard step saved", "onboarding_step": user.onboarding_step}), 200 
 
 @auth_bp.route("/upload-document", methods=["POST"])
 @jwt_required()
