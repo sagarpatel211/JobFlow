@@ -14,7 +14,7 @@ import {
 import { defaultTrackerData } from "../services/constants";
 import { TrackerFilters } from "@/types/trackerHooks";
 import { TrackerData } from "@/types/tracker";
-import { Job, RoleType } from "@/types/job";
+import { Job } from "@/types/job";
 import { toast } from "react-hot-toast";
 import { createUndoableToast } from "../components/undotoast";
 import { statusKeys, StatusKey } from "@/lib/constants";
@@ -32,7 +32,6 @@ interface ApiJob {
   link: string;
   posted_date: string;
   status: StatusKey;
-  role_type?: string;
   priority: boolean;
   archived: boolean;
   atsScore?: number;
@@ -80,8 +79,9 @@ export function useTrackerData({ initialPage, itemsPerPage }: Params) {
           const posted = new Date(job.postedDate.split(".").reverse().join("-"));
           if (Date.now() - posted.getTime() > 7 * 24 * 60 * 60 * 1000) return false;
         }
-        if (filters.filterIntern && job.role_type !== "intern") return false;
-        if (filters.filterNewgrad && job.role_type !== "newgrad") return false;
+        const normalizedTags = job.tags?.map((t) => t.toLowerCase().replace(/\s+/g, "")) ?? [];
+        if (filters.filterIntern && !normalizedTags.includes("internship")) return false;
+        if (filters.filterNewgrad && !normalizedTags.includes("newgrad")) return false;
         if (filters.selectedTag && !job.tags?.includes(filters.selectedTag)) return false;
         if (filters.showPriorityOnly && !job.priority) return false;
         return true;
@@ -130,7 +130,6 @@ export function useTrackerData({ initialPage, itemsPerPage }: Params) {
           link,
           posted_date,
           status: apiStatus,
-          role_type: rawRoleType,
           priority,
           archived,
           atsScore,
@@ -151,7 +150,6 @@ export function useTrackerData({ initialPage, itemsPerPage }: Params) {
           postedDate: posted_date,
           status: apiStatus,
           statusIndex: statusKeys.indexOf(apiStatus) || 0,
-          role_type: rawRoleType as RoleType,
           priority,
           archived,
           atsScore,

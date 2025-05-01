@@ -21,11 +21,6 @@ from passlib.hash import bcrypt  # type: ignore
 from datetime import date
 
 
-class RoleType(enum.Enum):
-    intern = "intern"
-    newgrad = "newgrad"
-
-
 class Status(enum.Enum):
     nothing_done = "nothing_done"
     applying = "applying"
@@ -50,14 +45,18 @@ user_blacklist_table = Table(
     "user_blacklisted_companies",
     db.metadata,
     Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
-    Column("company_id", ForeignKey("companies.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "company_id", ForeignKey("companies.id", ondelete="CASCADE"), primary_key=True
+    ),
 )
 
 user_whitelist_table = Table(
     "user_whitelisted_companies",
     db.metadata,
     Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True),
-    Column("company_id", ForeignKey("companies.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "company_id", ForeignKey("companies.id", ondelete="CASCADE"), primary_key=True
+    ),
 )
 
 
@@ -68,7 +67,7 @@ class Company(db.Model):
     name = Column(String, unique=True, nullable=False)
     blacklisted = Column(Boolean, default=False)
     follower_count = Column(Integer, default=0)
-    image_url = Column(String, nullable=True)  # URL to company logo in Minio
+    image_url = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
@@ -84,8 +83,8 @@ class Tag(db.Model):
     id = Column(Integer, primary_key=True)
     name = Column(String, unique=True)
     created_at = Column(DateTime, server_default=func.now())
-    
-    jobs = relationship(                 # Tag.jobs is now always present
+
+    jobs = relationship(
         "Job",
         secondary=job_tags_table,
         back_populates="tags",
@@ -103,9 +102,8 @@ class Job(db.Model):
     )
     company = relationship("Company", backref="jobs")
     title = Column(String, nullable=False)
-    role_type = Column(Enum(RoleType), nullable=False, default=RoleType.newgrad)
     posted_date = Column(DateTime, server_default=func.now())
-    link = Column(String, index=True)  # ←  NEW index (speeds up dead‑link checks)
+    link = Column(String, index=True)
     status = Column(Enum(Status), nullable=False, default=Status.nothing_done)
     priority = Column(Boolean, default=False, index=True)
     archived = Column(Boolean, default=False, index=True)
@@ -134,7 +132,7 @@ class JobAttachment(db.Model):
     filename = Column(String, nullable=False)
     content_type = Column(String, nullable=False)
     object_key = Column(String, nullable=False)
-    attachment_type = Column(String, nullable=False)  # e.g. resume / cover_letter
+    attachment_type = Column(String, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
@@ -152,39 +150,30 @@ class User(db.Model):
     password_hash = Column(String, nullable=False)
     is_onboarded = Column(Boolean, default=False)
     name = Column(String, nullable=True)
-    # preferred email for cover letters
     preferred_email = Column(String, nullable=True)
-    # onboarding fields
     first_name = Column(String, nullable=True)
     last_name = Column(String, nullable=True)
     phone_number = Column(String, nullable=True)
     address = Column(String, nullable=True)
-    # settings fields
     university = Column(String, nullable=True)
     about_me = Column(Text, nullable=True)
     openai_api_key = Column(String, nullable=True)
     archive_duration = Column(String, default="A Month", nullable=False)
     delete_duration = Column(String, default="A Month", nullable=False)
-    # tracking preferences
     leetcode_enabled = Column(Boolean, default=False)
     behavioural_enabled = Column(Boolean, default=False)
     jobs_enabled = Column(Boolean, default=False)
     system_design_enabled = Column(Boolean, default=False)
-    # tracking goals
     leetcode_goal = Column(Integer, default=0)
     behavioural_goal = Column(Integer, default=0)
     jobs_goal = Column(Integer, default=0)
     system_design_goal = Column(Integer, default=0)
-    # document URLs (if stored externally)
     resume_url = Column(String, nullable=True)
     cover_letter_url = Column(String, nullable=True)
     transcript_url = Column(String, nullable=True)
     latex_url = Column(String, nullable=True)
-    # profile picture URL
     profile_pic_url = Column(String, nullable=True)
-    # job-automation preferences
     preferred_job_titles = Column(String, nullable=True)
-    # use relationships for user-specific company lists
     blacklisted_companies = relationship(
         "Company",
         secondary=user_blacklist_table,
@@ -197,7 +186,6 @@ class User(db.Model):
     )
     auto_apply = Column(Boolean, default=False)
     additional_notes = Column(Text, nullable=True)
-    # which onboarding step the user is on
     onboarding_step = Column(Integer, default=1)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
@@ -219,7 +207,9 @@ class StatType(enum.Enum):
 class DailyStat(db.Model):
     __tablename__ = "daily_stats"
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False
+    )
     stat_type = Column(Enum(StatType), nullable=False)
     date = Column(Date, nullable=False, default=date.today)
     value = Column(Integer, default=1)
@@ -227,5 +217,5 @@ class DailyStat(db.Model):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     __table_args__ = (
-        UniqueConstraint('user_id', 'stat_type', 'date', name='uq_user_stat_date'),
+        UniqueConstraint("user_id", "stat_type", "date", name="uq_user_stat_date"),
     )

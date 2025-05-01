@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app, send_file
 from app.config import db
-from app.models import Job, Company, Status, RoleType, Tag  # Added Tag for custom tags handling
+from app.models import Job, Company, Status, Tag
 from sqlalchemy import select, update, delete, and_
 from datetime import datetime, timedelta  # Add missing imports
 import requests  # Add missing import for remove_dead_links
@@ -9,9 +9,19 @@ import io
 from app.models import JobAttachment
 from app.utils.minio_client import get_minio_client, upload_fileobj
 from app.utils.redis_client import get_cache, set_cache
-from app.utils.job_utils import parse_posted_date, get_or_create_company, get_or_create_tags, index_job_es
+from app.utils.job_utils import (
+    parse_posted_date,
+    get_or_create_company,
+    get_or_create_tags,
+    index_job_es,
+)
+from app.models import User
+from flask_jwt_extended import jwt_required, get_jwt_identity  # Assuming JWT for auth
+import uuid
+import tempfile
 
 jobs_bp = Blueprint("jobs", __name__)
+
 
 @jobs_bp.route("", methods=["GET"])
 def get_jobs():
@@ -21,21 +31,25 @@ def get_jobs():
         return jsonify(cached)
 
     jobs = Job.query.all()
-    jobs_list = [{
-        "id": job.id,
-        "company": job.company.name if job.company else None,
-        "title": job.title,
-        "link": job.link,
-        "posted_date": job.posted_date.isoformat(),
-        "status": job.status.value,
-        "role_type": job.role_type.value,
-        "priority": job.priority,
-        "archived": job.archived,
-        "atsScore": job.ats_score,
-        "notes": job.notes or "",
-        "tags": [t.name for t in job.tags],
-        "company_image_url": job.company.image_url if job.company and job.company.image_url else None,
-    } for job in jobs]
+    jobs_list = [
+        {
+            "id": job.id,
+            "company": job.company.name if job.company else None,
+            "title": job.title,
+            "link": job.link,
+            "posted_date": job.posted_date.isoformat(),
+            "status": job.status.value,
+            "priority": job.priority,
+            "archived": job.archived,
+            "atsScore": job.ats_score,
+            "notes": job.notes or "",
+            "tags": [t.name for t in job.tags],
+            "company_image_url": (
+                job.company.image_url if job.company and job.company.image_url else None
+            ),
+        }
+        for job in jobs
+    ]
     data = {"success": True, "jobs": jobs_list}
     # Cache the response for 60 seconds
     set_cache("jobs_list", data, 60)
@@ -55,7 +69,7 @@ def create_job():
     try:
         # parse posted_date using helper
         posted_date = parse_posted_date(data.get("posted_date"))
-        
+
         # create job record
         job = Job(
             company=company,
@@ -63,7 +77,6 @@ def create_job():
             link=data.get("link"),
             posted_date=posted_date,
             status=Status(data.get("status", "nothing_done")),
-            role_type=RoleType(data.get("role_type", "newgrad")),
             priority=data.get("priority", False),
             archived=data.get("archived", False),
             ats_score=data.get("ats_score", 0.0),
@@ -77,10 +90,16 @@ def create_job():
 
         # index job in Elasticsearch
         index_job_es(job)
-        return jsonify({"success": True, "job": {"id": job.id, "company": job.company.name}}), 201
+        return (
+            jsonify(
+                {"success": True, "job": {"id": job.id, "company": job.company.name}}
+            ),
+            201,
+        )
     except Exception as e:
         session.rollback()
         return jsonify({"success": False, "error": str(e)}), 500
+
 
 @jobs_bp.route("/<int:job_id>", methods=["PUT"])
 def update_job(job_id):
@@ -89,10 +108,10 @@ def update_job(job_id):
     if "company" in data and data["company"].get("name"):
         company_name = data["company"]["name"]
         job.company = get_or_create_company(company_name)
-    
+
     # Process posted_date correctly
     job.posted_date = parse_posted_date(data.get("posted_date"))
-    
+
     if "status" in data:
         job.status = Status(data["status"])
     job.priority = data.get("priority", job.priority)
@@ -111,6 +130,7 @@ def update_job(job_id):
     index_job_es(job)
     return jsonify({"success": True, "job": {"id": job.id}})
 
+
 @jobs_bp.route("/<int:job_id>/archive", methods=["PUT"])
 def archive_job(job_id):
     session = db.session()
@@ -118,6 +138,7 @@ def archive_job(job_id):
     job.archived = True
     session.commit()
     return jsonify({"success": True})
+
 
 @jobs_bp.route("/<int:job_id>/unarchive", methods=["PUT"])
 def unarchive_job(job_id):
@@ -128,6 +149,7 @@ def unarchive_job(job_id):
     session.commit()
     return jsonify({"success": True})
 
+
 @jobs_bp.route("/<int:job_id>/priority", methods=["PUT"])
 def toggle_priority(job_id):
     session = db.session()
@@ -135,6 +157,7 @@ def toggle_priority(job_id):
     job.priority = not job.priority
     session.commit()
     return jsonify({"success": True, "priority": job.priority})
+
 
 @jobs_bp.route("/<int:job_id>/soft-delete", methods=["PUT"])
 def soft_delete_job(job_id):
@@ -148,13 +171,22 @@ def soft_delete_job(job_id):
     es.delete(index="jobs", id=job.id, ignore=[404])
     return jsonify({"success": True})
 
+
 @jobs_bp.route("/<int:job_id>/status-arrow", methods=["PUT"])
 def update_status_arrow(job_id):
     session = db.session()
     data = request.get_json()
     direction = data.get("direction", 0)
     job = Job.query.get_or_404(job_id)
-    statuses = ["nothing_done", "applying", "applied", "oa", "interview", "offer", "rejected"]
+    statuses = [
+        "nothing_done",
+        "applying",
+        "applied",
+        "oa",
+        "interview",
+        "offer",
+        "rejected",
+    ]
     try:
         current_index = statuses.index(job.status.value)
     except ValueError:
@@ -163,6 +195,7 @@ def update_status_arrow(job_id):
     job.status = Status(statuses[new_index])
     session.commit()
     return jsonify({"success": True})
+
 
 @jobs_bp.route("/delete-older-than/<int:months>", methods=["DELETE"])
 def delete_older_than(months: int):
@@ -177,10 +210,7 @@ def delete_older_than(months: int):
 @jobs_bp.route("/remove-dead-links", methods=["POST"])
 def remove_dead_links():
     session = db.session()
-    jobs = (
-        session.execute(select(Job.id, Job.link).where(Job.deleted.is_(False)))
-        .all()
-    )
+    jobs = session.execute(select(Job.id, Job.link).where(Job.deleted.is_(False))).all()
     dead_ids: list[int] = []
     for jid, link in jobs:
         try:
@@ -191,9 +221,7 @@ def remove_dead_links():
             dead_ids.append(jid)
 
     if dead_ids:
-        session.execute(
-            update(Job).where(Job.id.in_(dead_ids)).values(deleted=True)
-        )
+        session.execute(update(Job).where(Job.id.in_(dead_ids)).values(deleted=True))
         session.commit()
     return jsonify({"removed_count": len(dead_ids)})
 
@@ -245,6 +273,7 @@ def mark_oldest_as_priority():
     session.commit()
     return jsonify({"marked_count": count})
 
+
 @jobs_bp.route("/<int:job_id>/restore", methods=["PUT"])
 def restore_job(job_id):
     session = db.session()
@@ -254,13 +283,18 @@ def restore_job(job_id):
 
     # Re-index restored job in Elasticsearch
     es = current_app.extensions["es"]
-    es.index(index="jobs", id=job.id, body={
-        "title": job.title,
-        "company": job.company.name,
-        "tags": [t.name for t in job.tags],
-        "notes": job.notes or ""
-    })
+    es.index(
+        index="jobs",
+        id=job.id,
+        body={
+            "title": job.title,
+            "company": job.company.name,
+            "tags": [t.name for t in job.tags],
+            "notes": job.notes or "",
+        },
+    )
     return jsonify({"success": True})
+
 
 @jobs_bp.route("/<int:job_id>/permanent-delete", methods=["DELETE", "OPTIONS"])
 def permanent_delete_job(job_id):
@@ -281,58 +315,222 @@ def permanent_delete_job(job_id):
     response = jsonify({"success": True})
     return response
 
+
 @jobs_bp.route("/<int:job_id>/attachment", methods=["POST", "OPTIONS"])
 def upload_attachment(job_id: int):
     # Upload a resume or cover letter file for a job
     session = db.session()
-    if 'file' not in request.files or 'attachment_type' not in request.form:
-        return jsonify({"success": False, "error": "file and attachment_type are required"}), 400
-    f = request.files['file']
-    attachment_type = request.form['attachment_type']
+    if "file" not in request.files or "attachment_type" not in request.form:
+        return (
+            jsonify(
+                {"success": False, "error": "file and attachment_type are required"}
+            ),
+            400,
+        )
+    f = request.files["file"]
+    attachment_type = request.form["attachment_type"]
     # Upload to Minio using helper
-    bucket = os.getenv('MINIO_BUCKET', 'job-attachments')
+    bucket = os.getenv("MINIO_BUCKET", "job-attachments")
     object_key = f"{job_id}/{attachment_type}/{f.filename}"
     data = f.read()
     upload_fileobj(bucket, object_key, io.BytesIO(data), len(data), f.content_type)
     # Persist in database
-    att = JobAttachment(job_id=job_id, filename=f.filename, content_type=f.content_type, object_key=object_key, attachment_type=attachment_type)
+    att = JobAttachment(
+        job_id=job_id,
+        filename=f.filename,
+        content_type=f.content_type,
+        object_key=object_key,
+        attachment_type=attachment_type,
+    )
     session.add(att)
     session.commit()
-    return jsonify({"success": True, "attachment": {"filename": att.filename, "attachment_type": att.attachment_type}})
+    return jsonify(
+        {
+            "success": True,
+            "attachment": {
+                "filename": att.filename,
+                "attachment_type": att.attachment_type,
+            },
+        }
+    )
+
 
 @jobs_bp.route("/<int:job_id>/attachment/<string:attachment_type>", methods=["GET"])
 def get_attachment(job_id: int, attachment_type: str):
     # Get a presigned URL for the requested attachment
     session = db.session()
-    att = session.query(JobAttachment).filter_by(job_id=job_id, attachment_type=attachment_type).first()
+    att = (
+        session.query(JobAttachment)
+        .filter_by(job_id=job_id, attachment_type=attachment_type)
+        .first()
+    )
     if not att:
         return jsonify({"success": False, "error": "Attachment not found"}), 404
     minio_client = get_minio_client()
-    bucket = os.getenv('MINIO_BUCKET', 'job-attachments')
-    url = minio_client.presigned_get_object(bucket, att.object_key, expires=timedelta(minutes=10))
+    bucket = os.getenv("MINIO_BUCKET", "job-attachments")
+    url = minio_client.presigned_get_object(
+        bucket, att.object_key, expires=timedelta(minutes=10)
+    )
     return jsonify({"success": True, "url": url, "filename": att.filename})
 
-@jobs_bp.route("/<int:job_id>/attachment/<string:attachment_type>/download", methods=["GET"])
+
+@jobs_bp.route(
+    "/<int:job_id>/attachment/<string:attachment_type>/download", methods=["GET"]
+)
 def download_attachment_file(job_id: int, attachment_type: str):
     """Stream the attachment file through the API proxy."""
     session = db.session()
-    att = session.query(JobAttachment).filter_by(job_id=job_id, attachment_type=attachment_type).first()
+    att = (
+        session.query(JobAttachment)
+        .filter_by(job_id=job_id, attachment_type=attachment_type)
+        .first()
+    )
     if not att:
         return jsonify({"success": False, "error": "Attachment not found"}), 404
-    bucket = os.getenv('MINIO_BUCKET', 'job-attachments')
+    bucket = os.getenv("MINIO_BUCKET", "job-attachments")
     client = get_minio_client()
     try:
         obj = client.get_object(bucket, att.object_key)
         data = obj.read()
         # Return as attachment
         import io as _io
+
         file_obj = _io.BytesIO(data)
         file_obj.seek(0)
         return send_file(
             file_obj,
             mimetype=att.content_type,
             as_attachment=True,
-            download_name=att.filename
+            download_name=att.filename,
         )
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@jobs_bp.route("/<int:job_id>/generate-cover-letter", methods=["PUT", "OPTIONS"])
+@jwt_required()  # Protect the route
+def generate_cover_letter(job_id: int):
+    if request.method == "OPTIONS":
+        # Handle preflight request
+        response = jsonify(success=True)
+        response.headers.add("Access-Control-Allow-Methods", "PUT")
+        response.headers.add(
+            "Access-Control-Allow-Headers", "Content-Type,Authorization"
+        )
+        return response
+
+    session = db.session()
+    job = session.get(Job, job_id)
+    if not job:
+        return jsonify({"success": False, "error": "Job not found"}), 404
+
+    # --- Get User Info (Assuming JWT) ---
+    user_email = get_jwt_identity()
+    user = session.execute(
+        select(User).filter_by(email=user_email)
+    ).scalar_one_or_none()
+    if not user:
+        return jsonify({"success": False, "error": "User not found"}), 404
+
+    # --- Dummy Cover Letter Generation ---
+    # TODO: Replace with actual OpenAI call using user.openai_api_key and user.about_me
+    company_name = job.company.name if job.company else "the company"
+    job_title = job.title if job.title else "the position"
+    dummy_content = f"""
+Dear Hiring Manager at {company_name},
+
+I am writing to express my interest in the {job_title} position.
+
+Based on my profile: {user.about_me or 'No profile information available.'}
+
+Thank you for your time and consideration.
+
+Sincerely,
+{user.name or 'Applicant'}
+"""
+    dummy_filename = f"cover_letter_{job.id}_{uuid.uuid4().hex[:8]}.txt"
+    content_type = "text/plain"
+    attachment_type = "cover_letter"
+
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w", delete=False, suffix=".txt", encoding="utf-8"
+        ) as temp_file:
+            temp_file.write(dummy_content)
+            temp_path = temp_file.name
+
+        # --- Upload to Minio ---
+        minio_client = get_minio_client()
+        bucket_name = current_app.config["MINIO_BUCKET"]
+        object_key = f"user_{user.id}/job_{job.id}/{attachment_type}/{dummy_filename}"
+
+        with open(temp_path, "rb") as file_data:
+            file_size = os.path.getsize(temp_path)
+            upload_fileobj(
+                client=minio_client,
+                bucket_name=bucket_name,
+                object_key=object_key,
+                file_obj=io.BytesIO(file_data.read()),  # Use BytesIO
+                file_size=file_size,
+                content_type=content_type,
+            )
+        os.remove(temp_path)  # Clean up temporary file
+
+        # --- Update or Create JobAttachment ---
+        attachment = session.execute(
+            select(JobAttachment).filter_by(
+                job_id=job.id, attachment_type=attachment_type
+            )
+        ).scalar_one_or_none()
+
+        if attachment:
+            # TODO: Consider deleting old object from Minio
+            attachment.filename = dummy_filename
+            attachment.content_type = content_type
+            attachment.object_key = object_key
+            attachment.updated_at = func.now()
+        else:
+            attachment = JobAttachment(
+                job_id=job.id,
+                filename=dummy_filename,
+                content_type=content_type,
+                object_key=object_key,
+                attachment_type=attachment_type,
+            )
+            session.add(attachment)
+
+        session.commit()
+
+        # --- Get Presigned URL ---
+        # Reuse existing logic from get_attachment if possible, or implement here
+        try:
+            presigned_url = minio_client.presigned_get_object(
+                bucket_name,
+                object_key,
+                expires=timedelta(hours=1),  # URL valid for 1 hour
+            )
+        except Exception as e:
+            current_app.logger.error(
+                f"Failed to get presigned URL for {object_key}: {e}"
+            )
+            presigned_url = None  # Or handle differently
+
+        return jsonify(
+            {
+                "success": True,
+                "message": "Cover letter generated and saved.",
+                "coverLetterUrl": presigned_url,
+                "coverLetterFilename": dummy_filename,
+            }
+        )
+
+    except Exception as e:
+        session.rollback()
+        current_app.logger.error(f"Error generating cover letter for job {job.id}: {e}")
+        # Clean up temp file on error if it exists
+        if "temp_path" in locals() and os.path.exists(temp_path):
+            os.remove(temp_path)
+        return (
+            jsonify({"success": False, "error": f"Internal server error: {str(e)}"}),
+            500,
+        )

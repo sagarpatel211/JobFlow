@@ -10,6 +10,15 @@ import { toast, Toaster } from "react-hot-toast";
 import { useTheme } from "next-themes";
 import { getProfile, getStats, setStat } from "@/app/(auth)/services/api";
 
+// Define a type for the profile object
+interface Profile {
+  leetcodeEnabled: boolean;
+  jobsEnabled: boolean;
+  behaviouralEnabled: boolean;
+  systemDesignEnabled: boolean;
+  profilePicUrl?: string;
+}
+
 const HealthBar: React.FC<HealthBarProps> = ({ value, maxValue, color }) => (
   <div className="flex gap-[1px]">
     {Array.from({ length: maxValue }, (_, index) => (
@@ -63,14 +72,14 @@ const InfoBar = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const profile = await getProfile();
+        const profile: Profile = await getProfile();
         setPrefs({
           leetcodeEnabled: profile.leetcodeEnabled,
           jobsEnabled: profile.jobsEnabled,
           behaviouralEnabled: profile.behaviouralEnabled,
           systemDesignEnabled: profile.systemDesignEnabled,
         });
-        const pic = (profile as any).profilePicUrl;
+        const pic = profile.profilePicUrl;
         setProfilePicUrl(typeof pic === "string" && pic ? pic : "https://i.pravatar.cc/100");
         const stats = await getStats();
         setLeetcodeDone(stats.leetcode ?? 0);

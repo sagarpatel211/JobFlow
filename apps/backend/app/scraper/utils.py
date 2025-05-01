@@ -17,6 +17,7 @@ FOLLOWERS_FILE = BASE_DIR / "followers.txt"
 # Add minimum followers threshold and alias for existing get_followers_count
 MIN_FOLLOWERS = 200_000
 
+
 def _ensure_file(path: Path):
     if not path.exists():
         path.write_text("", encoding="utf-8")
@@ -83,29 +84,30 @@ def fetch_followers_from_profile(url: str) -> int:
     """Alias for get_followers_count; fetch and cache follower count for a company URL."""
     return get_followers_count(url)
 
-
-# -----------------------------------
-# Brandfetch logo API integration
-# -----------------------------------
-BRANDFETCH_API_URL = os.getenv("BRANDFETCH_API_URL", "https://api.brandfetch.io/v2/logo")
+BRANDFETCH_API_URL = os.getenv(
+    "BRANDFETCH_API_URL", "https://api.brandfetch.io/v2/logo"
+)
 BRANDFETCH_API_KEY = os.getenv("BRANDFETCH_API_KEY")
+
 
 def extract_domain(url: str) -> str:
     parsed = urlparse(url)
     return parsed.netloc
 
+
 def fetch_company_logo(url: str) -> str | None:
-    """Fetch logo URL for a company domain using Brandfetch."""
     if not BRANDFETCH_API_KEY:
         return None
     domain = extract_domain(url)
     headers = {"Authorization": f"Bearer {BRANDFETCH_API_KEY}"}
     try:
-        resp = requests.get(f"{BRANDFETCH_API_URL}?domain={domain}", headers=headers, timeout=10)
+        resp = requests.get(
+            f"{BRANDFETCH_API_URL}?domain={domain}", headers=headers, timeout=10
+        )
         if resp.ok:
             data = resp.json()
             # assume `url` field in response contains the logo URL
             return data.get("url")
     except Exception:
         pass
-    return None 
+    return None

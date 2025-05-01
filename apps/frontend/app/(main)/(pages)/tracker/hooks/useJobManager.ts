@@ -27,7 +27,6 @@ export function useJobManager({ trackerJobs, updateLocalJob, setTrackerJobs, set
       link: "",
       statusIndex: 0,
       status: "nothing_done",
-      role_type: "newgrad",
       priority: false,
       isModifying: true,
       archived: false,

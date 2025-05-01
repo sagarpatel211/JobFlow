@@ -9,10 +9,10 @@ def parse_posted_date(date_str: Optional[str]) -> datetime:
     """Parse an ISO or YYYY-MM-DD date string, defaulting to now on error or missing."""
     if date_str:
         try:
-            return datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+            return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
         except ValueError:
             try:
-                return datetime.strptime(date_str, '%Y-%m-%d')
+                return datetime.strptime(date_str, "%Y-%m-%d")
             except Exception:
                 pass
     return datetime.utcnow()
@@ -43,16 +43,16 @@ def get_or_create_tags(names: List[str]) -> List[Tag]:
 
 def index_job_es(job: Job) -> None:
     """Index (or re-index) a job document in Elasticsearch."""
-    es = current_app.extensions.get('es')
+    es = current_app.extensions.get("es")
     if not es:
         return
     es.index(
-        index='jobs',
+        index="jobs",
         id=job.id,
         body={
-            'title': job.title,
-            'company': job.company.name if job.company else None,
-            'tags': [t.name for t in job.tags],
-            'notes': job.notes or ''
-        }
-    ) 
+            "title": job.title,
+            "company": job.company.name if job.company else None,
+            "tags": [t.name for t in job.tags],
+            "notes": job.notes or "",
+        },
+    )

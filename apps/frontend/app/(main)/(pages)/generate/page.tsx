@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toaster, toast } from "react-hot-toast";
 import { Search } from "lucide-react";
@@ -12,6 +13,7 @@ import { ApplicationsTable } from "./components/applicationstable";
 import { PaginationControls } from "./components/paginationcontrols";
 import { HotkeysDialog } from "./components/hotkeysdialog";
 import { Application, DocumentType } from "./components/applicationstable";
+import { generateCoverLetter } from "../tracker/services/api";
 
 interface FormValues {
   jobTitle: string;
@@ -58,6 +60,13 @@ export default function GeneratePage() {
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
+
+  // --- New State for Cover Letter Generation ---
+  const [generateJobId, setGenerateJobId] = useState<string>("");
+  const [isGeneratingCoverLetter, setIsGeneratingCoverLetter] = useState(false);
+  const [generatedCoverLetterUrl, setGeneratedCoverLetterUrl] = useState<string | null>(null);
+  const [generatedCoverLetterFilename, setGeneratedCoverLetterFilename] = useState<string | null>(null);
+  // ---------------------------------------------
 
   // Initial fetch
   useEffect(() => {
@@ -207,9 +216,66 @@ export default function GeneratePage() {
     })();
   };
 
+  // --- New Function to Handle Cover Letter Generation ---
+  const handleGenerateCoverLetter = async () => {
+    const jobId = parseInt(generateJobId, 10);
+    if (isNaN(jobId) || jobId <= 0) {
+      toast.error("Please enter a valid Job ID.");
+      return;
+    }
+    setIsGeneratingCoverLetter(true);
+    setGeneratedCoverLetterUrl(null);
+    setGeneratedCoverLetterFilename(null);
+    try {
+      const result = await generateCoverLetter(jobId);
+      if (result.success && result.coverLetterUrl) {
+        toast.success(result.message || "Cover letter generated!");
+        setGeneratedCoverLetterUrl(result.coverLetterUrl);
+        setGeneratedCoverLetterFilename(result.coverLetterFilename || "cover_letter.txt");
+        // TODO: Optionally update the main job list state if this page were managing it
+      } else {
+        toast.error(result.error || "Failed to generate cover letter.");
+      }
+    } catch (err) {
+      toast.error("An error occurred during generation.");
+      console.error(err);
+    } finally {
+      setIsGeneratingCoverLetter(false);
+    }
+  };
+
   return (
     <div className="container pb-8">
       <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+
+      <div className="my-6 p-4 border rounded-md">
+        <h2 className="text-xl font-semibold mb-3">Generate Cover Letter for Job</h2>
+        <div className="flex items-center gap-2">
+          <Input
+            type="number"
+            placeholder="Enter Job ID from Tracker"
+            value={generateJobId}
+            onChange={(e) => setGenerateJobId(e.target.value)}
+            className="max-w-xs"
+          />
+          <Button
+            onClick={() => {
+              void handleGenerateCoverLetter();
+            }}
+            disabled={isGeneratingCoverLetter || !generateJobId}
+          >
+            {isGeneratingCoverLetter ? "Generating..." : "Generate"}
+          </Button>
+        </div>
+        {generatedCoverLetterUrl && (
+          <div className="mt-3">
+            <p>Generated Cover Letter:</p>
+            <a href={generatedCoverLetterUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+              {generatedCoverLetterFilename}
+            </a>
+          </div>
+        )}
+      </div>
 
       <div className="my-4 flex flex-col gap-2">
         <Tabs defaultValue="new">

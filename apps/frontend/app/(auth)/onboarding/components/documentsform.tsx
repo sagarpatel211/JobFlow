@@ -18,15 +18,17 @@ export default function DocumentsForm({
         <div className="flex flex-col">
           <FileUpload
             title="Upload Resume"
-            onFileChange={async (file) => {
-              try {
-                const { url } = await uploadDocument("resume", file);
-                handleFileChange("resumeUrl", url);
-                toast.success("Resume uploaded");
-              } catch (err) {
-                console.error(err);
-                toast.error("Failed to upload resume.");
-              }
+            onFileChange={(file) => {
+              void (async () => {
+                try {
+                  const { url } = await uploadDocument("resume", file);
+                  handleFileChange("resumeUrl", url);
+                  toast.success("Resume uploaded");
+                } catch (err) {
+                  console.error(err);
+                  toast.error("Failed to upload resume.");
+                }
+              })();
             }}
           />
           {resumeUrl && <p className="text-sm">Uploaded: {resumeUrl}</p>}
@@ -34,15 +36,17 @@ export default function DocumentsForm({
         <div className="flex flex-col">
           <FileUpload
             title="Upload Cover Letter"
-            onFileChange={async (file) => {
-              try {
-                const { url } = await uploadDocument("coverLetter", file);
-                handleFileChange("coverLetterUrl", url);
-                toast.success("Cover Letter uploaded");
-              } catch (err) {
-                console.error(err);
-                toast.error("Failed to upload cover letter.");
-              }
+            onFileChange={(file) => {
+              void (async () => {
+                try {
+                  const { url } = await uploadDocument("coverLetter", file);
+                  handleFileChange("coverLetterUrl", url);
+                  toast.success("Cover Letter uploaded");
+                } catch (err) {
+                  console.error(err);
+                  toast.error("Failed to upload cover letter.");
+                }
+              })();
             }}
           />
           {coverLetterUrl && <p className="text-sm">Uploaded: {coverLetterUrl}</p>}
@@ -50,15 +54,17 @@ export default function DocumentsForm({
         <div className="flex flex-col">
           <FileUpload
             title="Upload Transcript"
-            onFileChange={async (file) => {
-              try {
-                const { url } = await uploadDocument("transcript", file);
-                handleFileChange("transcriptUrl", url);
-                toast.success("Transcript uploaded");
-              } catch (err) {
-                console.error(err);
-                toast.error("Failed to upload transcript.");
-              }
+            onFileChange={(file) => {
+              void (async () => {
+                try {
+                  const { url } = await uploadDocument("transcript", file);
+                  handleFileChange("transcriptUrl", url);
+                  toast.success("Transcript uploaded");
+                } catch (err) {
+                  console.error(err);
+                  toast.error("Failed to upload transcript.");
+                }
+              })();
             }}
           />
           {transcriptUrl && <p className="text-sm">Uploaded: {transcriptUrl}</p>}
@@ -66,15 +72,17 @@ export default function DocumentsForm({
         <div className="flex flex-col">
           <FileUpload
             title="Upload Resume LaTeX (.zip)"
-            onFileChange={async (file) => {
-              try {
-                const { url } = await uploadDocument("latex", file);
-                handleFileChange("latexUrl", url);
-                toast.success("Resume LaTeX uploaded");
-              } catch (err) {
-                console.error(err);
-                toast.error("Failed to upload resume LaTeX.");
-              }
+            onFileChange={(file) => {
+              void (async () => {
+                try {
+                  const { url } = await uploadDocument("latex", file);
+                  handleFileChange("latexUrl", url);
+                  toast.success("Resume LaTeX uploaded");
+                } catch (err) {
+                  console.error(err);
+                  toast.error("Failed to upload resume LaTeX.");
+                }
+              })();
             }}
           />
           {latexUrl && <p className="text-sm">Uploaded: {latexUrl}</p>}

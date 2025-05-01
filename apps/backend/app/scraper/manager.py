@@ -6,6 +6,7 @@ from .linkedin import scrape_linkedin
 # list of scraper functions; extendable
 SCRAPERS = [scrape_linkedin]
 
+
 class ScrapeManager:
     def __init__(self):
         self._lock = threading.Lock()
@@ -78,5 +79,6 @@ class ScrapeManager:
     def cancel_event(self):
         return self._cancel_event
 
+
 # singleton instance for routes
-scrape_manager = ScrapeManager() 
+scrape_manager = ScrapeManager()

@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { Job, JobStatus, RoleType } from "@/types/job";
+import { Job, JobStatus } from "@/types/job";
 import { APIResponse, BackendJob, TrackerAPIResponse, AddJobResponse, UpdateJobResponse } from "@/types/api";
 import { getStatusFromIndex } from "@/lib/constants";
 
@@ -59,7 +59,6 @@ async function getJobs(): Promise<Job[]> {
     link: string;
     posted_date: string;
     status: JobStatus;
-    role_type: RoleType;
     priority: boolean;
     archived: boolean;
     atsScore?: number;
@@ -76,7 +75,6 @@ async function getJobs(): Promise<Job[]> {
     link: j.link,
     postedDate: j.posted_date,
     status: j.status,
-    role_type: j.role_type,
     priority: j.priority,
     archived: j.archived,
     statusIndex: 0,
@@ -94,7 +92,6 @@ export async function addJob(j: Job) {
   const bj: BackendJob = {
     company: { name: j.company },
     title: j.title,
-    role_type: j.role_type ?? "newgrad",
     status: j.status ?? "nothing_done",
     posted_date: safeDate(j.postedDate),
     link: j.link,
@@ -115,7 +112,6 @@ function patchToBackend(p: Partial<Job>): BackendJob {
   const b: BackendJob = {};
   if (p.company !== undefined) b.company = { name: p.company };
   if (p.title !== undefined) b.title = p.title;
-  if (p.role_type !== undefined) b.role_type = p.role_type;
   if (p.status !== undefined || p.statusIndex !== undefined) {
     b.status = p.status ?? (p.statusIndex !== undefined ? getStatusFromIndex(p.statusIndex) : undefined);
   }
@@ -254,10 +250,6 @@ export async function updateCompanyFollowers(c: string, f: number) {
   });
 }
 
-function getRoleTypeFromString(r: string): RoleType {
-  return r === "intern" ? "intern" : "newgrad";
-}
-
 export interface TagWithCount {
   id: number;
   name: string;
@@ -276,6 +268,34 @@ async function uploadCompanyLogo(companyId: number, logoFile: File): Promise<{ s
   return req<{ success: boolean; image_url: string }>(`${BASE_URL}/api/companies/logo/${String(companyId)}`, {
     method: "POST",
     body: formData,
+  });
+}
+
+// Generate a cover letter for a job
+export async function generateCoverLetter(
+  jobId: number,
+): Promise<{ success: boolean; message?: string; coverLetterUrl?: string | null; coverLetterFilename?: string; error?: string }> {
+  const token = localStorage.getItem("access_token"); // Assuming JWT token is stored in localStorage
+  if (!token) {
+    // Handle case where token is not available, perhaps redirect to login
+    return { success: false, error: "Authentication required." };
+  }
+
+  // Prepare headers with Authorization token
+  const authHeaders = {
+    ...HEADERS,
+    Authorization: `Bearer ${token}`,
+  };
+
+  return req<{
+    success: boolean;
+    message?: string;
+    coverLetterUrl?: string | null;
+    coverLetterFilename?: string;
+    error?: string;
+  }>(`${BASE_URL}/api/jobs/${s(jobId)}/generate-cover-letter`, {
+    method: "PUT",
+    headers: authHeaders,
   });
 }
 

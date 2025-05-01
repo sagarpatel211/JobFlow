@@ -1,6 +1,5 @@
 import { StatusKey } from "@/lib/constants";
 
-export type RoleType = "intern" | "newgrad";
 export type JobStatus = StatusKey;
 
 export interface Job {
@@ -11,7 +10,6 @@ export interface Job {
   link: string;
   statusIndex: number;
   status?: JobStatus;
-  role_type?: RoleType;
   priority: boolean;
   isModifying: boolean;
   archived: boolean;

@@ -1,1 +1,1 @@
-# This file makes the scraper folder a Python package 
+# This file makes the scraper folder a Python package

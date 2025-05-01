@@ -35,7 +35,7 @@ export default function TrackingPreferencesForm({
                 <Checkbox
                   className="h-8 w-8"
                   id={option.name}
-                  checked={formData[option.name]}
+                  checked={Boolean(formData[option.name])}
                   onCheckedChange={(checked: boolean) => {
                     handleCheckboxChange(option.name, checked);
                   }}
@@ -47,7 +47,7 @@ export default function TrackingPreferencesForm({
                   <Input
                     type="number"
                     name={goalField}
-                    value={formData[goalField] as string}
+                    value={formData[goalField]}
                     onChange={handleInputChange}
                     placeholder="Goal"
                     className="w-20"

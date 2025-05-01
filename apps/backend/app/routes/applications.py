@@ -8,10 +8,11 @@ import tempfile
 import os
 import json
 from app.config import db
-from app.models import Job, Company, Status, RoleType, JobAttachment
+from app.models import Job, Company, Status, JobAttachment
 
 try:
     import pdfkit
+
     PDF_ENABLED = True
 except ImportError:
     PDF_ENABLED = False
@@ -19,11 +20,9 @@ except ImportError:
 
 applications_bp = Blueprint("applications", __name__)
 
-# Create fixed UUIDs for consistency
 GOOGLE_APP_ID = "b4e5c44c-af30-4d5f-ac20-68b3c76cc0af"
 MICROSOFT_APP_ID = "6630c927-2bf7-4e91-a12f-55e6320859e8"
 
-# Mock data for generated applications
 MOCK_APPLICATIONS = [
     {
         "id": GOOGLE_APP_ID,
@@ -34,8 +33,8 @@ MOCK_APPLICATIONS = [
         "createdAt": datetime(2023, 4, 15).isoformat(),
         "documents": [
             {"type": "resume", "fileName": "resume.pdf"},
-            {"type": "cover_letter", "fileName": "cover_letter.pdf"}
-        ]
+            {"type": "cover_letter", "fileName": "cover_letter.pdf"},
+        ],
     },
     {
         "id": MICROSOFT_APP_ID,
@@ -46,19 +45,20 @@ MOCK_APPLICATIONS = [
         "createdAt": datetime(2023, 5, 10).isoformat(),
         "documents": [
             {"type": "resume", "fileName": "resume.pdf"},
-            {"type": "cover_letter", "fileName": "cover_letter.pdf"}
-        ]
-    }
+            {"type": "cover_letter", "fileName": "cover_letter.pdf"},
+        ],
+    },
 ]
 
 # Mock document content storage - in a real app, this would be in a database
 DOCUMENT_CONTENT = {}
 
+
 def markdown_to_html(md_content):
     """Convert markdown content to HTML"""
     # Use Python's markdown library to convert to HTML
-    html = markdown.markdown(md_content, extensions=['extra'])
-    
+    html = markdown.markdown(md_content, extensions=["extra"])
+
     # Add basic styling
     styled_html = f"""
     <!DOCTYPE html>
@@ -101,14 +101,16 @@ def markdown_to_html(md_content):
     """
     return styled_html
 
+
 def convert_to_pdf(html_content):
     """Convert HTML to PDF"""
     if not PDF_ENABLED:
         return None
-    
+
     # Convert HTML to PDF
     pdf = pdfkit.from_string(html_content, False)
     return pdf
+
 
 # Initialize document content for existing applications
 def initialize_document_content():
@@ -141,7 +143,7 @@ ABC Tech | 2015 - 2018
 Bachelor of Science in Computer Science
 University of Technology | 2011 - 2015
 """
-    
+
     # Google application cover letter
     google_cover_letter = """# Cover Letter
 
@@ -162,7 +164,7 @@ for this position. Thank you for considering my application.
 Sincerely,
 John Doe
 """
-    
+
     # Microsoft application resume
     microsoft_resume = f"""# Resume for Full Stack Developer at Microsoft
 
@@ -192,7 +194,7 @@ XYZ Company | 2014 - 2017
 Master of Science in Computer Science
 University of Technology | 2012 - 2014
 """
-    
+
     # Microsoft application cover letter
     microsoft_cover_letter = """# Cover Letter
 
@@ -213,49 +215,52 @@ for this position. Thank you for considering my application.
 Sincerely,
 John Doe
 """
-    
+
     # Convert markdown to HTML for each document
     google_resume_html = markdown_to_html(google_resume)
     google_cover_letter_html = markdown_to_html(google_cover_letter)
     microsoft_resume_html = markdown_to_html(microsoft_resume)
     microsoft_cover_letter_html = markdown_to_html(microsoft_cover_letter)
-    
+
     # Store document content
     DOCUMENT_CONTENT[f"{GOOGLE_APP_ID}_resume"] = {
         "content": google_resume,
         "content_type": "text/markdown",
         "raw_content": google_resume,
-        "html_content": google_resume_html
+        "html_content": google_resume_html,
     }
-    
+
     DOCUMENT_CONTENT[f"{GOOGLE_APP_ID}_cover_letter"] = {
         "content": google_cover_letter,
         "content_type": "text/markdown",
         "raw_content": google_cover_letter,
-        "html_content": google_cover_letter_html
+        "html_content": google_cover_letter_html,
     }
-    
+
     DOCUMENT_CONTENT[f"{MICROSOFT_APP_ID}_resume"] = {
         "content": microsoft_resume,
         "content_type": "text/markdown",
         "raw_content": microsoft_resume,
-        "html_content": microsoft_resume_html
+        "html_content": microsoft_resume_html,
     }
-    
+
     DOCUMENT_CONTENT[f"{MICROSOFT_APP_ID}_cover_letter"] = {
         "content": microsoft_cover_letter,
         "content_type": "text/markdown",
         "raw_content": microsoft_cover_letter,
-        "html_content": microsoft_cover_letter_html
+        "html_content": microsoft_cover_letter_html,
     }
+
 
 # Initialize document content
 initialize_document_content()
+
 
 @applications_bp.route("/applications", methods=["GET"])
 def get_applications():
     """Get all applications"""
     return jsonify(MOCK_APPLICATIONS)
+
 
 @applications_bp.route("/applications/<application_id>", methods=["GET"])
 def get_application(application_id):
@@ -265,58 +270,70 @@ def get_application(application_id):
             return jsonify(app)
     return jsonify({"error": "Application not found"}), 404
 
-@applications_bp.route("/applications/<application_id>/documents/<document_type>", methods=["GET"])
+
+@applications_bp.route(
+    "/applications/<application_id>/documents/<document_type>", methods=["GET"]
+)
 def get_application_document(application_id, document_type):
     """Get a specific document for an application"""
     document_key = f"{application_id}_{document_type}"
-    
+
     if document_key not in DOCUMENT_CONTENT:
         return jsonify({"error": "Document not found"}), 404
-    
+
     document = DOCUMENT_CONTENT[document_key]
-    format_param = request.args.get('format', 'markdown')
-    
-    if format_param == 'html':
-        return Response(document['html_content'], mimetype='text/html')
-    elif format_param == 'pdf':
+    format_param = request.args.get("format", "markdown")
+
+    if format_param == "html":
+        return Response(document["html_content"], mimetype="text/html")
+    elif format_param == "pdf":
         if not PDF_ENABLED:
-            return jsonify({"error": "PDF generation is not enabled on this server"}), 501
-        
-        pdf_content = convert_to_pdf(document['html_content'])
+            return (
+                jsonify({"error": "PDF generation is not enabled on this server"}),
+                501,
+            )
+
+        pdf_content = convert_to_pdf(document["html_content"])
         if pdf_content:
             return Response(
                 pdf_content,
-                mimetype='application/pdf',
-                headers={"Content-Disposition": f"inline; filename={document_type}.pdf"}
+                mimetype="application/pdf",
+                headers={
+                    "Content-Disposition": f"inline; filename={document_type}.pdf"
+                },
             )
         else:
             return jsonify({"error": "Failed to generate PDF"}), 500
     else:  # Default to markdown
-        return Response(document['raw_content'], mimetype='text/markdown')
+        return Response(document["raw_content"], mimetype="text/markdown")
 
-@applications_bp.route("/applications/<application_id>/documents/<document_type>", methods=["PUT"])
+
+@applications_bp.route(
+    "/applications/<application_id>/documents/<document_type>", methods=["PUT"]
+)
 def update_application_document(application_id, document_type):
     """Update a specific document for an application"""
     document_key = f"{application_id}_{document_type}"
-    
+
     if document_key not in DOCUMENT_CONTENT:
         return jsonify({"error": "Document not found"}), 404
-    
+
     if not request.is_json:
         return jsonify({"error": "Request must be JSON"}), 400
-    
+
     data = request.get_json()
-    if 'content' not in data:
+    if "content" not in data:
         return jsonify({"error": "Content is required"}), 400
-    
-    new_content = data['content']
-    
+
+    new_content = data["content"]
+
     # Update the document content
-    DOCUMENT_CONTENT[document_key]['content'] = new_content
-    DOCUMENT_CONTENT[document_key]['raw_content'] = new_content
-    DOCUMENT_CONTENT[document_key]['html_content'] = markdown_to_html(new_content)
-    
+    DOCUMENT_CONTENT[document_key]["content"] = new_content
+    DOCUMENT_CONTENT[document_key]["raw_content"] = new_content
+    DOCUMENT_CONTENT[document_key]["html_content"] = markdown_to_html(new_content)
+
     return jsonify({"success": True})
+
 
 @applications_bp.route("/applications/<application_id>/generate", methods=["POST"])
 def generate_application_documents(application_id):
@@ -327,13 +344,13 @@ def generate_application_documents(application_id):
         if app["id"] == application_id:
             application = app
             break
-    
+
     if not application:
         return jsonify({"error": "Application not found"}), 404
-    
+
     # In a real app, this would call a service to generate the documents
     # For this demo, we'll just use some sample data
-    
+
     # Generate or update resume
     resume_key = f"{application_id}_resume"
     resume_content = f"""# Resume for {application['jobTitle']} at {application['company']}
@@ -362,7 +379,7 @@ ABC Inc | 2015 - 2018
 Bachelor of Science in Computer Science
 University of Technology | 2011 - 2015
 """
-    
+
     # Generate or update cover letter
     cover_letter_key = f"{application_id}_cover_letter"
     cover_letter_content = f"""# Cover Letter
@@ -380,29 +397,26 @@ I look forward to the opportunity to discuss how my experience aligns with your 
 Sincerely,
 John Doe
 """
-    
+
     # Update the document content store
     DOCUMENT_CONTENT[resume_key] = {
         "content": resume_content,
         "content_type": "text/markdown",
         "raw_content": resume_content,
-        "html_content": markdown_to_html(resume_content)
+        "html_content": markdown_to_html(resume_content),
     }
-    
+
     DOCUMENT_CONTENT[cover_letter_key] = {
         "content": cover_letter_content,
         "content_type": "text/markdown",
         "raw_content": cover_letter_content,
-        "html_content": markdown_to_html(cover_letter_content)
+        "html_content": markdown_to_html(cover_letter_content),
     }
-    
+
     # Update the application status
     for app in MOCK_APPLICATIONS:
         if app["id"] == application_id:
             app["status"] = "completed"
             break
-    
-    return jsonify({
-        "success": True,
-        "message": "Documents generated successfully"
-    }) 
+
+    return jsonify({"success": True, "message": "Documents generated successfully"})

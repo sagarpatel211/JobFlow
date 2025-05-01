@@ -41,11 +41,9 @@ with DAG(
 ) as dag:
 
     def run_linkedin_scraper(job_roles):
-        """Create a ScrapeManager and run the LinkedIn scraper for given roles."""
         manager = ScrapeManager()
         scrape_linkedin(manager, job_roles)
 
-    # Create one task per LinkedIn role to leverage Airflow's retry/backoff per role
     with TaskGroup("linkedin_scrapers") as linkedin_group:
         for role in LINKEDIN_ROLES:
             PythonOperator(

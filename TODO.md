@@ -67,6 +67,7 @@ get black list whitelist and fix the followers dropdown we should be able to typ
   - [ ] Filters  
   - [ ] Actions dropdown  
   - [ ] Scraping endpoint  
+- [ ] fix blob storage so we upload directly to minio and send the link to the backend because right now we send the file to the backend
 - [X] Set up blob storage  
 - [X] Set up Elasticsearch search indexing  
 
@@ -90,3 +91,5 @@ get black list whitelist and fix the followers dropdown we should be able to typ
 - [ ] Get search bar to work with:
   - [ ] Custom tags  
   - [ ] Personal notes  
+
+- [ ] Add the architecture image in the README from NextJS endpoint
